@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# Chat MVP
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A small chat application built with React, Vite, and TypeScript.
 
-Currently, two official plugins are available:
+The app includes:
+- Mock login ("log in as user X")
+- Conversation list on the left
+- Message thread and composer on the right
+- Optimistic message sending with rollback on failure
+- Loading, empty, success, and error UI states
+- In-memory mocked API aligned with `API_CONTRACT.md`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech Stack
 
-## React Compiler
+- React
+- TypeScript (strict)
+- Vite
+- Vitest + React Testing Library
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Run Locally
 
-## Expanding the ESLint configuration
+- Install: `npm install`
+- Dev server: `npm run dev`
+- Tests: `npm test`
+- Full checks: `npm run verify:precommit`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Acceptance Criteria Mapping
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **All UI states (loading, empty, success, error) are visibly handled**  
+  Yes. Conversations and messages containers explicitly render skeletons, empty text, normal content, and error states.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **Optimistic send works and rolls back on simulated failure**  
+  Yes. Message send uses optimistic insert, then either confirms on success or removes and shows an error on failure.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **Auto-scroll keeps the latest message in view**  
+  Yes. The message list scrolls to an end marker whenever messages update.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- **Cursor-style pagination supported in the API mock (frontend doesn’t crash on long thread)**  
+  Yes. The mock API uses cursor paging, and message loading follows cursors to build full history safely.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **At least one custom hook + at least one `useReducer` usage**  
+  Yes. Custom hooks include `useMessages` and `useOptimisticMessages`.  
+  `useReducer` is used in `useOptimisticMessages` with `messagesReducer` (note: reducer usage is in a hook, not directly inside a component).
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **At least 5 unit/component tests with Vitest + React Testing Library**  
+  Yes. The project includes more than 5 tests across reducers, selectors, mocks, components, and hooks.
+
+- **`npx tsc --noEmit` passes**  
+  Yes. Typecheck is included in `npm run verify:precommit` and currently passes.
+
+- **`API_CONTRACT.md` documents every endpoint with request/response shapes**  
+  Yes. Required endpoints and payloads are fully documented in `API_CONTRACT.md`.
+
+## Project Docs
+
+- Implementation and constraints: `CLAUDE.md`
+- Architecture and responsibilities: `ARCHITECTURE.md`
+- API contract: `API_CONTRACT.md`
