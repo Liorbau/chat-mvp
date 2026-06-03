@@ -17,12 +17,19 @@ The app includes:
 - Vite
 - Vitest + React Testing Library
 
+## Repository Structure
+
+- `apps/web/` — Week 2 frontend (React + Vite)
+- `apps/api/` — Week 3 backend workspace (placeholder scaffold)
+- `packages/contracts/` — shared API contract types used by web and api
+- Root (`/`) — shared scripts, Husky hooks, and project docs
+
 ## Run Locally
 
-- Install: `npm install`
-- Dev server: `npm run dev`
-- Tests: `npm test`
-- Full checks: `npm run verify:precommit`
+- Install all workspaces: `npm install`
+- Frontend dev server: `npm run dev` (delegates to `@chat/web`)
+- Frontend tests: `npm test`
+- Full monorepo checks: `npm run verify:precommit`
 
 ## Acceptance Criteria Mapping
 
