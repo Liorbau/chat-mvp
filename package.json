@@ -1,45 +1,24 @@
 {
-  "name": "frontend-chat-mvp",
+  "name": "chat-mvp-monorepo",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"scripts/**/*.{js,mjs,cjs,ts}\"",
+    "dev": "npm run dev -w @chat/web",
+    "dev:web": "npm run dev -w @chat/web",
+    "build": "npm run build -w @chat/contracts && npm run build -w @chat/api && npm run build -w @chat/web",
+    "lint": "npm run lint -w @chat/web && npm run lint -w @chat/contracts && npm run lint -w @chat/api",
+    "typecheck": "npm run typecheck -w @chat/contracts && npm run typecheck -w @chat/api && npm run typecheck -w @chat/web",
+    "format:check": "npm run format:check -w @chat/web",
     "verify:precommit": "npm run format:check && npm run lint && npm run typecheck",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "preview": "vite preview",
+    "test": "npm run test -w @chat/web",
+    "test:watch": "npm run test:watch -w @chat/web",
     "prepare": "husky"
   },
-  "dependencies": {
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
-  },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^24.12.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "@vitest/coverage-v8": "^4.1.7",
-    "eslint": "^10.3.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.6.0",
-    "husky": "^9.1.7",
-    "jsdom": "^29.1.1",
-    "prettier": "^3.8.3",
-    "typescript": "~6.0.2",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12",
-    "vitest": "^4.1.7"
+    "husky": "^9.1.7"
   }
 }

@@ -1,0 +1,19 @@
+{
+  "name": "@chat/api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "npm run typecheck",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@chat/contracts": "file:../../packages/contracts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.3",
+    "typescript": "~6.0.2"
+  }
+}

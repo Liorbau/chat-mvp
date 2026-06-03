@@ -20,13 +20,13 @@ Use this as the source of truth for:
 ## High-Level Architecture
 
 - Single-page frontend (no routing needed for now).
-- Entry: `src/main.tsx` renders `<App />`.
-- App shell: `src/App.tsx` sets up global layout and mounts the chat feature.
-- Main feature lives under `src/features/chat/`.
+- Entry: `apps/web/src/main.tsx` renders `<App />`.
+- App shell: `apps/web/src/App.tsx` sets up global layout and mounts the chat feature.
+- Main feature lives under `apps/web/src/features/chat/`.
 
 ## Folder and File Structure (One File -> One Responsibility)
 
-### `src/features/chat/components/`
+### `apps/web/src/features/chat/components/`
 
 - `ChatLayout.tsx`
   - Layout-only.
@@ -71,7 +71,7 @@ Use this as the source of truth for:
   - Props: `onSend(content)`, `disabled`.
   - No API calls.
 
-### `src/features/chat/hooks/`
+### `apps/web/src/features/chat/hooks/`
 
 - `useConversations.ts`
   - Fetches conversations.
@@ -107,7 +107,7 @@ Use this as the source of truth for:
     - `sendMessage`
     - `refetch`
 
-### `src/features/chat/api/`
+### `apps/web/src/features/chat/api/`
 
 - `chatApi.types.ts`
   - Contract-first shared types for frontend and mocked backend:
@@ -132,7 +132,7 @@ Use this as the source of truth for:
   - The session lives behind this boundary: only `login`/`logout` mutate it, so
     the UI never touches `authSession` directly.
 
-### `src/features/chat/state/`
+### `apps/web/src/features/chat/state/`
 
 - `chatStatus.ts`
   - Shared union type for status-driven UI:
@@ -150,7 +150,7 @@ Use this as the source of truth for:
     - `SEND_SUCCESS` (replace temp message with real one)
     - `SEND_FAILURE` (remove temp message, set error)
 
-### `src/features/chat/mocks/`
+### `apps/web/src/features/chat/mocks/`
 
 - `mockData.ts`
   - In-memory arrays matching `chatApi.types.ts`.
@@ -168,7 +168,7 @@ Use this as the source of truth for:
     - random failures for error-state testing
   - `apiClient.ts` should call this layer (or a fetch wrapper), not a real backend.
 
-### `src/features/chat/__tests__/`
+### `apps/web/src/features/chat/__tests__/`
 
 - Tests for reducers, selectors, mock server contract behavior, components, and hooks.
 - Built with Vitest + React Testing Library.
@@ -176,7 +176,7 @@ Use this as the source of truth for:
 
 ### Shared UI Primitives
 
-- No standalone `src/components/ui/` primitives are currently used.
+- No standalone `apps/web/src/components/ui/` primitives are currently used.
 - Loading/error/empty visuals are rendered through feature-level components
   (`ConversationListSkeleton`, `MessageThreadSkeleton`, `ErrorToast`, and inline copy).
 
