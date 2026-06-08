@@ -1,5 +1,8 @@
 import type { Conversation, Message, User } from '../api/chatApi.types'
 
+// Legacy Week 2 mock fixtures.
+// Unwired from runtime in Week 3, kept only as a historical reference.
+
 export const mockUsers: User[] = [
   {
     id: 'user-1',

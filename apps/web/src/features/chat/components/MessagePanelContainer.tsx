@@ -1,5 +1,4 @@
 import { useOptimisticMessages } from '../hooks/useOptimisticMessages'
-import { getMockUserDisplayName } from '../mocks/mockData'
 import ErrorToast from './ErrorToast'
 import MessageComposer from './MessageComposer'
 import MessageList from './MessageList'
@@ -8,6 +7,7 @@ import MessageThreadSkeleton from './MessageThreadSkeleton'
 type MessagePanelContainerProps = {
   selectedConversationId: string | null
   currentUserId: string
+  getUserDisplayName: (userId: string) => string
   onConversationActivity: (conversationId: string, lastMessagePreview: string) => void
 }
 
@@ -32,10 +32,13 @@ const COMPOSER_AREA_STYLE = {
 function MessagePanelContainer({
   selectedConversationId,
   currentUserId,
+  getUserDisplayName,
   onConversationActivity,
 }: MessagePanelContainerProps) {
-  const { status, messages, error, sendMessage, refetch } =
-    useOptimisticMessages(selectedConversationId)
+  const { status, messages, error, sendMessage, refetch } = useOptimisticMessages(
+    selectedConversationId,
+    currentUserId,
+  )
 
   async function handleSendMessage(content: string): Promise<void> {
     await sendMessage(content)
@@ -73,7 +76,7 @@ function MessagePanelContainer({
           <MessageList
             messages={messages}
             currentUserId={currentUserId}
-            getDisplayName={getMockUserDisplayName}
+            getDisplayName={getUserDisplayName}
           />
         )}
       </div>

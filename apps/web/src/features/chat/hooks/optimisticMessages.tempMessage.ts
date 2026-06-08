@@ -1,9 +1,10 @@
 import type { Message } from '../api/chatApi.types'
-import { getSessionUserId } from '../auth/authSession'
 
-export function createTemporaryMessage(conversationId: string, content: string): Message {
-  const currentUserId = getSessionUserId() ?? 'user-1'
-
+export function createTemporaryMessage(
+  conversationId: string,
+  currentUserId: string,
+  content: string,
+): Message {
   return {
     id: `temp-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
     conversationId,
