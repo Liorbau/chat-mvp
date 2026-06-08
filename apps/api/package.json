@@ -4,16 +4,30 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "npm run typecheck",
-    "start": "node dist/index.js"
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
-    "@chat/contracts": "file:../../packages/contracts"
+    "@chat/contract": "*",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
     "@types/node": "^24.12.3",
-    "typescript": "~6.0.2"
+    "@types/supertest": "^7.2.0",
+    "eslint": "^10.3.0",
+    "globals": "^17.6.0",
+    "supertest": "^7.2.2",
+    "tsx": "^4.20.6",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vitest": "^4.1.8"
   }
 }
