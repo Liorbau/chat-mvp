@@ -41,6 +41,7 @@ function createDeferred<T>() {
 
 const mockedGetMessages = vi.mocked(apiClient.getMessages)
 const mockedSendMessage = vi.mocked(apiClient.sendMessage)
+const getUserDisplayName = (userId: string): string => `User ${userId}`
 
 beforeEach(() => {
   mockedGetMessages.mockReset()
@@ -53,6 +54,7 @@ describe('MessagePanelContainer (status branches)', () => {
       <MessagePanelContainer
         selectedConversationId={null}
         currentUserId="user-1"
+        getUserDisplayName={getUserDisplayName}
         onConversationActivity={vi.fn()}
       />,
     )
@@ -69,6 +71,7 @@ describe('MessagePanelContainer (status branches)', () => {
       <MessagePanelContainer
         selectedConversationId="conv-1"
         currentUserId="user-1"
+        getUserDisplayName={getUserDisplayName}
         onConversationActivity={vi.fn()}
       />,
     )
@@ -83,6 +86,7 @@ describe('MessagePanelContainer (status branches)', () => {
       <MessagePanelContainer
         selectedConversationId="conv-1"
         currentUserId="user-1"
+        getUserDisplayName={getUserDisplayName}
         onConversationActivity={vi.fn()}
       />,
     )
@@ -97,6 +101,7 @@ describe('MessagePanelContainer (status branches)', () => {
       <MessagePanelContainer
         selectedConversationId="conv-1"
         currentUserId="user-1"
+        getUserDisplayName={getUserDisplayName}
         onConversationActivity={vi.fn()}
       />,
     )
@@ -118,6 +123,7 @@ describe('MessagePanelContainer (status branches)', () => {
       <MessagePanelContainer
         selectedConversationId="conv-1"
         currentUserId="user-1"
+        getUserDisplayName={getUserDisplayName}
         onConversationActivity={vi.fn()}
       />,
     )
@@ -139,6 +145,7 @@ describe('MessagePanelContainer (optimistic send)', () => {
       <MessagePanelContainer
         selectedConversationId="conv-1"
         currentUserId="user-1"
+        getUserDisplayName={getUserDisplayName}
         onConversationActivity={handleConversationActivity}
       />,
     )
@@ -179,6 +186,7 @@ describe('MessagePanelContainer (optimistic send)', () => {
       <MessagePanelContainer
         selectedConversationId="conv-1"
         currentUserId="user-1"
+        getUserDisplayName={getUserDisplayName}
         onConversationActivity={handleConversationActivity}
       />,
     )

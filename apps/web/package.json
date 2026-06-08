@@ -8,13 +8,12 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"eslint.config.js\" \"vite.config.ts\" \"vitest.config.ts\"",
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@chat/contracts": "file:../../packages/contracts",
+    "@chat/contract": "*",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
@@ -34,7 +33,6 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
-    "prettier": "^3.8.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",

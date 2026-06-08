@@ -1,0 +1,9 @@
+export const ErrorCode = {
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  RESOURCE_NOT_FOUND: 'RESOURCE_NOT_FOUND',
+  CONVERSATION_ALREADY_EXISTS: 'CONVERSATION_ALREADY_EXISTS',
+  INTERNAL: 'INTERNAL',
+} as const
+
+export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode]

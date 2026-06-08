@@ -5,6 +5,7 @@ import MessagePanelContainer from './MessagePanelContainer'
 
 type ChatLayoutProps = {
   currentUserId: string
+  getUserDisplayName: (userId: string) => string
   onLogout: () => void
 }
 
@@ -49,7 +50,7 @@ const LOGOUT_BUTTON_STYLE = {
   cursor: 'pointer',
 }
 
-function ChatLayout({ currentUserId, onLogout }: ChatLayoutProps) {
+function ChatLayout({ currentUserId, getUserDisplayName, onLogout }: ChatLayoutProps) {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const { status, conversations, error, markConversationActivity } = useConversations()
 
@@ -87,6 +88,7 @@ function ChatLayout({ currentUserId, onLogout }: ChatLayoutProps) {
             <MessagePanelContainer
               selectedConversationId={selectedConversationId}
               currentUserId={currentUserId}
+              getUserDisplayName={getUserDisplayName}
               onConversationActivity={markConversationActivity}
             />
           </div>

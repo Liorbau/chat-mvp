@@ -1,24 +1,26 @@
 {
-  "name": "chat-mvp-monorepo",
+  "name": "chat-mvp",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @chat/web",
     "dev:web": "npm run dev -w @chat/web",
-    "build": "npm run build -w @chat/contracts && npm run build -w @chat/api && npm run build -w @chat/web",
-    "lint": "npm run lint -w @chat/web && npm run lint -w @chat/contracts && npm run lint -w @chat/api",
-    "typecheck": "npm run typecheck -w @chat/contracts && npm run typecheck -w @chat/api && npm run typecheck -w @chat/web",
-    "format:check": "npm run format:check -w @chat/web",
-    "verify:precommit": "npm run format:check && npm run lint && npm run typecheck",
-    "test": "npm run test -w @chat/web",
-    "test:watch": "npm run test:watch -w @chat/web",
+    "dev:api": "npm run dev -w @chat/api",
+    "build:web": "npm run build -w @chat/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format:check": "prettier --check \"apps/**/src/**/*.{ts,tsx}\" \"packages/**/src/**/*.{ts,tsx}\" \"scripts/**/*.{js,mjs,cjs}\"",
+    "format:write": "prettier --write \"apps/**/src/**/*.{ts,tsx}\" \"packages/**/src/**/*.{ts,tsx}\" \"scripts/**/*.{js,mjs,cjs}\"",
+    "verify:precommit": "npm run format:check && npm run lint && npm run typecheck && npm run test",
     "prepare": "husky"
   },
   "devDependencies": {
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "prettier": "^3.8.3"
   }
 }

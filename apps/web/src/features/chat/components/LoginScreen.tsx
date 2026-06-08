@@ -7,10 +7,10 @@ type LoginScreenProps = {
 }
 
 const LOGIN_OPTIONS = [
-  { id: 'user-1', label: 'Alex (user-1)', email: 'alex@example.com' },
-  { id: 'user-2', label: 'Sam (user-2)', email: 'sam@example.com' },
-  { id: 'user-3', label: 'Dana (user-3)', email: 'dana@example.com' },
-  { id: 'user-4', label: 'Maya (user-4)', email: 'maya@example.com' },
+  { id: 'user-1', label: 'Alex (user-1)' },
+  { id: 'user-2', label: 'Sam (user-2)' },
+  { id: 'user-3', label: 'Dana (user-3)' },
+  { id: 'user-4', label: 'Maya (user-4)' },
 ] as const
 
 const SCREEN_STYLE = {
@@ -67,7 +67,7 @@ const LOGIN_BUTTON_DISABLED_STYLE = {
 }
 
 function LoginScreen({ onLogin }: LoginScreenProps) {
-  const [selectedEmail, setSelectedEmail] = useState<string>(LOGIN_OPTIONS[0].email)
+  const [selectedUserId, setSelectedUserId] = useState<string>(LOGIN_OPTIONS[0].id)
   const [isLoading, setIsLoading] = useState(false)
   const [isErrorVisible, setIsErrorVisible] = useState(false)
 
@@ -76,10 +76,7 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
     setIsErrorVisible(false)
 
     try {
-      const response = await login({
-        email: selectedEmail,
-        password: 'mock-password',
-      })
+      const response = await login({ userId: selectedUserId })
       onLogin(response.user)
     } catch {
       setIsErrorVisible(true)
@@ -91,12 +88,12 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
   return (
     <main style={SCREEN_STYLE}>
       <section style={CARD_STYLE}>
-        <h1 style={{ margin: 0, fontSize: '24px', color: '#2563eb' }}>Mock Login</h1>
+        <h1 style={{ margin: 0, fontSize: '24px', color: '#2563eb' }}>Chat Login</h1>
         <p style={{ marginTop: '8px', color: '#334155' }}>Choose a user identity to continue.</p>
 
         <div style={OPTIONS_STYLE}>
           {LOGIN_OPTIONS.map((option) => {
-            const isSelected = selectedEmail === option.email
+            const isSelected = selectedUserId === option.id
             const optionLabelStyle = isSelected
               ? {
                   ...OPTION_LABEL_STYLE,
@@ -110,10 +107,10 @@ function LoginScreen({ onLogin }: LoginScreenProps) {
                 <input
                   type="radio"
                   name="mock-user"
-                  value={option.email}
+                  value={option.id}
                   checked={isSelected}
                   onChange={() => {
-                    setSelectedEmail(option.email)
+                    setSelectedUserId(option.id)
                   }}
                 />
                 <span>{option.label}</span>

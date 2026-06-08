@@ -44,7 +44,7 @@ describe('useOptimisticMessages (renderHook)', () => {
     }
     mockedGetMessages.mockResolvedValue(response)
 
-    const { result } = renderHook(() => useOptimisticMessages('conv-1'))
+    const { result } = renderHook(() => useOptimisticMessages('conv-1', 'user-1'))
 
     await waitFor(() => {
       expect(result.current.status).toBe('success')
@@ -61,7 +61,7 @@ describe('useOptimisticMessages (renderHook)', () => {
     }
     mockedSendMessage.mockResolvedValue(sendResponse)
 
-    const { result } = renderHook(() => useOptimisticMessages('conv-1'))
+    const { result } = renderHook(() => useOptimisticMessages('conv-1', 'user-1'))
     await waitFor(() => {
       expect(result.current.status).toBe('empty')
     })
@@ -84,7 +84,7 @@ describe('useOptimisticMessages (renderHook)', () => {
     mockedGetMessages.mockResolvedValue({ messages: [], nextCursor: null })
     mockedSendMessage.mockRejectedValue(new Error('simulated network failure'))
 
-    const { result } = renderHook(() => useOptimisticMessages('conv-1'))
+    const { result } = renderHook(() => useOptimisticMessages('conv-1', 'user-1'))
     await waitFor(() => {
       expect(result.current.status).toBe('empty')
     })
@@ -102,7 +102,7 @@ describe('useOptimisticMessages (renderHook)', () => {
   it('treats whitespace-only content as a no-op (no API call, no state change)', async () => {
     mockedGetMessages.mockResolvedValue({ messages: [], nextCursor: null })
 
-    const { result } = renderHook(() => useOptimisticMessages('conv-1'))
+    const { result } = renderHook(() => useOptimisticMessages('conv-1', 'user-1'))
     await waitFor(() => {
       expect(result.current.status).toBe('empty')
     })
@@ -123,7 +123,7 @@ describe('useOptimisticMessages (renderHook)', () => {
     })
 
     const { result, rerender } = renderHook(
-      ({ id }: { id: string | null }) => useOptimisticMessages(id),
+      ({ id }: { id: string | null }) => useOptimisticMessages(id, 'user-1'),
       { initialProps: { id: 'conv-1' as string | null } },
     )
     await waitFor(() => {

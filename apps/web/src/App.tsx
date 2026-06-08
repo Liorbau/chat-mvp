@@ -6,6 +6,19 @@ import LoginScreen from './features/chat/components/LoginScreen'
 
 function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [knownUsersById, setKnownUsersById] = useState<Record<string, User>>({})
+
+  function handleLogin(user: User): void {
+    setCurrentUser(user)
+    setKnownUsersById((previousUsersById) => {
+      return { ...previousUsersById, [user.id]: user }
+    })
+  }
+
+  function getUserDisplayName(userId: string): string {
+    const matchedUser = knownUsersById[userId]
+    return matchedUser?.name ?? `Unknown user (${userId})`
+  }
 
   function handleLogout() {
     setCurrentUser(null)
@@ -13,10 +26,16 @@ function App() {
   }
 
   if (currentUser === null) {
-    return <LoginScreen onLogin={setCurrentUser} />
+    return <LoginScreen onLogin={handleLogin} />
   }
 
-  return <ChatLayout currentUserId={currentUser.id} onLogout={handleLogout} />
+  return (
+    <ChatLayout
+      currentUserId={currentUser.id}
+      getUserDisplayName={getUserDisplayName}
+      onLogout={handleLogout}
+    />
+  )
 }
 
 export default App

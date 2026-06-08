@@ -1,7 +1,8 @@
-import type { LoginRequest } from '@chat/contracts'
+import { createApp } from './app'
+import { env } from './config/env'
 
-export function bootstrapApi(): void {
-  // Week 3 backend implementation entry point.
-}
+const app = createApp()
 
-export type { LoginRequest }
+app.listen(env.PORT, () => {
+  console.log(`API listening on http://localhost:${env.PORT}`)
+})

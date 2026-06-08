@@ -38,7 +38,11 @@ type Message = {
 };
 
 type ApiError = {
-  error: string;
+  error: {
+    code: string;
+    message: string;
+    details?: unknown;
+  };
 };
 ```
 
@@ -59,8 +63,7 @@ type ApiError = {
 
 ```json
 {
-  "email": "string",
-  "password": "string"
+  "userId": "string"
 }
 ```
 
@@ -81,7 +84,10 @@ type ApiError = {
 
 ```json
 {
-  "error": "Invalid credentials"
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Invalid credentials"
+  }
 }
 ```
 
@@ -119,7 +125,47 @@ _No content._
 
 ```json
 {
-  "error": "Unable to load conversations"
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Missing or malformed Authorization header"
+  }
+}
+```
+
+### `POST /conversations`
+
+**Request body**
+
+```json
+{
+  "title": "string",
+  "participantIds": ["string"]
+}
+```
+
+**Success response (201)**
+
+Headers:
+- `Location: /conversations/:id`
+
+```json
+{
+  "id": "string",
+  "title": "string",
+  "participantIds": ["string"],
+  "lastMessagePreview": "",
+  "updatedAt": "2026-05-27T10:00:00.000Z"
+}
+```
+
+**Error response (4xx/5xx)**
+
+```json
+{
+  "error": {
+    "code": "CONVERSATION_ALREADY_EXISTS",
+    "message": "A direct conversation for these participants already exists"
+  }
 }
 ```
 
@@ -132,6 +178,7 @@ _No content._
 **Query params**
 
 - `cursor?: string`
+- `limit?: number` (default: `20`, max: `50`)
 
 **Success response (200)**
 
@@ -154,7 +201,10 @@ _No content._
 
 ```json
 {
-  "error": "Unable to load messages"
+  "error": {
+    "code": "RESOURCE_NOT_FOUND",
+    "message": "Conversation not found"
+  }
 }
 ```
 
@@ -190,10 +240,18 @@ _No content._
 
 ```json
 {
-  "error": "Message content is required"
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request",
+    "details": []
+  }
 }
 ```
 
 ## Contract Changes
 
-- None yet.
+- Login request body changed from `{ email, password }` to `{ userId }`.
+- Error envelope changed from `{ error: string }` to
+  `{ error: { code, message, details? } }`.
+- Added `POST /conversations` to the documented endpoint surface.
+- Added `limit` query parameter documentation for message pagination.

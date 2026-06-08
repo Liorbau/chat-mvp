@@ -4,12 +4,14 @@ import { createTemporaryMessage } from './optimisticMessages.tempMessage'
 
 type SendOptimisticMessageParameters = {
   conversationId: string | null
+  currentUserId: string
   content: string
   dispatch: MessagesDispatch
 }
 
 export async function sendOptimisticMessage({
   conversationId,
+  currentUserId,
   content,
   dispatch,
 }: SendOptimisticMessageParameters): Promise<void> {
@@ -18,7 +20,7 @@ export async function sendOptimisticMessage({
     return
   }
 
-  const temporaryMessage = createTemporaryMessage(conversationId, normalizedContent)
+  const temporaryMessage = createTemporaryMessage(conversationId, currentUserId, normalizedContent)
   dispatch({
     type: 'SEND_START',
     payload: { message: temporaryMessage },

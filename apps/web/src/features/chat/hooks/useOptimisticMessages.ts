@@ -10,7 +10,10 @@ import {
 import { sendOptimisticMessage } from './optimisticMessages.send'
 import type { UseOptimisticMessagesResult } from './optimisticMessages.types'
 
-export function useOptimisticMessages(conversationId: string | null): UseOptimisticMessagesResult {
+export function useOptimisticMessages(
+  conversationId: string | null,
+  currentUserId: string,
+): UseOptimisticMessagesResult {
   const {
     status: baseStatus,
     messages: baseMessages,
@@ -46,7 +49,7 @@ export function useOptimisticMessages(conversationId: string | null): UseOptimis
   const status = resolveOptimisticStatus(conversationId, baseStatus, mergedMessages)
 
   async function sendMessage(content: string): Promise<void> {
-    return sendOptimisticMessage({ conversationId, content, dispatch })
+    return sendOptimisticMessage({ conversationId, currentUserId, content, dispatch })
   }
 
   return {
