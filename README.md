@@ -1,35 +1,34 @@
 # Chat MVP
 
-A small chat application built with React, Vite, and TypeScript.
+A chat application built as an npm-workspaces monorepo.
 
-The app includes:
-- Mock login ("log in as user X")
+## Workspace Layout
+
+- `apps/web` — React + Vite + TypeScript frontend (Week 2).
+- `apps/api` — Express + TypeScript REST backend (Week 3, completed).
+- `packages/contract` — shared domain types (single source of truth) consumed by both apps.
+
+The frontend includes:
 - Conversation list on the left
 - Message thread and composer on the right
 - Optimistic message sending with rollback on failure
 - Loading, empty, success, and error UI states
-- In-memory mocked API aligned with `API_CONTRACT.md`
+- Real API integration aligned with `API_CONTRACT.md`
 
 ## Tech Stack
 
-- React
-- TypeScript (strict)
-- Vite
-- Vitest + React Testing Library
-
-## Repository Structure
-
-- `apps/web/` — Week 2 frontend (React + Vite)
-- `apps/api/` — Week 3 backend workspace (placeholder scaffold)
-- `packages/contracts/` — shared API contract types used by web and api
-- Root (`/`) — shared scripts, Husky hooks, and project docs
+- React, TypeScript (strict), Vite, Vitest + React Testing Library (frontend)
+- Node.js, Express, TypeScript (backend)
 
 ## Run Locally
 
-- Install all workspaces: `npm install`
-- Frontend dev server: `npm run dev` (delegates to `@chat/web`)
-- Frontend tests: `npm test`
-- Full monorepo checks: `npm run verify:precommit`
+- Install (from repo root): `npm install`
+- For end-to-end chat flow, run both servers:
+- Backend dev server: `npm run dev:api` (`http://localhost:4000`)
+- Frontend dev server: `npm run dev:web` (`http://localhost:5173`)
+- `VITE_API_BASE_URL` defaults to `http://localhost:4000`
+- Tests: `npm test`
+- Full checks: `npm run verify:precommit`
 
 ## Acceptance Criteria Mapping
 
@@ -57,6 +56,20 @@ The app includes:
 
 - **`API_CONTRACT.md` documents every endpoint with request/response shapes**  
   Yes. Required endpoints and payloads are fully documented in `API_CONTRACT.md`.
+
+## Week 3 API Mapping
+
+- **`POST /auth/login` implemented**  
+  Yes. Accepts `{ userId }`, returns fake token + user with input validation and consistent errors.
+
+- **Conversations and messages endpoints implemented**  
+  Yes. `GET /conversations`, `POST /conversations`, `GET /conversations/:id/messages`, and `POST /conversations/:id/messages` are available and match the contract.
+
+- **Clean backend layering + validation + error shape**  
+  Yes. Router -> controller -> service layering is used, invalid input returns `400`, and errors follow `{ "error": { "code", "message", "details" } }`.
+
+- **Operational requirements covered**  
+  Yes. Request logging and JSON middleware are enabled, and CORS allows `http://localhost:5173`.
 
 ## Project Docs
 
