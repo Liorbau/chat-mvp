@@ -4,5 +4,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    env: {
+      JWT_SECRET: 'test-secret',
+      BCRYPT_ROUNDS: '4', // For fast testing (less secure than production)
+    },
   },
 })

@@ -18,10 +18,4 @@ export default defineConfig([
       globals: globals.node,
     },
   },
-  {
-    files: ['src/types/**/*.d.ts'],
-    rules: {
-      '@typescript-eslint/consistent-type-definitions': 'off',
-    },
-  },
 ])
