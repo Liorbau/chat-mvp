@@ -21,6 +21,10 @@ export class AppError extends Error {
     return new AppError(401, 'UNAUTHORIZED', message, details)
   }
 
+  static forbidden(message: string, details?: unknown): AppError {
+    return new AppError(403, 'FORBIDDEN', message, details)
+  }
+
   static notFound(message: string, details?: unknown): AppError {
     return new AppError(404, 'RESOURCE_NOT_FOUND', message, details)
   }

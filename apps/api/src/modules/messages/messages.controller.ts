@@ -1,48 +1,40 @@
-import type { NextFunction, Request, Response } from 'express'
-import { requireAuthenticatedUser } from '../../middleware/authenticate'
-import { getValidated } from '../../middleware/validate'
-import type { CreateMessageBody } from '../../validation/createMessage.schema'
-import {
-  type ConversationParams,
-  type ListMessagesQuery,
-} from '../../validation/listMessages.schema'
-import { createMessage, listMessages } from './messages.service'
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
+import type { GetMessagesResponse, SendMessageResponse, User } from '@chat/contract'
+import { CurrentUser } from '../../common/decorators/current-user.decorator'
+import { JwtAuthGuard } from '../auth/jwt-auth.guard'
+import { CreateMessageDto } from './dto/create-message.dto'
+import { ConversationParamsDto, ListMessagesQueryDto } from './dto/list-messages.dto'
+import { MessagesService } from './messages.service'
 
-export function listMessagesController(
-  request: Request,
-  response: Response,
-  next: NextFunction,
-): void {
-  try {
-    const params = getValidated<ConversationParams>(request, 'params')
-    const query = getValidated<ListMessagesQuery>(request, 'query')
-    const result = listMessages({
+@Controller('conversations/:id/messages')
+@UseGuards(JwtAuthGuard)
+export class MessagesController {
+  constructor(private readonly messagesService: MessagesService) {}
+
+  @Get()
+  list(
+    @Param() params: ConversationParamsDto,
+    @Query() query: ListMessagesQueryDto,
+    @CurrentUser() user: User,
+  ): GetMessagesResponse {
+    return this.messagesService.listMessages({
       conversationId: params.id,
-      requesterId: requireAuthenticatedUser(request),
+      requesterId: user.id,
       cursor: query.cursor,
       limit: query.limit,
     })
-    response.status(200).json(result)
-  } catch (error: unknown) {
-    next(error)
   }
-}
 
-export function createMessageController(
-  request: Request,
-  response: Response,
-  next: NextFunction,
-): void {
-  try {
-    const params = getValidated<ConversationParams>(request, 'params')
-    const body = getValidated<CreateMessageBody>(request, 'body')
-    const result = createMessage({
+  @Post()
+  create(
+    @Param() params: ConversationParamsDto,
+    @Body() body: CreateMessageDto,
+    @CurrentUser() user: User,
+  ): SendMessageResponse {
+    return this.messagesService.createMessage({
       conversationId: params.id,
-      requesterId: requireAuthenticatedUser(request),
+      requesterId: user.id,
       content: body.content,
     })
-    response.status(201).json(result)
-  } catch (error: unknown) {
-    next(error)
   }
 }

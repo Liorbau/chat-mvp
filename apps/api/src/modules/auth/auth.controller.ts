@@ -1,25 +1,22 @@
-import type { NextFunction, Request, Response } from 'express'
-import { requireAuthenticatedToken } from '../../middleware/authenticate'
-import { getValidated } from '../../middleware/validate'
-import type { LoginBody } from '../../validation/login.schema'
-import { loginUser, logoutUser } from './auth.service'
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
+import type { AuthResponse } from '@chat/contract'
+import { AuthService } from './auth.service'
+import { LoginDto } from './dto/login.dto'
+import { SignupDto } from './dto/signup.dto'
 
-export function login(request: Request, response: Response, next: NextFunction): void {
-  try {
-    const { userId } = getValidated<LoginBody>(request)
-    const result = loginUser(userId)
-    response.status(200).json(result)
-  } catch (error: unknown) {
-    next(error)
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('signup')
+  @HttpCode(HttpStatus.CREATED)
+  signup(@Body() body: SignupDto): Promise<AuthResponse> {
+    return this.authService.signup(body)
   }
-}
 
-export function logout(request: Request, response: Response, next: NextFunction): void {
-  try {
-    const token = requireAuthenticatedToken(request)
-    logoutUser(token)
-    response.status(204).send()
-  } catch (error: unknown) {
-    next(error)
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  login(@Body() body: LoginDto): Promise<AuthResponse> {
+    return this.authService.login(body)
   }
 }

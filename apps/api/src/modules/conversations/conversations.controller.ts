@@ -1,34 +1,29 @@
-import type { NextFunction, Request, Response } from 'express'
-import { requireAuthenticatedUser } from '../../middleware/authenticate'
-import { getValidated } from '../../middleware/validate'
-import type { CreateConversationInput } from './conversations.service'
-import { createConversation, listConversations } from './conversations.service'
+import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common'
+import type { Conversation, User } from '@chat/contract'
+import type { Response } from 'express'
+import { CurrentUser } from '../../common/decorators/current-user.decorator'
+import { JwtAuthGuard } from '../auth/jwt-auth.guard'
+import { ConversationsService } from './conversations.service'
+import { CreateConversationDto } from './dto/create-conversation.dto'
 
-export function listConversationsController(
-  request: Request,
-  response: Response,
-  next: NextFunction,
-): void {
-  try {
-    const userId = requireAuthenticatedUser(request)
-    const conversations = listConversations(userId)
-    response.status(200).json(conversations)
-  } catch (error: unknown) {
-    next(error)
+@Controller('conversations')
+@UseGuards(JwtAuthGuard)
+export class ConversationsController {
+  constructor(private readonly conversationsService: ConversationsService) {}
+
+  @Get()
+  list(@CurrentUser() user: User): Conversation[] {
+    return this.conversationsService.listConversations(user.id)
   }
-}
 
-export function createConversationController(
-  request: Request,
-  response: Response,
-  next: NextFunction,
-): void {
-  try {
-    const userId = requireAuthenticatedUser(request)
-    const payload = getValidated<CreateConversationInput>(request)
-    const conversation = createConversation(payload, userId)
-    response.location(`/conversations/${conversation.id}`).status(201).json(conversation)
-  } catch (error: unknown) {
-    next(error)
+  @Post()
+  create(
+    @CurrentUser() user: User,
+    @Body() body: CreateConversationDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Conversation {
+    const conversation = this.conversationsService.createConversation(body, user.id)
+    response.setHeader('Location', `/conversations/${conversation.id}`)
+    return conversation
   }
 }
