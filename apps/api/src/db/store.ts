@@ -1,17 +1,21 @@
-import type { Conversation, Message, User } from '@chat/contract'
+import type { Conversation, Message } from '@chat/contract'
+import bcrypt from 'bcrypt'
 import { clearConversations, setConversation } from './conversations.store'
 import { clearMessages, setMessage } from './messages.store'
-import { clearTokens } from './tokens.store'
-import { clearUsers, setUser } from './users.store'
+import { clearUsers, setUser, type StoredUser } from './users.store'
 
-// In-memory seed bootstrap.
+// Shared password for hard-coded users
+const SEED_PASSWORD = 'password123'
 
-const seedUsers: User[] = [
-  { id: 'user-1', name: 'Alex', email: 'alex@example.com' },
-  { id: 'user-2', name: 'Sam', email: 'sam@example.com' },
-  { id: 'user-3', name: 'Dana', email: 'dana@example.com' },
-  { id: 'user-4', name: 'Maya', email: 'maya@example.com' },
-]
+function buildSeedUsers(bcryptRounds: number): StoredUser[] {
+  const seedPasswordHash = bcrypt.hashSync(SEED_PASSWORD, bcryptRounds)
+  return [
+    { id: 'user-1', name: 'Alex', email: 'alex@example.com', passwordHash: seedPasswordHash },
+    { id: 'user-2', name: 'Sam', email: 'sam@example.com', passwordHash: seedPasswordHash },
+    { id: 'user-3', name: 'Dana', email: 'dana@example.com', passwordHash: seedPasswordHash },
+    { id: 'user-4', name: 'Maya', email: 'maya@example.com', passwordHash: seedPasswordHash },
+  ]
+}
 
 const seedConversations: Conversation[] = [
   {
@@ -103,13 +107,14 @@ const seedMessages: Message[] = [
   },
 ]
 
-export function resetStore(): void {
+// The bcrypt cost comes from the caller (bootstrap or tests) because seeding
+// runs outside Nest's DI, where ConfigService is not available yet.
+export function resetStore(bcryptRounds: number): void {
   clearUsers()
   clearConversations()
   clearMessages()
-  clearTokens()
 
-  for (const user of seedUsers) {
+  for (const user of buildSeedUsers(bcryptRounds)) {
     setUser(user)
   }
   for (const conversation of seedConversations) {
@@ -119,5 +124,3 @@ export function resetStore(): void {
     setMessage(message)
   }
 }
-
-resetStore()
