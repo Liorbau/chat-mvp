@@ -2,8 +2,8 @@ import { useState, type CSSProperties, type FormEvent } from 'react'
 import { useAuth } from '../../auth/auth-context'
 import { ApiRequestError } from '../api/apiClient'
 
-type LoginScreenProps = {
-  onSwitchToSignup: () => void
+type SignupScreenProps = {
+  onSwitchToLogin: () => void
 }
 
 const SCREEN_STYLE: CSSProperties = {
@@ -69,10 +69,10 @@ const SWITCH_BUTTON_STYLE: CSSProperties = {
   cursor: 'pointer',
 }
 
-function toLoginErrors(error: unknown): string[] {
+function toSignupErrors(error: unknown): string[] {
   if (error instanceof ApiRequestError) {
-    if (error.status === 401) {
-      return ['Invalid email or password.']
+    if (error.status === 409) {
+      return ['An account with this email already exists.']
     }
     if (error.status === 400 && Array.isArray(error.details)) {
       const messages = error.details.filter(
@@ -91,8 +91,9 @@ function toLoginErrors(error: unknown): string[] {
   return ['Something went wrong. Please try again.']
 }
 
-function LoginScreen({ onSwitchToSignup }: LoginScreenProps) {
-  const { signIn } = useAuth()
+function SignupScreen({ onSwitchToLogin }: SignupScreenProps) {
+  const { signUp } = useAuth()
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -104,9 +105,9 @@ function LoginScreen({ onSwitchToSignup }: LoginScreenProps) {
     setErrorMessages([])
 
     try {
-      await signIn({ email, password })
+      await signUp({ name, email, password })
     } catch (error: unknown) {
-      setErrorMessages(toLoginErrors(error))
+      setErrorMessages(toSignupErrors(error))
       setIsSubmitting(false)
     }
   }
@@ -114,14 +115,29 @@ function LoginScreen({ onSwitchToSignup }: LoginScreenProps) {
   return (
     <main style={SCREEN_STYLE}>
       <section style={CARD_STYLE}>
-        <h1 style={{ margin: 0, fontSize: '24px', color: '#2563eb' }}>Log in</h1>
-        <p style={{ marginTop: '8px', color: '#334155' }}>Welcome back to the chat.</p>
+        <h1 style={{ margin: 0, fontSize: '24px', color: '#2563eb' }}>Create account</h1>
+        <p style={{ marginTop: '8px', color: '#334155' }}>Join the chat in a few seconds.</p>
 
         <form
           onSubmit={(event) => {
             void handleSubmit(event)
           }}
         >
+          <label style={FIELD_STYLE}>
+            <span>Name</span>
+            <input
+              type="text"
+              required
+              maxLength={100}
+              value={name}
+              autoComplete="name"
+              onChange={(event) => {
+                setName(event.target.value)
+              }}
+              style={INPUT_STYLE}
+            />
+          </label>
+
           <label style={FIELD_STYLE}>
             <span>Email</span>
             <input
@@ -141,14 +157,18 @@ function LoginScreen({ onSwitchToSignup }: LoginScreenProps) {
             <input
               type="password"
               required
+              minLength={8}
               value={password}
-              autoComplete="current-password"
+              autoComplete="new-password"
               onChange={(event) => {
                 setPassword(event.target.value)
               }}
               style={INPUT_STYLE}
             />
           </label>
+          <span style={{ fontSize: '12px', color: '#64748b', display: 'block', marginTop: '4px' }}>
+            At least 8 characters.
+          </span>
 
           {errorMessages.length > 0 ? (
             <ul role="alert" style={{ color: '#b91c1c', marginTop: '12px', paddingLeft: '18px' }}>
@@ -163,16 +183,16 @@ function LoginScreen({ onSwitchToSignup }: LoginScreenProps) {
             disabled={isSubmitting}
             style={isSubmitting ? { ...BUTTON_STYLE, ...BUTTON_DISABLED_STYLE } : BUTTON_STYLE}
           >
-            {isSubmitting ? 'Logging in...' : 'Log in'}
+            {isSubmitting ? 'Creating account...' : 'Sign up'}
           </button>
         </form>
 
-        <button type="button" onClick={onSwitchToSignup} style={SWITCH_BUTTON_STYLE}>
-          Need an account? Sign up
+        <button type="button" onClick={onSwitchToLogin} style={SWITCH_BUTTON_STYLE}>
+          Already have an account? Log in
         </button>
       </section>
     </main>
   )
 }
 
-export default LoginScreen
+export default SignupScreen

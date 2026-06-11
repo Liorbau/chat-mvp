@@ -1,4 +1,3 @@
-// Domain + transport types come from the shared single source of truth.
 export type {
   User,
   Conversation,
@@ -6,7 +5,8 @@ export type {
   GetMessagesResponse,
   SendMessageRequest,
   SendMessageResponse,
-  LoginRequest,
-  LoginResponse,
   ApiError,
+  SignupRequest,
+  LoginRequest,
+  AuthResponse,
 } from '@chat/contract'
