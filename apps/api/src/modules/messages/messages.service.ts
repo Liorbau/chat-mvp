@@ -1,15 +1,10 @@
+import { Injectable } from '@nestjs/common'
 import type { GetMessagesResponse, Message, SendMessageResponse } from '@chat/contract'
 import { z } from 'zod'
-import { env } from '../../config/env'
 import { AppError } from '../../errors/AppError'
-import {
-  create as createMessageRecord,
-  listByConversationId,
-} from '../../dbServices/messages.dbService'
-import {
-  findById as findConversationById,
-  update as updateConversation,
-} from '../../dbServices/conversations.dbService'
+import { ConversationsService } from '../conversations/conversations.service'
+import { DEFAULT_LIMIT, MAX_LIMIT } from './dto/list-messages.dto'
+import { MessagesDbService } from './messages.dbService'
 
 type ListMessagesInput = {
   conversationId: string
@@ -33,13 +28,6 @@ const cursorKeySchema = z.object({
   createdAt: z.string().min(1),
   id: z.string().min(1),
 })
-
-function assertConversationMembership(conversationId: string, requesterId: string): void {
-  const conversation = findConversationById(conversationId)
-  if (conversation === undefined || !conversation.participantIds.includes(requesterId)) {
-    throw AppError.notFound('Conversation not found')
-  }
-}
 
 function encodeCursor(key: CursorKey): string {
   return Buffer.from(`${key.createdAt}|${key.id}`, 'utf8').toString('base64')
@@ -95,48 +83,58 @@ function isOlderThanCursor(message: Message, cursor: CursorKey): boolean {
   return message.id < cursor.id
 }
 
-export function listMessages(input: ListMessagesInput): GetMessagesResponse {
-  assertConversationMembership(input.conversationId, input.requesterId)
+@Injectable()
+export class MessagesService {
+  constructor(
+    private readonly messagesDbService: MessagesDbService,
+    private readonly conversationsService: ConversationsService,
+  ) {}
 
-  const limit = input.limit > 0 ? Math.min(input.limit, env.MAX_LIMIT) : env.DEFAULT_LIMIT
-  const cursor = decodeCursor(input.cursor)
+  listMessages(input: ListMessagesInput): GetMessagesResponse {
+    this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
 
-  const sortedDesc = listByConversationId(input.conversationId)
-    .sort(compareMessageDesc)
-    .filter((message) => {
-      if (cursor === undefined) {
-        return true
-      }
+    const limit = input.limit > 0 ? Math.min(input.limit, MAX_LIMIT) : DEFAULT_LIMIT
+    const cursor = decodeCursor(input.cursor)
 
-      return isOlderThanCursor(message, cursor)
+    const sortedDesc = this.messagesDbService
+      .listByConversationId(input.conversationId)
+      .sort(compareMessageDesc)
+      .filter((message) => {
+        if (cursor === undefined) {
+          return true
+        }
+
+        return isOlderThanCursor(message, cursor)
+      })
+
+    const pageDesc = sortedDesc.slice(0, limit)
+    const pageAsc = [...pageDesc].reverse()
+    const lastPageItem = pageDesc.at(-1)
+    const nextCursor =
+      pageDesc.length < limit || lastPageItem === undefined
+        ? null
+        : encodeCursor({ createdAt: lastPageItem.createdAt, id: lastPageItem.id })
+
+    return { messages: pageAsc, nextCursor }
+  }
+
+  createMessage(input: CreateMessageInput): SendMessageResponse {
+    this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
+
+    const createdAt = new Date().toISOString()
+    const message = this.messagesDbService.create({
+      conversationId: input.conversationId,
+      senderId: input.requesterId,
+      content: input.content,
+      createdAt,
     })
 
-  const pageDesc = sortedDesc.slice(0, limit)
-  const pageAsc = [...pageDesc].reverse()
-  const lastPageItem = pageDesc.at(-1)
-  const nextCursor =
-    pageDesc.length < limit || lastPageItem === undefined
-      ? null
-      : encodeCursor({ createdAt: lastPageItem.createdAt, id: lastPageItem.id })
+    this.conversationsService.recordMessageActivity(
+      input.conversationId,
+      message.content,
+      createdAt,
+    )
 
-  return { messages: pageAsc, nextCursor }
-}
-
-export function createMessage(input: CreateMessageInput): SendMessageResponse {
-  assertConversationMembership(input.conversationId, input.requesterId)
-
-  const createdAt = new Date().toISOString()
-  const message = createMessageRecord({
-    conversationId: input.conversationId,
-    senderId: input.requesterId,
-    content: input.content,
-    createdAt,
-  })
-
-  updateConversation(input.conversationId, {
-    lastMessagePreview: message.content,
-    updatedAt: createdAt,
-  })
-
-  return { message }
+    return { message }
+  }
 }
