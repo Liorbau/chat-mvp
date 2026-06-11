@@ -9,14 +9,22 @@ export type User = {
   email: string
 }
 
-// Week 3 identity flow: log in by choosing a userId; the server issues a token
-// and derives the sender from it on every subsequent request.
-export type LoginRequest = {
-  userId: string
+// Week 4 identity flow: email + password auth. The server verifies credentials,
+// hashes passwords with bcrypt, and issues a signed JWT. The password is never
+// part of `User` or any response body.
+export type SignupRequest = {
+  email: string
+  password: string
+  name: string
 }
 
-export type LoginResponse = {
-  token: string
+export type LoginRequest = {
+  email: string
+  password: string
+}
+
+export type AuthResponse = {
+  token: string // signed JWT
   user: User
 }
 
@@ -31,7 +39,9 @@ export type ApiError = {
 
 export type Conversation = {
   id: string
-  title: string
+  // Optional: direct chats derive their display name from participants, so they
+  // carry no stored title. Named/group conversations may set one.
+  title?: string
   participantIds: string[]
   lastMessagePreview: string
   updatedAt: string
