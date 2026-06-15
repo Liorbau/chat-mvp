@@ -12,17 +12,17 @@ export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}
 
   @Get()
-  list(@CurrentUser() user: User): Conversation[] {
+  async list(@CurrentUser() user: User): Promise<Conversation[]> {
     return this.conversationsService.listConversations(user.id)
   }
 
   @Post()
-  create(
+  async create(
     @CurrentUser() user: User,
     @Body() body: CreateConversationDto,
     @Res({ passthrough: true }) response: Response,
-  ): Conversation {
-    const conversation = this.conversationsService.createConversation(body, user.id)
+  ): Promise<Conversation> {
+    const conversation = await this.conversationsService.createConversation(body, user.id)
     response.setHeader('Location', `/conversations/${conversation.id}`)
     return conversation
   }

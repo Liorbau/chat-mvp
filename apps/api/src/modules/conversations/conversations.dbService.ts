@@ -1,53 +1,89 @@
 import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
+import { InjectModel } from '@nestjs/mongoose'
 import type { Conversation } from '@chat/contract'
-import { getConversation, listConversations, setConversation } from '../../db/conversations.store'
+import type { Model } from 'mongoose'
+import type { SeedConversation } from '../../db/store'
+import { Conversation as ConversationModel, type ConversationDocument } from './conversation.schema'
 
-export type ConversationDraft = Omit<Conversation, 'id'>
+export type ConversationDraft = {
+  participantIds: string[]
+  title?: string
+  lastMessagePreview: string
+}
+
+function toConversation(doc: ConversationDocument): Conversation {
+  const base: Conversation = {
+    id: doc._id,
+    participantIds: doc.participantIds,
+    lastMessagePreview: doc.lastMessagePreview,
+    // Contract exposes activity time as `updatedAt`; fall back to createdAt for
+    // conversations that have no messages yet.
+    updatedAt: (doc.lastMessageAt ?? doc.createdAt).toISOString(),
+  }
+  return doc.title === undefined ? base : { ...base, title: doc.title }
+}
 
 @Injectable()
 export class ConversationsDbService {
-  findById(conversationId: string): Conversation | undefined {
-    return getConversation(conversationId)
+  constructor(
+    @InjectModel(ConversationModel.name)
+    private readonly conversationModel: Model<ConversationDocument>,
+  ) {}
+
+  async findById(conversationId: string): Promise<Conversation | undefined> {
+    const doc = await this.conversationModel.findById(conversationId).exec()
+    return doc === null ? undefined : toConversation(doc)
   }
 
-  listByParticipant(userId: string): Conversation[] {
-    return listConversations().filter((conversation) => {
-      return conversation.participantIds.includes(userId)
+  async listByParticipant(userId: string): Promise<Conversation[]> {
+    const docs = await this.conversationModel
+      .find({ participantIds: userId })
+      .sort({ lastMessageAt: -1 })
+      .exec()
+    return docs.map(toConversation)
+  }
+
+  async findDirectByParticipants(participantIds: string[]): Promise<Conversation | undefined> {
+    const doc = await this.conversationModel
+      .findOne({ participantIds: { $all: participantIds, $size: 2 } })
+      .exec()
+    return doc === null ? undefined : toConversation(doc)
+  }
+
+  async create(draft: ConversationDraft): Promise<Conversation> {
+    const doc = await this.conversationModel.create({
+      _id: randomUUID(),
+      participantIds: draft.participantIds,
+      lastMessagePreview: draft.lastMessagePreview,
+      ...(draft.title === undefined ? {} : { title: draft.title }),
     })
+    return toConversation(doc)
   }
 
-  findDirectByParticipants(participantIds: string[]): Conversation | undefined {
-    if (participantIds.length !== 2) {
-      return undefined
+  async updateLastMessage(
+    conversationId: string,
+    lastMessagePreview: string,
+    lastMessageAt: Date,
+  ): Promise<void> {
+    await this.conversationModel.updateOne(
+      { _id: conversationId },
+      { $set: { lastMessagePreview, lastMessageAt } },
+    )
+  }
+
+  async reset(conversations: SeedConversation[]): Promise<void> {
+    await this.conversationModel.deleteMany({})
+    if (conversations.length > 0) {
+      await this.conversationModel.insertMany(
+        conversations.map((conversation) => ({
+          _id: conversation.id,
+          participantIds: conversation.participantIds,
+          lastMessagePreview: conversation.lastMessagePreview,
+          lastMessageAt: conversation.lastMessageAt,
+          ...(conversation.title === undefined ? {} : { title: conversation.title }),
+        })),
+      )
     }
-
-    const target = new Set(participantIds)
-    return listConversations().find((conversation) => {
-      if (conversation.participantIds.length !== 2) {
-        return false
-      }
-
-      return conversation.participantIds.every((participantId) => {
-        return target.has(participantId)
-      })
-    })
-  }
-
-  create(draft: ConversationDraft): Conversation {
-    const conversation: Conversation = { id: randomUUID(), ...draft }
-    setConversation(conversation)
-    return conversation
-  }
-
-  update(conversationId: string, patch: Partial<ConversationDraft>): Conversation | undefined {
-    const existing = getConversation(conversationId)
-    if (existing === undefined) {
-      return undefined
-    }
-
-    const updated: Conversation = { ...existing, ...patch }
-    setConversation(updated)
-    return updated
   }
 }
