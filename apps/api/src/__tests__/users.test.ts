@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { SEED_USER_IDS } from '../db/store'
 import { createTestApp, login } from './test.app'
 
 describe('Users API', () => {
@@ -34,6 +35,10 @@ describe('Users API', () => {
       expect(Object.keys(user).sort()).toEqual(['email', 'id', 'name'])
       expect(user).not.toHaveProperty('passwordHash')
     }
-    expect(users).toContainEqual({ id: 'user-1', name: 'Alex', email: 'alex@example.com' })
+    expect(users).toContainEqual({
+      id: SEED_USER_IDS.alex,
+      name: 'Alex',
+      email: 'alex@example.com',
+    })
   })
 })
