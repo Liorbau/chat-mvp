@@ -12,11 +12,11 @@ export class MessagesController {
   constructor(private readonly messagesService: MessagesService) {}
 
   @Get()
-  list(
+  async list(
     @Param() params: ConversationParamsDto,
     @Query() query: ListMessagesQueryDto,
     @CurrentUser() user: User,
-  ): GetMessagesResponse {
+  ): Promise<GetMessagesResponse> {
     return this.messagesService.listMessages({
       conversationId: params.id,
       requesterId: user.id,
@@ -26,11 +26,11 @@ export class MessagesController {
   }
 
   @Post()
-  create(
+  async create(
     @Param() params: ConversationParamsDto,
     @Body() body: CreateMessageDto,
     @CurrentUser() user: User,
-  ): SendMessageResponse {
+  ): Promise<SendMessageResponse> {
     return this.messagesService.createMessage({
       conversationId: params.id,
       requesterId: user.id,

@@ -90,22 +90,20 @@ export class MessagesService {
     private readonly conversationsService: ConversationsService,
   ) {}
 
-  listMessages(input: ListMessagesInput): GetMessagesResponse {
-    this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
+  async listMessages(input: ListMessagesInput): Promise<GetMessagesResponse> {
+    await this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
 
     const limit = input.limit > 0 ? Math.min(input.limit, MAX_LIMIT) : DEFAULT_LIMIT
     const cursor = decodeCursor(input.cursor)
 
-    const sortedDesc = this.messagesDbService
-      .listByConversationId(input.conversationId)
-      .sort(compareMessageDesc)
-      .filter((message) => {
-        if (cursor === undefined) {
-          return true
-        }
+    const messages = await this.messagesDbService.listByConversationId(input.conversationId)
+    const sortedDesc = messages.sort(compareMessageDesc).filter((message) => {
+      if (cursor === undefined) {
+        return true
+      }
 
-        return isOlderThanCursor(message, cursor)
-      })
+      return isOlderThanCursor(message, cursor)
+    })
 
     const pageDesc = sortedDesc.slice(0, limit)
     const pageAsc = [...pageDesc].reverse()
@@ -118,18 +116,18 @@ export class MessagesService {
     return { messages: pageAsc, nextCursor }
   }
 
-  createMessage(input: CreateMessageInput): SendMessageResponse {
-    this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
+  async createMessage(input: CreateMessageInput): Promise<SendMessageResponse> {
+    await this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
 
     const createdAt = new Date().toISOString()
-    const message = this.messagesDbService.create({
+    const message = await this.messagesDbService.create({
       conversationId: input.conversationId,
       senderId: input.requesterId,
       content: input.content,
       createdAt,
     })
 
-    this.conversationsService.recordMessageActivity(
+    await this.conversationsService.recordMessageActivity(
       input.conversationId,
       message.content,
       createdAt,
