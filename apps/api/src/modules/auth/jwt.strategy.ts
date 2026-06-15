@@ -26,8 +26,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   // Passport calls this with the verified payload. We resolve the user by the
   // stable id (sub); a token for a deleted user is rejected. The return value
   // becomes request.user.
-  validate(payload: JwtPayload): User {
-    const user = this.usersService.findById(payload.sub)
+  async validate(payload: JwtPayload): Promise<User> {
+    const user = await this.usersService.findById(payload.sub)
     if (user === undefined) {
       throw new UnauthorizedException('Invalid or expired token')
     }

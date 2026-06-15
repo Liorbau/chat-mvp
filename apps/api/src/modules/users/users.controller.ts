@@ -9,7 +9,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  list(): User[] {
+  async list(): Promise<User[]> {
     return this.usersService.list()
   }
 }
