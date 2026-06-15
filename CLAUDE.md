@@ -349,6 +349,189 @@ FE changes (part of the submission):
 
 ---
 
+### Week 5 (Current) — MongoDB Persistence (Mongoose)
+
+**Course:** Backend • **Week:** 5 • **Score weight:** 100
+
+#### Week 5 Data Model Decision (locked — PR defense)
+
+Rule: **reference high-volume/mutable data; denormalize only the small, read-hot
+scalars the conversation list needs.**
+
+- **Messages → referenced.** Own collection linked by `conversationId`. Threads
+  grow unbounded (thousands–millions), so embedding them in a conversation would
+  hit the 16MB document cap and break cursor pagination. Reference scales; embed
+  does not.
+- **Conversations → denormalize `lastMessageAt` + `lastMessagePreview`.** The
+  sidebar lists conversations newest-first with a snippet. An index on the
+  messages collection only speeds up "newest message of *one* conversation"; it
+  cannot sort the *conversations* collection by a field that lives in messages.
+  Storing these two scalars on the conversation turns the list into one indexed
+  query (`find({ participantIds }).sort({ lastMessageAt: -1 })`). Cost: each send
+  updates them on the parent conversation (the spec requires this anyway).
+- **Users → referenced** (`senderId`), not embedded on messages. The FE already
+  loads the user directory once (`/users`) and resolves names client-side, so
+  embedding names on messages would be duplicated, stale-prone data with no
+  read-perf payoff.
+
+#### Week 5 Naming Glossary (DAO/DTO mapping — PR defense)
+
+The codebase satisfies the spec's "DAO/DTO separation" using the project's own
+vocabulary (kept consistent with Weeks 3–4 rather than renamed). Mapping:
+
+- **DAO / repository** → `*DbService` classes (`UsersDbService`,
+  `MessagesDbService`, `ConversationsDbService`) plus the Mongoose `*.schema.ts`
+  models/documents. Only DbServices touch Mongoose; domain services depend on
+  DbServices, not Mongoose. (`DbService` keeps the Week 3 name for the role the
+  spec calls a repository.)
+- **Request DTOs** → `*.dto.ts` `class-validator` classes (`SignupDto`,
+  `CreateMessageDto`, …), validated by the global `ValidationPipe` at controllers.
+- **Response DTOs** → the shared `@chat/contract` types (`User`, `Message`,
+  `Conversation`, …). Deliberately shared with the FE as the single source of
+  truth; controllers return these, never raw Mongoose documents.
+- **DAO → DTO boundary** → mapper functions in the DbServices (`toPublicUser`,
+  `toMessage`) strip `_id → id` and drop `__v`/`passwordHash`.
+- **Server-only DAO type** → `StoredUser` (`User` + `passwordHash`), lives in
+  `users.dbService.ts`; never returned to clients.
+
+#### Week 5 Official Instructions (source of truth)
+
+> Verbatim assignment spec. Our working progress and gaps are tracked in the
+> "In-Scope" and "Open Concerns" subsections below.
+
+**TL;DR:** Replace the in-memory data layer in your Week 4 chat backend with
+MongoDB. Design clean Users / Conversations / Messages schemas, add the right
+indexes, implement cursor-paginated message history. The FE keeps working — data
+now survives server restarts.
+
+**Learning goals:**
+
+- Design MongoDB schemas for a real product (Users, Conversations, Messages).
+- Decide between embedding and referencing based on read/write workloads.
+- Use indexes to back the chat app's hot queries.
+- Implement cursor-based pagination for message history.
+- Separate database access (DAOs) from API contracts (DTOs) — no Mongo internals
+  leaking into responses.
+
+**Spec — replace the in-memory repository services with MongoDB-backed ones.**
+
+Required collections (suggested — defend choices in the PR):
+
+- `users` — `{ _id, email, name, passwordHash, createdAt }`, unique index on `email`.
+- `conversations` — `{ _id, participantIds, lastMessageAt, createdAt }`, index on
+  `(participantIds, lastMessageAt desc)`.
+- `messages` — `{ _id, conversationId, senderId, content, createdAt }`, index on
+  `(conversationId, createdAt desc)`.
+
+Required queries:
+
+- "List my conversations sorted by last activity" (uses participantIds +
+  lastMessageAt index).
+- "Message history for conversation X with cursor pagination"
+  (`?cursor=<messageId>&limit=N`, returns messages older than the cursor).
+- "Send message" — write the message AND update the parent conversation's
+  `lastMessageAt` atomically.
+
+Required architecture:
+
+- DAO layer (Mongoose models) lives in dedicated DB services (e.g.
+  `MessagesDbService`).
+- Domain services depend on DAOs, not on Mongoose directly.
+- Controllers return DTOs, never raw Mongoose documents. Strip `_id` → `id`,
+  drop `__v`.
+
+**Tech constraints:**
+
+- NestJS + `@nestjs/mongoose` + Mongoose.
+- MongoDB running locally — Docker or a free MongoDB Atlas cluster.
+- `MONGO_URI` from env; `.env.example` updated.
+- Cursor pagination, not offset.
+- API contract preserved — FE needs no changes beyond pointing at the new backend.
+- No `any`.
+
+**Acceptance criteria:**
+
+- [ ] Schema designed with explicit reasoning in the PR (embedding vs referencing).
+- [ ] All required indexes created (via Mongoose `index()` calls / schemas).
+- [ ] "My conversations" sorted correctly by last activity.
+- [ ] Cursor-paginated message history works on a thread of 100+ messages.
+- [ ] Sending a message updates `lastMessageAt` on the parent conversation.
+- [ ] DAO/DTO separation enforced — no `_id`, no `__v` in API responses.
+- [ ] Authorization rule from Week 4 still enforced (no cross-user access).
+- [ ] Data survives server restart.
+- [ ] `npx tsc --noEmit` passes; `npm run build` passes.
+
+**Submission:** PR with summary, schema diagram (text fine), index list with the
+query each backs, embedding-vs-referencing reasoning, key tradeoffs. Repo runs
+end-to-end with MongoDB. Mentor reviews on Sunday.
+
+#### Week 5 TL;DR
+
+Swap the in-memory chat storage for MongoDB via Mongoose, starting with the
+messages domain. Keep the controller/DTO contract unchanged so the FE keeps
+working. Use an injectable repository (`MessagesDbService`) so services never
+touch Mongoose directly.
+
+#### Week 5 In-Scope (must-have)
+
+- [x] `MessagesDbService` uses a Mongoose model instead of the in-memory `Map`.
+- [x] `MessagesService` depends on the DbService, not on Mongoose.
+- [x] Controllers/DTO contract unchanged (FE keeps working).
+- [x] Reads and writes point to the same store; seeding (`resetStore` +
+      `MessagesDbService.reset`) migrated so the suite passes.
+- [x] `MONGO_URI` loaded from `@nestjs/config`, validated, and in `.env.example`.
+
+#### Week 5 Open Concerns (must resolve before the PR)
+
+> Goal: the PR opens with **no open concerns**. Track and clear each item below.
+
+- [x] **Destructive seed on boot — RESOLVED.** `main.ts` no longer seeds Mongo on
+      boot (no `deleteMany` on startup). Mongo data is seeded out-of-band via
+      `npm run seed` (`src/db/seed.ts`, a standalone Nest context). In-memory
+      users/conversations are still re-seeded on boot (ephemeral, can't be seeded
+      by an external process); that line disappears when they move to Mongo.
+- [x] **Shared test database — RESOLVED.** `vitest.config.ts` now sets
+      `fileParallelism: false` + `poolOptions.forks.singleFork`, so test files run
+      sequentially in one process and never race on the shared `chat-test` DB.
+      `npm run test` is green by default (verified 5×, no CLI flag needed).
+- [x] **Mixed-store state — RESOLVED.** All three domains (users, conversations,
+      messages) now live in Mongo with a single uuid string `_id` format. No
+      in-memory stores remain (`users.store.ts`, `conversations.store.ts`,
+      `messages.store.ts` all deleted); `resetStore` is gone. Nothing seeds on
+      boot — data survives restart.
+- [x] **`lastMessageAt` on message create — RESOLVED.** Conversations are in Mongo
+      with matching uuid ids, so sending a message now updates the parent
+      conversation's `lastMessageAt` + `lastMessagePreview`
+      (`ConversationsService.recordMessageActivity` →
+      `ConversationsDbService.updateLastMessage`). Covered by a test that asserts
+      `updatedAt` advances, the preview updates, and the conversation sorts to the
+      top. (Two sequential writes — not a true transaction; see resilience note.)
+- [ ] **Unconstrained message schema:** `conversationId/senderId/content/createdAt`
+      are bare optional `@Prop()` strings. Decide required/validation rules (and
+      whether `createdAt` should be a real `Date`/`timestamps`) for data integrity.
+- [ ] **Connection resilience:** `MongooseModule.forRootAsync` has no explicit
+      failure messaging/retry. Confirm a clear startup error if Mongo is
+      unreachable, and document the expected local Mongo setup in the README.
+- [x] **Conversation schema vs. contract — RESOLVED.** `conversation.schema.ts`
+      now carries `title`, `lastMessagePreview`, `lastMessageAt` (Date),
+      `participantIds`, `createdAt`. The DAO maps `lastMessageAt → updatedAt`
+      (ISO, falling back to `createdAt`) in the response DTO, so the FE contract
+      is unchanged. Index `(participantIds, lastMessageAt desc)` added.
+- [ ] **Index-backed message pagination not wired:** `MessagesDbService.getMessagePage`
+      (keyset, index-backed) exists but `MessagesService.listMessages` still does a
+      full `find` + in-memory paging. Wire the service through `getMessagePage` and
+      verify on a 100+ message thread.
+
+#### Week 5 Tech Constraints
+
+- `@nestjs/mongoose` + `mongoose`; one model per domain registered via
+  `MongooseModule.forFeature` inside the owning feature module.
+- `MongooseModule.forRoot`/`forRootAsync` only in `AppModule`.
+- Keep the repository (`DbService`) seam; services stay framework/DB-agnostic.
+- No `any`; explicit return types; preserve the error envelope and DTO contract.
+
+---
+
 ## Week 4 Study Summary (Core Concepts)
 
 ### NestJS architecture
@@ -581,7 +764,10 @@ FE changes (part of the submission):
 
 - Week 2 scope is documented as the completed frontend baseline.
 - Week 3 (Express REST backend) is documented as completed.
-- Week 4 (NestJS refactor + JWT auth) is now the active implementation target.
+- Week 4 (NestJS refactor + JWT auth) is documented as completed.
+- Week 5 (MongoDB persistence via Mongoose) is now the active implementation
+  target; its open concerns are tracked under "Week 5 Open Concerns" and must be
+  cleared before the PR.
 - Shared layering/validation principles were generalized to cover both Express
   (Week 3) and NestJS (Week 4).
 - Future weeks should be added as new sections without removing shared principles.
