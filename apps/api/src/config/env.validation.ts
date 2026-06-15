@@ -21,6 +21,10 @@ export class EnvironmentVariables {
   @IsString()
   @MinLength(1)
   CORS_ORIGIN: string = 'http://localhost:5173'
+
+  @IsString()
+  @MinLength(1)
+  MONGO_URI!: string
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {
