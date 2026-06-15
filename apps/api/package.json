@@ -6,6 +6,7 @@
     "dev": "nest start --watch",
     "start": "nest start",
     "build": "nest build",
+    "seed": "nest build && node dist/scripts/seed",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
