@@ -17,8 +17,6 @@ function toConversation(doc: ConversationDocument): Conversation {
     id: doc._id,
     participantIds: doc.participantIds,
     lastMessagePreview: doc.lastMessagePreview,
-    // Contract exposes activity time as `updatedAt`; fall back to createdAt for
-    // conversations that have no messages yet.
     updatedAt: (doc.lastMessageAt ?? doc.createdAt).toISOString(),
   }
   return doc.title === undefined ? base : { ...base, title: doc.title }
@@ -56,6 +54,9 @@ export class ConversationsDbService {
       _id: randomUUID(),
       participantIds: draft.participantIds,
       lastMessagePreview: draft.lastMessagePreview,
+      // Seed activity time on creation so a new conversation sorts by creation
+      // (matching its displayed `updatedAt`) instead of falling to the bottom.
+      lastMessageAt: new Date(),
       ...(draft.title === undefined ? {} : { title: draft.title }),
     })
     return toConversation(doc)

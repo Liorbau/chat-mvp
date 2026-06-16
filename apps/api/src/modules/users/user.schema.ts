@@ -3,9 +3,6 @@ import type { HydratedDocument } from 'mongoose'
 
 export type UserDocument = HydratedDocument<User>
 
-// `_id` is an app-level uuid string (seed users use pinned uuids, signups
-// generate uuids), so a single id format is used everywhere and existing
-// conversation participantIds / message senderId references stay valid.
 @Schema({ timestamps: { createdAt: true, updatedAt: false } })
 export class User {
   @Prop({ type: String, required: true })

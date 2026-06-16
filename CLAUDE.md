@@ -528,23 +528,28 @@ touch Mongoose directly.
 > Found in the Jun 16 deep review. Intentionally deferred until open ends are done.
 
 - [ ] **B2 — `lastMessageAt` not atomic with the message insert.** Two sequential
-      writes (no transaction; standalone `mongod` can't). Document as a limitation
-      or move to a replica set + transaction.
-- [ ] **B3 — duplicate-key (`E11000`) → 500.** Signup 409 relies on the
-      `findByEmail` pre-check; a race hits the unique index and the exception
-      filter maps it to `500`. Map `E11000` → `409` (and/or drop the pre-check).
-- [ ] **B4 — new-conversation sort vs. display mismatch.** List sorts by
-      `lastMessageAt` (null for new convs) while the DTO `updatedAt` falls back to
-      `createdAt`, so a fresh conversation shows a recent time but sorts last.
-- [ ] **S2 — inconsistent date typing.** `message.createdAt` is a string;
-      `conversation.lastMessageAt` and `user.createdAt` are `Date`.
-- [ ] **S3 — unconstrained message schema.** `conversationId/senderId/content/
-      createdAt` are bare optional `@Prop()` with no `required`/validation.
-- [ ] **S4 — mixed validation stacks.** `zod` for cursor parsing vs.
-      `class-validator` everywhere else.
-- [ ] **Test-infra flake (rare).** ~<5% of runs, two pre-DB `401` tests fail
-      together — connection churn across 31 per-test app lifecycles on the shared
-      `chat-test` DB. Consider a shared app/connection across the suite.
+      writes (no transaction; standalone `mongod` can't). Planned: real transaction
+      via a single-node replica set (Docker) — tracked in the separate
+      "Week 5 bugs and smells" plan, Phase 5 (deferred for its own change).
+- [x] **B3 — duplicate-key (`E11000`) → 409 — RESOLVED.** `AllExceptionsFilter`
+      maps Mongo `E11000` to `409 EMAIL_ALREADY_EXISTS`; the signup `findByEmail`
+      pre-check was dropped so the unique index is the single source of truth.
+- [x] **B4 — new-conversation ordering — RESOLVED.** `ConversationsDbService.create`
+      sets `lastMessageAt = now`, so a new conversation sorts by creation time and
+      matches its displayed `updatedAt`.
+- [x] **S2 — date typing — RESOLVED.** `message.createdAt` is now a `Date`
+      (DAO maps it to an ISO string in the DTO), consistent with conversations/users.
+- [x] **S3 — message schema hardened — RESOLVED.** `conversationId/senderId/content`
+      are `required`; `createdAt` is a required `Date`.
+- [x] **S4 — validation stack unified — RESOLVED.** Cursor parsing no longer uses
+      `zod` (manual uuid check); the `zod` dependency was removed.
+- [x] **Tiebreak coverage — RESOLVED.** Added a same-`createdAt` pagination test
+      asserting the `_id` tiebreak yields no dupes/skips.
+- [ ] **Test-infra flake (rare).** ~<5% of runs a request-based test fails
+      transiently (connection churn on the shared `chat-test` DB). Tried a shared
+      app-per-file harness; it didn't fully eliminate it, so reverted to the simple
+      app-per-test harness and accepted the rare flake. Details in the local
+      (gitignored) `KNOWN_ISSUES.local.md`. Fix later via per-file DB isolation.
 
 #### Week 5 Tech Constraints
 
