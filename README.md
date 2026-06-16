@@ -5,7 +5,7 @@ A chat application built as an npm-workspaces monorepo.
 ## Workspace Layout
 
 - `apps/web` — React + Vite + TypeScript frontend (Week 2).
-- `apps/api` — Express + TypeScript REST backend (Week 3, completed).
+- `apps/api` — NestJS + TypeScript backend: JWT auth (Week 4) and MongoDB persistence via Mongoose (Week 5).
 - `packages/contract` — shared domain types (single source of truth) consumed by both apps.
 
 The frontend includes:
@@ -17,18 +17,37 @@ The frontend includes:
 
 ## Tech Stack
 
-- React, TypeScript (strict), Vite, Vitest + React Testing Library (frontend)
-- Node.js, Express, TypeScript (backend)
+- Frontend: React, TypeScript (strict), Vite, Vitest + React Testing Library
+- Backend: NestJS, TypeScript (strict), MongoDB + Mongoose, Passport JWT, class-validator
+
+## Prerequisites
+
+- Node.js + npm
+- A running MongoDB: local `mongod`, Docker, or a free MongoDB Atlas cluster
+
+## Environment
+
+`apps/api` loads config from `apps/api/.env` (copy `apps/api/.env.example`). Required vars:
+
+- `JWT_SECRET` — secret used to sign/verify JWTs
+- `BCRYPT_ROUNDS` — bcrypt cost (e.g. `12`)
+- `MONGO_URI` — e.g. `mongodb://localhost:27017/chat`
+
+`MONGO_URI` is validated at startup; the API will not boot without it.
 
 ## Run Locally
 
-- Install (from repo root): `npm install`
-- For end-to-end chat flow, run both servers:
-- Backend dev server: `npm run dev:api` (`http://localhost:4000`)
-- Frontend dev server: `npm run dev:web` (`http://localhost:5173`)
+1. Install (from repo root): `npm install`
+2. Start MongoDB, e.g. via Docker: `docker run -p 27017:27017 --name chat-mongo -d mongo:7` (or use a local `mongod` / an Atlas `MONGO_URI`)
+3. Seed the database (out-of-band — the server never seeds on boot, so data survives restarts): `npm run seed -w @chat/api`
+4. Backend dev server: `npm run dev:api` (`http://localhost:4000`)
+5. Frontend dev server: `npm run dev:web` (`http://localhost:5173`)
+
 - `VITE_API_BASE_URL` defaults to `http://localhost:4000`
-- Tests: `npm test`
+- Tests: `npm test` (the API suite uses a `chat-test` database and requires a running MongoDB)
 - Full checks: `npm run verify:precommit`
+
+Seed accounts (password `password123`): `alex@example.com`, `sam@example.com`, `dana@example.com`, `maya@example.com`.
 
 ## Acceptance Criteria Mapping
 
@@ -57,13 +76,13 @@ The frontend includes:
 - **`API_CONTRACT.md` documents every endpoint with request/response shapes**  
   Yes. Required endpoints and payloads are fully documented in `API_CONTRACT.md`.
 
-## Week 3 API Mapping
+## Backend API Mapping
 
-- **`POST /auth/login` implemented**  
-  Yes. Accepts `{ userId }`, returns fake token + user with input validation and consistent errors.
+- **Auth implemented (Week 4)**  
+  `POST /auth/signup` and `POST /auth/login` accept `{ email, password, name? }`, hash with bcrypt, and return a signed JWT + user. `GET /me` returns the current user.
 
 - **Conversations and messages endpoints implemented**  
-  Yes. `GET /conversations`, `POST /conversations`, `GET /conversations/:id/messages`, and `POST /conversations/:id/messages` are available and match the contract.
+  Yes. `GET /conversations`, `POST /conversations`, `GET /conversations/:id/messages` (cursor-paginated), and `POST /conversations/:id/messages` are available and match the contract. All require a valid JWT.
 
 - **Clean backend layering + validation + error shape**  
   Yes. Router -> controller -> service layering is used, invalid input returns `400`, and errors follow `{ "error": { "code", "message", "details" } }`.

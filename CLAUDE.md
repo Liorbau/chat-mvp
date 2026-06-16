@@ -485,17 +485,17 @@ touch Mongoose directly.
 
 > Goal: the PR opens with **no open concerns**. Track and clear each item below.
 
-- [x] **Destructive seed on boot — RESOLVED.** `main.ts` no longer seeds Mongo on
-      boot (no `deleteMany` on startup). Mongo data is seeded out-of-band via
-      `npm run seed` (`src/db/seed.ts`, a standalone Nest context). In-memory
-      users/conversations are still re-seeded on boot (ephemeral, can't be seeded
-      by an external process); that line disappears when they move to Mongo.
-- [x] **Shared test database — RESOLVED.** `vitest.config.ts` now sets
-      `fileParallelism: false` + `poolOptions.forks.singleFork`, so test files run
-      sequentially in one process and never race on the shared `chat-test` DB.
-      `npm run test` is green by default (verified 5×, no CLI flag needed).
+- [x] **Destructive seed on boot — RESOLVED.** `main.ts` seeds nothing on boot.
+      All data lives in Mongo and is seeded out-of-band via `npm run seed`
+      (`src/scripts/seed.ts`, a standalone Nest context), so persisted data
+      survives restarts.
+- [x] **Shared test database — RESOLVED.** `vitest.config.ts` sets
+      `fileParallelism: false` + `maxWorkers: 1`, so test files run sequentially
+      in one worker and never race on the shared `chat-test` DB. `npm run test`
+      is green by default (no CLI flag needed).
 - [x] **Mixed-store state — RESOLVED.** All three domains (users, conversations,
-      messages) now live in Mongo with a single uuid string `_id` format. No
+      messages) live in Mongo with a single uuid string `_id` format (messages
+      were migrated from the default ObjectId `_id` to a uuid for consistency). No
       in-memory stores remain (`users.store.ts`, `conversations.store.ts`,
       `messages.store.ts` all deleted); `resetStore` is gone. Nothing seeds on
       boot — data survives restart.
@@ -517,10 +517,34 @@ touch Mongoose directly.
       `participantIds`, `createdAt`. The DAO maps `lastMessageAt → updatedAt`
       (ISO, falling back to `createdAt`) in the response DTO, so the FE contract
       is unchanged. Index `(participantIds, lastMessageAt desc)` added.
-- [ ] **Index-backed message pagination not wired:** `MessagesDbService.getMessagePage`
-      (keyset, index-backed) exists but `MessagesService.listMessages` still does a
-      full `find` + in-memory paging. Wire the service through `getMessagePage` and
-      verify on a 100+ message thread.
+- [x] **Index-backed message pagination — RESOLVED.** `MessagesService.listMessages`
+      now uses `getMessagePage` (keyset, index-backed); the full-fetch
+      `listByConversationId` and JS paging were removed. Cursor stays an opaque
+      base64 token at the edge (FE unchanged); cursor `id` is validated as a
+      uuid. Verified by a 150-message pagination test (walks all pages).
+
+#### Week 5 Deferred (bugs/smells — address after open ends)
+
+> Found in the Jun 16 deep review. Intentionally deferred until open ends are done.
+
+- [ ] **B2 — `lastMessageAt` not atomic with the message insert.** Two sequential
+      writes (no transaction; standalone `mongod` can't). Document as a limitation
+      or move to a replica set + transaction.
+- [ ] **B3 — duplicate-key (`E11000`) → 500.** Signup 409 relies on the
+      `findByEmail` pre-check; a race hits the unique index and the exception
+      filter maps it to `500`. Map `E11000` → `409` (and/or drop the pre-check).
+- [ ] **B4 — new-conversation sort vs. display mismatch.** List sorts by
+      `lastMessageAt` (null for new convs) while the DTO `updatedAt` falls back to
+      `createdAt`, so a fresh conversation shows a recent time but sorts last.
+- [ ] **S2 — inconsistent date typing.** `message.createdAt` is a string;
+      `conversation.lastMessageAt` and `user.createdAt` are `Date`.
+- [ ] **S3 — unconstrained message schema.** `conversationId/senderId/content/
+      createdAt` are bare optional `@Prop()` with no `required`/validation.
+- [ ] **S4 — mixed validation stacks.** `zod` for cursor parsing vs.
+      `class-validator` everywhere else.
+- [ ] **Test-infra flake (rare).** ~<5% of runs, two pre-DB `401` tests fail
+      together — connection churn across 31 per-test app lifecycles on the shared
+      `chat-test` DB. Consider a shared app/connection across the suite.
 
 #### Week 5 Tech Constraints
 
