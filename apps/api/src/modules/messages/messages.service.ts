@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import type { GetMessagesResponse, Message, SendMessageResponse } from '@chat/contract'
-import { z } from 'zod'
+import type { GetMessagesResponse, SendMessageResponse } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
 import { ConversationsService } from '../conversations/conversations.service'
-import { DEFAULT_LIMIT, MAX_LIMIT } from './dto/list.messages.dto'
-import { MessagesDbService } from './messages.dbService'
+import { MessagesDbService, type MessagePageCursor } from './messages.dbService'
 
 type ListMessagesInput = {
   conversationId: string
@@ -19,21 +17,14 @@ type CreateMessageInput = {
   content: string
 }
 
-type CursorKey = {
-  createdAt: string
-  id: string
-}
+// The cursor id is a message's uuid `_id`.
+const CURSOR_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-const cursorKeySchema = z.object({
-  createdAt: z.string().min(1),
-  id: z.string().min(1),
-})
-
-function encodeCursor(key: CursorKey): string {
+function encodeCursor(key: MessagePageCursor): string {
   return Buffer.from(`${key.createdAt}|${key.id}`, 'utf8').toString('base64')
 }
 
-function decodeCursor(cursor: string | undefined): CursorKey | undefined {
+function decodeCursor(cursor: string | undefined): MessagePageCursor | undefined {
   if (cursor === undefined) {
     return undefined
   }
@@ -45,42 +36,18 @@ function decodeCursor(cursor: string | undefined): CursorKey | undefined {
       createdAt === undefined ||
       createdAt.length === 0 ||
       id === undefined ||
-      id.length === 0 ||
+      !CURSOR_ID_PATTERN.test(id) ||
       extra !== undefined
     ) {
       throw new Error('Invalid cursor')
     }
-    const parsedKey = cursorKeySchema.safeParse({ createdAt, id })
-    if (!parsedKey.success) {
-      throw new Error('Invalid cursor')
-    }
 
-    return parsedKey.data
+    return { createdAt, id }
   } catch {
     throw AppError.badRequest('VALIDATION_ERROR', 'Invalid request', [
       { path: ['cursor'], message: 'cursor is invalid' },
     ])
   }
-}
-
-function compareMessageDesc(left: Message, right: Message): number {
-  const createdAtCompare = right.createdAt.localeCompare(left.createdAt)
-  if (createdAtCompare !== 0) {
-    return createdAtCompare
-  }
-
-  return right.id.localeCompare(left.id)
-}
-
-function isOlderThanCursor(message: Message, cursor: CursorKey): boolean {
-  if (message.createdAt < cursor.createdAt) {
-    return true
-  }
-  if (message.createdAt > cursor.createdAt) {
-    return false
-  }
-
-  return message.id < cursor.id
 }
 
 @Injectable()
@@ -93,27 +60,16 @@ export class MessagesService {
   async listMessages(input: ListMessagesInput): Promise<GetMessagesResponse> {
     await this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
 
-    const limit = input.limit > 0 ? Math.min(input.limit, MAX_LIMIT) : DEFAULT_LIMIT
+    // ListMessagesQueryDto already clamps limit to 1..MAX_LIMIT (default 20).
+    const limit = input.limit
     const cursor = decodeCursor(input.cursor)
 
-    const messages = await this.messagesDbService.listByConversationId(input.conversationId)
-    const sortedDesc = messages.sort(compareMessageDesc).filter((message) => {
-      if (cursor === undefined) {
-        return true
-      }
+    const page = await this.messagesDbService.getMessagePage(input.conversationId, limit, cursor)
 
-      return isOlderThanCursor(message, cursor)
-    })
-
-    const pageDesc = sortedDesc.slice(0, limit)
-    const pageAsc = [...pageDesc].reverse()
-    const lastPageItem = pageDesc.at(-1)
-    const nextCursor =
-      pageDesc.length < limit || lastPageItem === undefined
-        ? null
-        : encodeCursor({ createdAt: lastPageItem.createdAt, id: lastPageItem.id })
-
-    return { messages: pageAsc, nextCursor }
+    return {
+      messages: page.messages,
+      nextCursor: page.nextCursor === null ? null : encodeCursor(page.nextCursor),
+    }
   }
 
   async createMessage(input: CreateMessageInput): Promise<SendMessageResponse> {

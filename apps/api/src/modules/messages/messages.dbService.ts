@@ -1,7 +1,7 @@
+import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import type { Message } from '@chat/contract'
-import { Types } from 'mongoose'
 import type { Model } from 'mongoose'
 import { Message as MessageModel, type MessageDocument } from './message.schema'
 
@@ -19,7 +19,7 @@ export type MessagePage = {
 
 function toMessage(doc: MessageDocument): Message {
   return {
-    id: doc._id.toString(),
+    id: doc._id,
     conversationId: doc.conversationId,
     senderId: doc.senderId,
     content: doc.content,
@@ -34,11 +34,6 @@ export class MessagesDbService {
     private readonly messageModel: Model<MessageDocument>,
   ) {}
 
-  async listByConversationId(conversationId: string): Promise<Message[]> {
-    const docs = await this.messageModel.find({ conversationId }).exec()
-    return docs.map(toMessage)
-  }
-
   async getMessagePage(
     conversationId: string,
     limit: number,
@@ -49,9 +44,11 @@ export class MessagesDbService {
         ? { conversationId }
         : {
             conversationId,
+            // createdAt is a Date in the schema; convert the cursor's ISO string
+            // explicitly instead of relying on Mongoose to cast the comparison.
             $or: [
-              { createdAt: { $lt: cursor.createdAt } },
-              { createdAt: cursor.createdAt, _id: { $lt: new Types.ObjectId(cursor.id) } },
+              { createdAt: { $lt: new Date(cursor.createdAt) } },
+              { createdAt: new Date(cursor.createdAt), _id: { $lt: cursor.id } },
             ],
           }
 
@@ -66,7 +63,7 @@ export class MessagesDbService {
     const oldestOnPage = pageDesc.at(-1)
     const nextCursor =
       hasMore && oldestOnPage !== undefined
-        ? { createdAt: oldestOnPage.createdAt, id: oldestOnPage._id.toString() }
+        ? { createdAt: oldestOnPage.createdAt, id: oldestOnPage._id }
         : null
 
     return { messages: pageDesc.reverse().map(toMessage), nextCursor }
@@ -74,6 +71,7 @@ export class MessagesDbService {
 
   async create(draft: MessageDraft): Promise<Message> {
     const doc = await this.messageModel.create({
+      _id: randomUUID(),
       conversationId: draft.conversationId,
       senderId: draft.senderId,
       content: draft.content,
@@ -85,7 +83,7 @@ export class MessagesDbService {
   async reset(drafts: MessageDraft[]): Promise<void> {
     await this.messageModel.deleteMany({})
     if (drafts.length > 0) {
-      await this.messageModel.insertMany(drafts)
+      await this.messageModel.insertMany(drafts.map((draft) => ({ _id: randomUUID(), ...draft })))
     }
   }
 }

@@ -5,6 +5,9 @@ export type MessageDocument = HydratedDocument<Message>
 
 @Schema()
 export class Message {
+  @Prop({ type: String, required: true })
+  _id!: string
+
   @Prop()
   conversationId!: string
 

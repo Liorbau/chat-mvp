@@ -2,6 +2,7 @@ import type { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { SEED_CONVERSATION_IDS, SEED_USER_IDS } from '../db/store'
+import { MessagesDbService } from '../modules/messages/messages.dbService'
 import { createTestApp, login } from './test.app'
 
 type MessageItem = {
@@ -154,5 +155,38 @@ describe('Messages API', () => {
 
     expect(fromAlex.body.message.senderId).toBe(SEED_USER_IDS.alex)
     expect(fromSam.body.message.senderId).toBe(SEED_USER_IDS.sam)
+  })
+
+  it('cursor-paginates a 100+ message thread to completion', async () => {
+    const token = await login(app, 'alex@example.com')
+    const total = 150
+    const base = Date.parse('2026-06-01T00:00:00.000Z')
+    const drafts = Array.from({ length: total }, (_, index) => ({
+      conversationId: SEED_CONVERSATION_IDS.onboarding,
+      senderId: SEED_USER_IDS.alex,
+      content: `m${index}`,
+      createdAt: new Date(base + index * 1000).toISOString(),
+    }))
+    await app.get(MessagesDbService).reset(drafts)
+
+    const collected: string[] = []
+    let cursor: string | null = null
+    let pages = 0
+    do {
+      const query = cursor === null ? '?limit=50' : `?limit=50&cursor=${encodeURIComponent(cursor)}`
+      const response = await request(app.getHttpServer())
+        .get(`/conversations/${SEED_CONVERSATION_IDS.onboarding}/messages${query}`)
+        .set('Authorization', `Bearer ${token}`)
+      expect(response.status).toBe(200)
+      const body = response.body as ListMessagesBody
+      expect(body.messages.length).toBeLessThanOrEqual(50)
+      collected.push(...body.messages.map((message) => message.content))
+      cursor = body.nextCursor
+      pages += 1
+    } while (cursor !== null && pages < 10)
+
+    expect(cursor).toBeNull()
+    expect(collected).toHaveLength(total)
+    expect(new Set(collected).size).toBe(total)
   })
 })
