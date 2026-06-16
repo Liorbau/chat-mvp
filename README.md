@@ -23,7 +23,10 @@ The frontend includes:
 ## Prerequisites
 
 - Node.js + npm
-- A running MongoDB: local `mongod`, Docker, or a free MongoDB Atlas cluster
+- MongoDB running as a single-node replica set (required for multi-document
+  transactions). Easiest via the provided `docker-compose.yml`, which
+  auto-initializes the `rs0` replica set. A MongoDB Atlas cluster also works
+  (already a replica set).
 
 ## Environment
 
@@ -31,14 +34,16 @@ The frontend includes:
 
 - `JWT_SECRET` — secret used to sign/verify JWTs
 - `BCRYPT_ROUNDS` — bcrypt cost (e.g. `12`)
-- `MONGO_URI` — e.g. `mongodb://localhost:27017/chat`
+- `MONGO_URI` — e.g. `mongodb://localhost:27017/chat?replicaSet=rs0`
 
-`MONGO_URI` is validated at startup; the API will not boot without it.
+`MONGO_URI` is validated at startup; the API will not boot without it. The
+`?replicaSet=rs0` is required for transactions (sending a message updates the
+parent conversation atomically).
 
 ## Run Locally
 
 1. Install (from repo root): `npm install`
-2. Start MongoDB, e.g. via Docker: `docker run -p 27017:27017 --name chat-mongo -d mongo:7` (or use a local `mongod` / an Atlas `MONGO_URI`)
+2. Start MongoDB as a replica set: `docker compose up -d` (starts `mongo:7` as the `rs0` single-node replica set and auto-initializes it; data persists in a volume). An Atlas `MONGO_URI` works too.
 3. Seed the database (out-of-band — the server never seeds on boot, so data survives restarts): `npm run seed -w @chat/api`
 4. Backend dev server: `npm run dev:api` (`http://localhost:4000`)
 5. Frontend dev server: `npm run dev:web` (`http://localhost:5173`)

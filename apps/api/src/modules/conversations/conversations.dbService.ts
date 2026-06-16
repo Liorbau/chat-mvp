@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import type { Conversation } from '@chat/contract'
-import type { Model } from 'mongoose'
+import type { ClientSession, Model } from 'mongoose'
 import type { SeedConversation } from '../../db/store'
 import { Conversation as ConversationModel, type ConversationDocument } from './conversation.schema'
 
@@ -54,8 +54,6 @@ export class ConversationsDbService {
       _id: randomUUID(),
       participantIds: draft.participantIds,
       lastMessagePreview: draft.lastMessagePreview,
-      // Seed activity time on creation so a new conversation sorts by creation
-      // (matching its displayed `updatedAt`) instead of falling to the bottom.
       lastMessageAt: new Date(),
       ...(draft.title === undefined ? {} : { title: draft.title }),
     })
@@ -66,10 +64,12 @@ export class ConversationsDbService {
     conversationId: string,
     lastMessagePreview: string,
     lastMessageAt: Date,
+    session?: ClientSession,
   ): Promise<void> {
     await this.conversationModel.updateOne(
       { _id: conversationId },
       { $set: { lastMessagePreview, lastMessageAt } },
+      session ? { session } : {},
     )
   }
 

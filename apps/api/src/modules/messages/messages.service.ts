@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common'
+import { InjectConnection } from '@nestjs/mongoose'
 import type { GetMessagesResponse, SendMessageResponse } from '@chat/contract'
+import type { Connection } from 'mongoose'
 import { AppError } from '../../errors/AppError'
 import { ConversationsService } from '../conversations/conversations.service'
 import { MessagesDbService, type MessagePageCursor } from './messages.dbService'
@@ -55,6 +57,8 @@ export class MessagesService {
   constructor(
     private readonly messagesDbService: MessagesDbService,
     private readonly conversationsService: ConversationsService,
+    // Used only to run the message-send writes in one transaction.
+    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   async listMessages(input: ListMessagesInput): Promise<GetMessagesResponse> {
@@ -75,19 +79,28 @@ export class MessagesService {
   async createMessage(input: CreateMessageInput): Promise<SendMessageResponse> {
     await this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
 
-    const createdAt = new Date().toISOString()
-    const message = await this.messagesDbService.create({
-      conversationId: input.conversationId,
-      senderId: input.requesterId,
-      content: input.content,
-      createdAt,
+    const occurredAt = new Date()
+    const createdAt = occurredAt.toISOString()
+    // Insert the message and bump the parent conversation's activity in one
+    // transaction so they never drift apart (requires a replica set).
+    const message = await this.connection.transaction(async (session) => {
+      const created = await this.messagesDbService.create(
+        {
+          conversationId: input.conversationId,
+          senderId: input.requesterId,
+          content: input.content,
+          createdAt,
+        },
+        session,
+      )
+      await this.conversationsService.recordMessageActivity(
+        input.conversationId,
+        created.content,
+        occurredAt,
+        session,
+      )
+      return created
     })
-
-    await this.conversationsService.recordMessageActivity(
-      input.conversationId,
-      message.content,
-      createdAt,
-    )
 
     return { message }
   }

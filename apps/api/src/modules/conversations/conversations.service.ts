@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import type { Conversation } from '@chat/contract'
+import type { ClientSession } from 'mongoose'
 import { AppError } from '../../errors/AppError'
 import { UsersService } from '../users/users.service'
 import { ConversationsDbService } from './conversations.dbService'
@@ -73,12 +74,14 @@ export class ConversationsService {
   async recordMessageActivity(
     conversationId: string,
     lastMessagePreview: string,
-    occurredAt: string,
+    occurredAt: Date,
+    session?: ClientSession,
   ): Promise<void> {
     await this.conversationsDbService.updateLastMessage(
       conversationId,
       lastMessagePreview,
-      new Date(occurredAt),
+      occurredAt,
+      session,
     )
   }
 }

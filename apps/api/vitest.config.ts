@@ -11,7 +11,7 @@ export default defineConfig({
     env: {
       JWT_SECRET: 'test-secret-at-least-32-characters-long',
       BCRYPT_ROUNDS: '4', // For fast testing (less secure than production)
-      MONGO_URI: 'mongodb://localhost:27017/chat-test',
+      MONGO_URI: 'mongodb://localhost:27017/chat-test?replicaSet=rs0',
     },
   },
 })

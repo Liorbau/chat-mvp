@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import type { Message } from '@chat/contract'
-import type { Model } from 'mongoose'
+import type { ClientSession, Model } from 'mongoose'
 import { Message as MessageModel, type MessageDocument } from './message.schema'
 
 export type MessageDraft = Omit<Message, 'id'>
@@ -23,7 +23,6 @@ function toMessage(doc: MessageDocument): Message {
     conversationId: doc.conversationId,
     senderId: doc.senderId,
     content: doc.content,
-    // Stored as a Date; the contract exposes an ISO string.
     createdAt: doc.createdAt.toISOString(),
   }
 }
@@ -70,14 +69,22 @@ export class MessagesDbService {
     return { messages: pageDesc.reverse().map(toMessage), nextCursor }
   }
 
-  async create(draft: MessageDraft): Promise<Message> {
-    const doc = await this.messageModel.create({
-      _id: randomUUID(),
-      conversationId: draft.conversationId,
-      senderId: draft.senderId,
-      content: draft.content,
-      createdAt: new Date(draft.createdAt),
-    })
+  async create(draft: MessageDraft, session?: ClientSession): Promise<Message> {
+    const [doc] = await this.messageModel.create(
+      [
+        {
+          _id: randomUUID(),
+          conversationId: draft.conversationId,
+          senderId: draft.senderId,
+          content: draft.content,
+          createdAt: new Date(draft.createdAt),
+        },
+      ],
+      session ? { session } : {},
+    )
+    if (doc === undefined) {
+      throw new Error('Failed to create message')
+    }
     return toMessage(doc)
   }
 

@@ -527,10 +527,11 @@ touch Mongoose directly.
 
 > Found in the Jun 16 deep review. Intentionally deferred until open ends are done.
 
-- [ ] **B2 — `lastMessageAt` not atomic with the message insert.** Two sequential
-      writes (no transaction; standalone `mongod` can't). Planned: real transaction
-      via a single-node replica set (Docker) — tracked in the separate
-      "Week 5 bugs and smells" plan, Phase 5 (deferred for its own change).
+- [x] **B2 — atomic message send — RESOLVED.** The message insert and the parent
+      conversation's `lastMessageAt`/preview update now run in one Mongo
+      transaction (`connection.transaction(...)`, session threaded through the
+      DAOs). Requires Mongo as a replica set: `docker-compose.yml` runs a
+      self-initializing single-node `rs0`, and `MONGO_URI` uses `?replicaSet=rs0`.
 - [x] **B3 — duplicate-key (`E11000`) → 409 — RESOLVED.** `AllExceptionsFilter`
       maps Mongo `E11000` to `409 EMAIL_ALREADY_EXISTS`; the signup `findByEmail`
       pre-check was dropped so the unique index is the single source of truth.
