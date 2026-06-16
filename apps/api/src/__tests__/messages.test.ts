@@ -189,4 +189,37 @@ describe('Messages API', () => {
     expect(collected).toHaveLength(total)
     expect(new Set(collected).size).toBe(total)
   })
+
+  it('paginates deterministically when messages share a createdAt (_id tiebreak)', async () => {
+    const token = await login(app, 'alex@example.com')
+    const total = 3
+    const sameCreatedAt = '2026-06-02T00:00:00.000Z'
+    const drafts = Array.from({ length: total }, (_, index) => ({
+      conversationId: SEED_CONVERSATION_IDS.onboarding,
+      senderId: SEED_USER_IDS.alex,
+      content: `same-${index}`,
+      createdAt: sameCreatedAt,
+    }))
+    await app.get(MessagesDbService).reset(drafts)
+
+    const collected: string[] = []
+    let cursor: string | null = null
+    let pages = 0
+    do {
+      const query = cursor === null ? '?limit=1' : `?limit=1&cursor=${encodeURIComponent(cursor)}`
+      const response = await request(app.getHttpServer())
+        .get(`/conversations/${SEED_CONVERSATION_IDS.onboarding}/messages${query}`)
+        .set('Authorization', `Bearer ${token}`)
+      expect(response.status).toBe(200)
+      const body = response.body as ListMessagesBody
+      collected.push(...body.messages.map((message) => message.content))
+      cursor = body.nextCursor
+      pages += 1
+    } while (cursor !== null && pages < 10)
+
+    // All same-timestamp messages are visited exactly once, no dupes or skips.
+    expect(cursor).toBeNull()
+    expect(collected).toHaveLength(total)
+    expect(new Set(collected).size).toBe(total)
+  })
 })

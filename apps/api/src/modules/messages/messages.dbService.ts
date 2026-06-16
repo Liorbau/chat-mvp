@@ -23,7 +23,8 @@ function toMessage(doc: MessageDocument): Message {
     conversationId: doc.conversationId,
     senderId: doc.senderId,
     content: doc.content,
-    createdAt: doc.createdAt,
+    // Stored as a Date; the contract exposes an ISO string.
+    createdAt: doc.createdAt.toISOString(),
   }
 }
 
@@ -63,7 +64,7 @@ export class MessagesDbService {
     const oldestOnPage = pageDesc.at(-1)
     const nextCursor =
       hasMore && oldestOnPage !== undefined
-        ? { createdAt: oldestOnPage.createdAt, id: oldestOnPage._id }
+        ? { createdAt: oldestOnPage.createdAt.toISOString(), id: oldestOnPage._id }
         : null
 
     return { messages: pageDesc.reverse().map(toMessage), nextCursor }
@@ -75,7 +76,7 @@ export class MessagesDbService {
       conversationId: draft.conversationId,
       senderId: draft.senderId,
       content: draft.content,
-      createdAt: draft.createdAt,
+      createdAt: new Date(draft.createdAt),
     })
     return toMessage(doc)
   }
@@ -83,7 +84,15 @@ export class MessagesDbService {
   async reset(drafts: MessageDraft[]): Promise<void> {
     await this.messageModel.deleteMany({})
     if (drafts.length > 0) {
-      await this.messageModel.insertMany(drafts.map((draft) => ({ _id: randomUUID(), ...draft })))
+      await this.messageModel.insertMany(
+        drafts.map((draft) => ({
+          _id: randomUUID(),
+          conversationId: draft.conversationId,
+          senderId: draft.senderId,
+          content: draft.content,
+          createdAt: new Date(draft.createdAt),
+        })),
+      )
     }
   }
 }

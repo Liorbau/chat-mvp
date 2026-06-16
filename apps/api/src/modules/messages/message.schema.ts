@@ -8,17 +8,17 @@ export class Message {
   @Prop({ type: String, required: true })
   _id!: string
 
-  @Prop()
+  @Prop({ required: true })
   conversationId!: string
 
-  @Prop()
+  @Prop({ required: true })
   senderId!: string
 
-  @Prop()
+  @Prop({ required: true })
   content!: string
 
-  @Prop()
-  createdAt!: string
+  @Prop({ type: Date, required: true })
+  createdAt!: Date
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message)
