@@ -3,7 +3,7 @@ import { IsInt, IsString, Min, MinLength, validateSync } from 'class-validator'
 
 export class EnvironmentVariables {
   @IsString()
-  @MinLength(1)
+  @MinLength(32)
   JWT_SECRET!: string
 
   @IsInt()
