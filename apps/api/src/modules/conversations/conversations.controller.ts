@@ -1,10 +1,10 @@
 import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common'
 import type { Conversation, User } from '@chat/contract'
 import type { Response } from 'express'
-import { CurrentUser } from '../../common/decorators/current-user.decorator'
-import { JwtAuthGuard } from '../auth/jwt-auth.guard'
+import { CurrentUser } from '../../common/decorators/current.user.decorator'
+import { JwtAuthGuard } from '../auth/jwt.auth.guard'
 import { ConversationsService } from './conversations.service'
-import { CreateConversationDto } from './dto/create-conversation.dto'
+import { CreateConversationDto } from './dto/create.conversation.dto'
 
 @Controller('conversations')
 @UseGuards(JwtAuthGuard)

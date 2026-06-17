@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common'
 import type { GetMessagesResponse, SendMessageResponse, User } from '@chat/contract'
-import { CurrentUser } from '../../common/decorators/current-user.decorator'
-import { JwtAuthGuard } from '../auth/jwt-auth.guard'
-import { CreateMessageDto } from './dto/create-message.dto'
-import { ConversationParamsDto, ListMessagesQueryDto } from './dto/list-messages.dto'
+import { CurrentUser } from '../../common/decorators/current.user.decorator'
+import { JwtAuthGuard } from '../auth/jwt.auth.guard'
+import { CreateMessageDto } from './dto/create.message.dto'
+import { ConversationParamsDto, ListMessagesQueryDto } from './dto/list.messages.dto'
 import { MessagesService } from './messages.service'
 
 @Controller('conversations/:id/messages')

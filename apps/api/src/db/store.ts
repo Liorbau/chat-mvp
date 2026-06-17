@@ -4,8 +4,8 @@ import { clearConversations, setConversation } from './conversations.store'
 import { clearMessages, setMessage } from './messages.store'
 import { clearUsers, setUser, type StoredUser } from './users.store'
 
-// Shared password for hard-coded users
-const SEED_PASSWORD = 'password123'
+// Shared password for hard-coded seed users. Single source of truth: tests
+export const SEED_PASSWORD = 'password123'
 
 function buildSeedUsers(bcryptRounds: number): StoredUser[] {
   const seedPasswordHash = bcrypt.hashSync(SEED_PASSWORD, bcryptRounds)

@@ -3,7 +3,7 @@ import type { GetMessagesResponse, Message, SendMessageResponse } from '@chat/co
 import { z } from 'zod'
 import { AppError } from '../../errors/AppError'
 import { ConversationsService } from '../conversations/conversations.service'
-import { DEFAULT_LIMIT, MAX_LIMIT } from './dto/list-messages.dto'
+import { DEFAULT_LIMIT, MAX_LIMIT } from './dto/list.messages.dto'
 import { MessagesDbService } from './messages.dbService'
 
 type ListMessagesInput = {

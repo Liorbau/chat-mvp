@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { createTestApp, login } from './test-app'
+import { createTestApp, login } from './test.app'
 
 type MessageItem = {
   id: string

@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { createTestApp, login, SEED_PASSWORD } from './test-app'
+import { createTestApp, login, SEED_PASSWORD } from './test.app'
 
 describe('Auth API', () => {
   let app: INestApplication
@@ -24,6 +24,37 @@ describe('Auth API', () => {
       token: expect.any(String),
       user: { id: expect.any(String), name: 'New User', email: 'new@example.com' },
     })
+  })
+
+  it('normalizes a mixed-case email to lowercase on signup', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({ email: '  Mixed@Example.COM ', password: 'password123', name: 'Mixed' })
+
+    expect(response.status).toBe(201)
+    expect((response.body as { user: { email: string } }).user.email).toBe('mixed@example.com')
+  })
+
+  it('logs in case-insensitively against the email stored at signup', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({ email: 'caseuser@example.com', password: 'password123', name: 'Case User' })
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'CaseUser@Example.com', password: 'password123' })
+
+    expect(response.status).toBe(200)
+    expect((response.body as { user: { email: string } }).user.email).toBe('caseuser@example.com')
+  })
+
+  it('rejects a duplicate signup that differs only by email case with 409', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({ email: 'ALEX@example.com', password: 'password123', name: 'Dup Case' })
+
+    expect(response.status).toBe(409)
+    expect(response.body.error.code).toBe('EMAIL_ALREADY_EXISTS')
   })
 
   it('issues a token that authorizes GET /me', async () => {
@@ -118,6 +149,17 @@ describe('Auth API', () => {
 
     expect(response.status).toBe(400)
     expect(response.body.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('rejects an oversized request body with 413', async () => {
+    // Exceed the 100kb JSON body limit configured at bootstrap.
+    const oversizedName = 'a'.repeat(200 * 1024)
+    const response = await request(app.getHttpServer())
+      .post('/auth/signup')
+      .send({ email: 'big@example.com', password: 'password123', name: oversizedName })
+
+    expect(response.status).toBe(413)
+    expect(response.body.error.code).toBe('PAYLOAD_TOO_LARGE')
   })
 
   it('returns 401 for GET /me without a token', async () => {
