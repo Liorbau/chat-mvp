@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength } from 'class-validator'
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator'
 import { Lowercase } from '../../../common/decorators/lowercase.decorator'
 import { Trim } from '../../../common/decorators/trim.decorator'
 
@@ -10,6 +10,6 @@ export class LoginDto {
   email!: string
 
   @IsString()
-  @MinLength(8)
+  @IsNotEmpty()
   password!: string
 }
