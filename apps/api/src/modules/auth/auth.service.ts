@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import type { AuthResponse } from '@chat/contract'
-import bcrypt from 'bcrypt'
 import { AppError } from '../../errors/AppError'
-import { toPublicUser } from '../users/users.dbService'
 import { UsersService } from '../users/users.service'
 import type { LoginDto } from './dto/login.dto'
 import type { SignupDto } from './dto/signup.dto'
@@ -26,23 +24,17 @@ export class AuthService {
   }
 
   async login(input: LoginDto): Promise<AuthResponse> {
-    const stored = this.usersService.findByEmail(input.email)
-    // Same error for unknown email and wrong password so we never reveal which
-    // accounts exist.
-    if (stored === undefined) {
+    // verifyCredentials returns undefined for both unknown email and wrong
+    // password, so we surface one error and never reveal which accounts exist.
+    const user = await this.usersService.verifyCredentials(input.email, input.password)
+    if (user === undefined) {
       throw AppError.unauthorized('Invalid credentials')
     }
 
-    const passwordMatches = await bcrypt.compare(input.password, stored.passwordHash)
-    if (!passwordMatches) {
-      throw AppError.unauthorized('Invalid credentials')
-    }
-
-    const user = toPublicUser(stored)
     return { token: this.signToken({ id: user.id, email: user.email }), user }
   }
 
-  signToken(user: TokenSubject): string {
+  private signToken(user: TokenSubject): string {
     return this.jwtService.sign({ sub: user.id, email: user.email })
   }
 }

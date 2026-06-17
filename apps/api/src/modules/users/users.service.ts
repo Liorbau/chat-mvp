@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config'
 import type { User } from '@chat/contract'
 import bcrypt from 'bcrypt'
 import { AppError } from '../../errors/AppError'
-import type { StoredUser } from '../../db/users.store'
 import { toPublicUser, UsersDbService } from './users.dbService'
 
 export type CreateUserInput = {
@@ -27,8 +26,18 @@ export class UsersService {
     return this.usersDbService.list()
   }
 
-  findByEmail(email: string): StoredUser | undefined {
-    return this.usersDbService.findByEmail(email)
+  async verifyCredentials(email: string, password: string): Promise<User | undefined> {
+    const stored = this.usersDbService.findByEmail(email)
+    if (stored === undefined) {
+      return undefined
+    }
+
+    const passwordMatches = await bcrypt.compare(password, stored.passwordHash)
+    if (!passwordMatches) {
+      return undefined
+    }
+
+    return toPublicUser(stored)
   }
 
   async create(input: CreateUserInput): Promise<User> {
