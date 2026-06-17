@@ -6,6 +6,7 @@ const statusToCode: Partial<Record<HttpStatus, string>> = {
   [HttpStatus.FORBIDDEN]: 'FORBIDDEN',
   [HttpStatus.NOT_FOUND]: 'RESOURCE_NOT_FOUND',
   [HttpStatus.CONFLICT]: 'CONFLICT',
+  [HttpStatus.PAYLOAD_TOO_LARGE]: 'PAYLOAD_TOO_LARGE',
 }
 
 export function mapStatusToCode(statusCode: number): string {

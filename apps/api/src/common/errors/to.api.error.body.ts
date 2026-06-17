@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common'
-import type { ApiErrorBody } from './error-envelope.types'
-import { mapStatusToCode } from './http-status-to-code'
+import type { ApiErrorBody } from './error.envelope.types'
+import { mapStatusToCode } from './http.status.to.code'
 
 export function toApiErrorBody(statusCode: number, exceptionResponse: unknown): ApiErrorBody {
   const code = mapStatusToCode(statusCode)

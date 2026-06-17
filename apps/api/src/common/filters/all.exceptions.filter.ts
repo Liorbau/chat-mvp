@@ -4,14 +4,17 @@ import {
   type ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common'
 import type { Response } from 'express'
 import { AppError } from '../../errors/AppError'
-import type { ApiErrorBody } from '../errors/error-envelope.types'
-import { toApiErrorBody } from '../errors/to-api-error-body'
+import type { ApiErrorBody } from '../errors/error.envelope.types'
+import { toApiErrorBody } from '../errors/to.api.error.body'
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger('ExceptionsFilter')
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>()
 
@@ -26,10 +29,27 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return
     }
 
-    console.error('Unhandled exception:', exception)
+    const httpErrorStatus = this.resolveHttpErrorStatus(exception)
+    if (httpErrorStatus !== undefined) {
+      const message = exception instanceof Error ? exception.message : 'Request failed'
+      response.status(httpErrorStatus).json(toApiErrorBody(httpErrorStatus, message))
+      return
+    }
+
+    this.logger.error('Unhandled exception:', exception)
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       error: { code: 'INTERNAL', message: 'Internal server error' },
     })
+  }
+
+  private resolveHttpErrorStatus(exception: unknown): number | undefined {
+    if (typeof exception !== 'object' || exception === null) {
+      return undefined
+    }
+
+    const candidate = exception as { status?: unknown; statusCode?: unknown }
+    const status = typeof candidate.status === 'number' ? candidate.status : candidate.statusCode
+    return typeof status === 'number' ? status : undefined
   }
 
   private fromAppError(error: AppError): ApiErrorBody {
