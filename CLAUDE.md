@@ -141,11 +141,9 @@ tiebreak); **atomic send via a Mongo transaction** (single-node replica set via
 `docker-compose.yml`, `MONGO_URI` uses `?replicaSet=rs0`); `E11000 -> 409`;
 new-conversation ordering (`lastMessageAt` set on create); hardened message
 schema (required fields, `createdAt` as `Date`); out-of-band seeding via
-`npm run seed` (never on boot, so data survives restart); `zod` removed.
-
-Remaining: a rare (~<5%) test-infra flake from connection churn on the shared
-`chat-test` DB — accepted and documented in the gitignored
-`KNOWN_ISSUES.local.md` (fix later via per-file DB isolation).
+`npm run seed` (never on boot, so data survives restart); `zod` removed;
+per-file test DB isolation so the API suite is deterministic (each test file
+gets its own database instead of sharing `chat-test`).
 
 #### Tech Constraints
 

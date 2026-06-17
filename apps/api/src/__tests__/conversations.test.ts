@@ -8,7 +8,7 @@ describe('Conversations API', () => {
   let app: INestApplication
 
   beforeEach(async () => {
-    app = await createTestApp()
+    app = await createTestApp('chat-test-conversations')
   })
 
   afterEach(async () => {
