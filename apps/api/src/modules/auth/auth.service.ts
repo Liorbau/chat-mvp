@@ -1,23 +1,40 @@
-import type { User } from '@chat/contract'
+import { Injectable } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
+import type { AuthResponse } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
-import { issue, revoke } from '../../dbServices/tokens.dbService'
-import { findById } from '../../dbServices/users.dbService'
+import { UsersService } from '../users/users.service'
+import type { LoginDto } from './dto/login.dto'
+import type { SignupDto } from './dto/signup.dto'
 
-export type LoginResult = {
-  token: string
-  user: User
+type TokenSubject = {
+  id: string
+  email: string
 }
 
-export function loginUser(userId: string): LoginResult {
-  const user = findById(userId)
-  if (user === undefined) {
-    throw AppError.unauthorized('Invalid credentials')
+@Injectable()
+export class AuthService {
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
+  ) {}
+
+  async signup(input: SignupDto): Promise<AuthResponse> {
+    const user = await this.usersService.create(input)
+    return { token: this.signToken({ id: user.id, email: user.email }), user }
   }
 
-  const token = issue(userId)
-  return { token, user }
-}
+  async login(input: LoginDto): Promise<AuthResponse> {
+    // verifyCredentials returns undefined for both unknown email and wrong
+    // password, so we surface one error and never reveal which accounts exist.
+    const user = await this.usersService.verifyCredentials(input.email, input.password)
+    if (user === undefined) {
+      throw AppError.unauthorized('Invalid credentials')
+    }
 
-export function logoutUser(token: string): void {
-  revoke(token)
+    return { token: this.signToken({ id: user.id, email: user.email }), user }
+  }
+
+  private signToken(user: TokenSubject): string {
+    return this.jwtService.sign({ sub: user.id, email: user.email })
+  }
 }

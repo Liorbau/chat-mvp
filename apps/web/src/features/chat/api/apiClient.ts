@@ -1,19 +1,32 @@
 import type {
   ApiError,
+  AuthResponse,
   Conversation,
   GetMessagesResponse,
   LoginRequest,
-  LoginResponse,
   SendMessageRequest,
   SendMessageResponse,
+  SignupRequest,
+  User,
 } from './chatApi.types'
+import { clearStoredAuth, getToken } from '../../auth/authStorage'
 
 const API_BASE_URL: string =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:4000'
 
-// The apiClient owns the auth boundary: it holds the token issued at login and
-// attaches it to every request.
-let authToken: string | null = null
+export class ApiRequestError extends Error {
+  readonly status: number
+  readonly code: string
+  readonly details: unknown
+
+  constructor(status: number, code: string, message: string, details: unknown) {
+    super(message)
+    this.name = 'ApiRequestError'
+    this.status = status
+    this.code = code
+    this.details = details
+  }
+}
 
 function isApiError(value: unknown): value is ApiError {
   return (
@@ -29,16 +42,32 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (init.body !== undefined) {
     headers.set('Content-Type', 'application/json')
   }
-  if (authToken !== null) {
-    headers.set('Authorization', `Bearer ${authToken}`)
+  const token = getToken()
+  if (token !== null) {
+    headers.set('Authorization', `Bearer ${token}`)
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearStoredAuth()
+    }
     const body: unknown = await response.json().catch(() => null)
-    const message = isApiError(body) ? body.error.message : `Request failed (${response.status})`
-    throw new Error(message)
+    if (isApiError(body)) {
+      throw new ApiRequestError(
+        response.status,
+        body.error.code,
+        body.error.message,
+        body.error.details,
+      )
+    }
+    throw new ApiRequestError(
+      response.status,
+      'UNKNOWN',
+      `Request failed (${response.status})`,
+      undefined,
+    )
   }
 
   if (response.status === 204) {
@@ -48,8 +77,20 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await response.json()) as T
 }
 
+export type CreateConversationInput = {
+  title?: string
+  participantIds: string[]
+}
+
 export async function getConversations(): Promise<Conversation[]> {
   return request<Conversation[]>('/conversations')
+}
+
+export async function createConversation(input: CreateConversationInput): Promise<Conversation> {
+  return request<Conversation>('/conversations', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
 }
 
 export async function getMessages(
@@ -67,19 +108,20 @@ export async function sendMessage(request_: SendMessageRequest): Promise<SendMes
   })
 }
 
-export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  const result = await request<LoginResponse>('/auth/login', {
+export async function getUsers(): Promise<User[]> {
+  return request<User[]>('/users')
+}
+
+export async function login(credentials: LoginRequest): Promise<AuthResponse> {
+  return request<AuthResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
   })
-  authToken = result.token
-  return result
 }
 
-export async function logout(): Promise<void> {
-  try {
-    await request<void>('/auth/logout', { method: 'POST' })
-  } finally {
-    authToken = null
-  }
+export async function signup(input: SignupRequest): Promise<AuthResponse> {
+  return request<AuthResponse>('/auth/signup', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
 }

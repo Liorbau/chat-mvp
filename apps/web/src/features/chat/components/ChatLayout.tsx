@@ -1,10 +1,27 @@
 import { useState } from 'react'
+import type { Conversation, User } from '../api/chatApi.types'
 import { useConversations } from '../hooks/useConversations'
 import ConversationListContainer from './ConversationListContainer'
 import MessagePanelContainer from './MessagePanelContainer'
+import NewConversation from './NewConversation'
+
+function deriveConversationTitle(
+  conversation: Conversation,
+  currentUserId: string,
+  getUserDisplayName: (userId: string) => string,
+): string {
+  const otherIds = conversation.participantIds.filter((id) => id !== currentUserId)
+  const otherId = otherIds.length === 1 ? otherIds[0] : undefined
+  if (otherId !== undefined) {
+    return `Chat with ${getUserDisplayName(otherId)}`
+  }
+
+  return conversation.title ?? 'Conversation'
+}
 
 type ChatLayoutProps = {
   currentUserId: string
+  users: User[]
   getUserDisplayName: (userId: string) => string
   onLogout: () => void
 }
@@ -50,9 +67,19 @@ const LOGOUT_BUTTON_STYLE = {
   cursor: 'pointer',
 }
 
-function ChatLayout({ currentUserId, getUserDisplayName, onLogout }: ChatLayoutProps) {
+function ChatLayout({ currentUserId, users, getUserDisplayName, onLogout }: ChatLayoutProps) {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
-  const { status, conversations, error, markConversationActivity } = useConversations()
+  const { status, conversations, error, markConversationActivity, refetch } = useConversations()
+
+  function handleConversationCreated(conversationId: string): void {
+    refetch()
+    setSelectedConversationId(conversationId)
+  }
+
+  const displayConversations = conversations.map((conversation) => ({
+    ...conversation,
+    title: deriveConversationTitle(conversation, currentUserId, getUserDisplayName),
+  }))
 
   return (
     <main style={ROOT_LAYOUT_STYLE}>
@@ -72,13 +99,20 @@ function ChatLayout({ currentUserId, getUserDisplayName, onLogout }: ChatLayoutP
             </button>
           </div>
           <div style={PANEL_CONTENT_STYLE}>
-            <ConversationListContainer
-              status={status}
-              conversations={conversations}
-              error={error}
-              selectedConversationId={selectedConversationId}
-              onSelectConversation={setSelectedConversationId}
+            <NewConversation
+              currentUserId={currentUserId}
+              users={users}
+              onCreated={handleConversationCreated}
             />
+            <div style={{ marginTop: '12px' }}>
+              <ConversationListContainer
+                status={status}
+                conversations={displayConversations}
+                error={error}
+                selectedConversationId={selectedConversationId}
+                onSelectConversation={setSelectedConversationId}
+              />
+            </div>
           </div>
         </aside>
 
