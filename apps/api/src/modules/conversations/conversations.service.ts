@@ -27,15 +27,8 @@ export class ConversationsService {
     creatorId: string,
   ): Promise<Conversation> {
     const participantIds = [...new Set([...input.participantIds, creatorId])]
-    const participantChecks = await Promise.all(
-      participantIds.map(async (participantId) => ({
-        participantId,
-        exists: (await this.usersService.findById(participantId)) !== undefined,
-      })),
-    )
-    const missingParticipantIds = participantChecks
-      .filter((check) => !check.exists)
-      .map((check) => check.participantId)
+    const existingIds = await this.usersService.findExistingIds(participantIds)
+    const missingParticipantIds = participantIds.filter((id) => !existingIds.has(id))
     if (missingParticipantIds.length > 0) {
       throw AppError.badRequest('VALIDATION_ERROR', 'One or more participants do not exist', {
         participantIds: missingParticipantIds,
@@ -76,12 +69,17 @@ export class ConversationsService {
     lastMessagePreview: string,
     occurredAt: Date,
     session?: ClientSession,
-  ): Promise<void> {
-    await this.conversationsDbService.updateLastMessage(
+  ): Promise<Conversation> {
+    const updated = await this.conversationsDbService.updateLastMessage(
       conversationId,
       lastMessagePreview,
       occurredAt,
       session,
     )
+    if (updated === undefined) {
+      throw AppError.notFound('Conversation not found')
+    }
+
+    return updated
   }
 }

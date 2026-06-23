@@ -62,7 +62,6 @@ describe('Conversations API', () => {
       lastMessagePreview: '',
       updatedAt: expect.any(String),
     })
-    expect(response.headers.location).toBe(`/conversations/${response.body.id as string}`)
   })
 
   it('creates a conversation without a title (title is optional)', async () => {

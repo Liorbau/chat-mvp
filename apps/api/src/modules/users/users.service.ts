@@ -26,6 +26,10 @@ export class UsersService {
     return this.usersDbService.list()
   }
 
+  async findExistingIds(userIds: string[]): Promise<Set<string>> {
+    return this.usersDbService.findExistingIds(userIds)
+  }
+
   async verifyCredentials(email: string, password: string): Promise<User | undefined> {
     const stored = await this.usersDbService.findByEmail(email)
     if (stored === undefined) {

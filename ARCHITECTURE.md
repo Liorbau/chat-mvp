@@ -295,7 +295,7 @@ Week 4 swaps the `tokens` lookup for real JWT verification; everything downstrea
 | `POST /auth/login` | `200` | body `{ userId }` -> `{ token, user }`; unknown user -> `401` |
 | `POST /auth/logout` | `204` | invalidates token; no body |
 | `GET /conversations` | `200` | current user's conversations, sorted `updatedAt` desc |
-| `POST /conversations` | `201` | `+ Location: /conversations/:id`; duplicate 1:1 -> `409` |
+| `POST /conversations` | `201` | returns the created conversation; duplicate 1:1 -> `409` |
 | `GET /conversations/:id/messages` | `200` | `?cursor=&limit=`; non-member or missing -> `404` |
 | `POST /conversations/:id/messages` | `201` | `{ message }`; non-member or missing -> `404` |
 
@@ -382,7 +382,7 @@ transport details. Implemented:
 
 - Error shape moved to `{ error: { code, message, details? } }`.
 - `POST /auth/login` request body uses `{ userId }`.
-- `POST /conversations` is documented with `201` + `Location` and duplicate `409`.
+- `POST /conversations` is documented with `201` returning the created conversation and duplicate `409`.
 - Message list includes `?limit=` alongside `?cursor=`.
 - Contract changes are tracked in the contract changelog section.
 

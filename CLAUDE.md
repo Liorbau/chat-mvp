@@ -70,6 +70,12 @@ architecture/data-model/API/auth/migration decision points. See
   New files/modules: `<topic>: initial commit.`
 - Branch: `feature/<domain>/<scope>`, kebab-case (e.g. `feature/backend/week-5-db`).
 - Run `npm run typecheck`, `npm run lint`, and tests before pushing.
+- Order commits so code is in its final shape by the time it lands. Reviewers
+  read commits chronologically, so do not let an early commit introduce code that
+  a later commit in the same PR rewrites. When squashing or reordering, fold the
+  fix into the commit that introduces the code (or place it immediately after) so
+  intermediate states never show superseded logic — this avoids "Outdated"
+  review comments on code that no longer exists.
 
 ## Shared Long-Term Goals
 

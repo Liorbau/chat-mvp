@@ -44,6 +44,12 @@ export class UsersDbService {
     return doc === null ? undefined : toStoredUser(doc)
   }
 
+  // One batched query (`$in`) instead of one lookup per id; projects only `_id`.
+  async findExistingIds(userIds: string[]): Promise<Set<string>> {
+    const docs = await this.userModel.find({ _id: { $in: userIds } }, { _id: 1 }).exec()
+    return new Set(docs.map((doc) => doc._id))
+  }
+
   async create(draft: StoredUserDraft): Promise<StoredUser> {
     const doc = await this.userModel.create({
       _id: randomUUID(),

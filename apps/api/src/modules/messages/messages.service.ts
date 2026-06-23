@@ -64,7 +64,6 @@ export class MessagesService {
   async listMessages(input: ListMessagesInput): Promise<GetMessagesResponse> {
     await this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
 
-    // ListMessagesQueryDto already clamps limit to 1..MAX_LIMIT (default 20).
     const limit = input.limit
     const cursor = decodeCursor(input.cursor)
 

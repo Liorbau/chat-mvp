@@ -60,17 +60,22 @@ export class ConversationsDbService {
     return toConversation(doc)
   }
 
+  // Returns the updated conversation, or undefined when none matched. A thrown
+  // error therefore means a real failure, never a missing conversation.
   async updateLastMessage(
     conversationId: string,
     lastMessagePreview: string,
     lastMessageAt: Date,
     session?: ClientSession,
-  ): Promise<void> {
-    await this.conversationModel.updateOne(
-      { _id: conversationId },
-      { $set: { lastMessagePreview, lastMessageAt } },
-      session ? { session } : {},
-    )
+  ): Promise<Conversation | undefined> {
+    const doc = await this.conversationModel
+      .findOneAndUpdate(
+        { _id: conversationId },
+        { $set: { lastMessagePreview, lastMessageAt } },
+        { returnDocument: 'after', ...(session ? { session } : {}) },
+      )
+      .exec()
+    return doc === null ? undefined : toConversation(doc)
   }
 
   async reset(conversations: SeedConversation[]): Promise<void> {

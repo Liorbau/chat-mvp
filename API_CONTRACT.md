@@ -276,9 +276,6 @@ per-viewer name from the participants); set it for named/group conversations.
 
 **Success response (201)**
 
-Headers:
-- `Location: /conversations/:id`
-
 ```json
 {
   "id": "string",

@@ -27,6 +27,43 @@ function toMessage(doc: MessageDocument): Message {
   }
 }
 
+function toMessageDocument(draft: MessageDraft) {
+  return {
+    _id: randomUUID(),
+    conversationId: draft.conversationId,
+    senderId: draft.senderId,
+    content: draft.content,
+    createdAt: new Date(draft.createdAt),
+  }
+}
+
+function buildPageFilter(conversationId: string, cursor?: MessagePageCursor) {
+  if (cursor === undefined) {
+    return { conversationId }
+  }
+
+  const cursorCreatedAt = new Date(cursor.createdAt)
+  return {
+    conversationId,
+    $or: [
+      { createdAt: { $lt: cursorCreatedAt } },
+      { createdAt: cursorCreatedAt, _id: { $lt: cursor.id } },
+    ],
+  }
+}
+
+function toMessagePage(docsDesc: MessageDocument[], limit: number): MessagePage {
+  const hasMore = docsDesc.length > limit
+  const pageDesc = hasMore ? docsDesc.slice(0, limit) : docsDesc
+  const oldestOnPage = pageDesc.at(-1)
+  const nextCursor =
+    hasMore && oldestOnPage !== undefined
+      ? { createdAt: oldestOnPage.createdAt.toISOString(), id: oldestOnPage._id }
+      : null
+
+  return { messages: pageDesc.reverse().map(toMessage), nextCursor }
+}
+
 @Injectable()
 export class MessagesDbService {
   constructor(
@@ -39,47 +76,18 @@ export class MessagesDbService {
     limit: number,
     cursor?: MessagePageCursor,
   ): Promise<MessagePage> {
-    const filter =
-      cursor === undefined
-        ? { conversationId }
-        : {
-            conversationId,
-            // createdAt is a Date in the schema; convert the cursor's ISO string
-            // explicitly instead of relying on Mongoose to cast the comparison.
-            $or: [
-              { createdAt: { $lt: new Date(cursor.createdAt) } },
-              { createdAt: new Date(cursor.createdAt), _id: { $lt: cursor.id } },
-            ],
-          }
-
     const docsDesc = await this.messageModel
-      .find(filter)
+      .find(buildPageFilter(conversationId, cursor))
       .sort({ createdAt: -1, _id: -1 })
       .limit(limit + 1)
       .exec()
 
-    const hasMore = docsDesc.length > limit
-    const pageDesc = hasMore ? docsDesc.slice(0, limit) : docsDesc
-    const oldestOnPage = pageDesc.at(-1)
-    const nextCursor =
-      hasMore && oldestOnPage !== undefined
-        ? { createdAt: oldestOnPage.createdAt.toISOString(), id: oldestOnPage._id }
-        : null
-
-    return { messages: pageDesc.reverse().map(toMessage), nextCursor }
+    return toMessagePage(docsDesc, limit)
   }
 
   async create(draft: MessageDraft, session?: ClientSession): Promise<Message> {
     const [doc] = await this.messageModel.create(
-      [
-        {
-          _id: randomUUID(),
-          conversationId: draft.conversationId,
-          senderId: draft.senderId,
-          content: draft.content,
-          createdAt: new Date(draft.createdAt),
-        },
-      ],
+      [toMessageDocument(draft)],
       session ? { session } : {},
     )
     if (doc === undefined) {
@@ -91,15 +99,7 @@ export class MessagesDbService {
   async reset(drafts: MessageDraft[]): Promise<void> {
     await this.messageModel.deleteMany({})
     if (drafts.length > 0) {
-      await this.messageModel.insertMany(
-        drafts.map((draft) => ({
-          _id: randomUUID(),
-          conversationId: draft.conversationId,
-          senderId: draft.senderId,
-          content: draft.content,
-          createdAt: new Date(draft.createdAt),
-        })),
-      )
+      await this.messageModel.insertMany(drafts.map(toMessageDocument))
     }
   }
 }
