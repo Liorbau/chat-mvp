@@ -18,16 +18,20 @@ export class UsersService {
     private readonly configService: ConfigService,
   ) {}
 
-  findById(userId: string): User | undefined {
+  async findById(userId: string): Promise<User | undefined> {
     return this.usersDbService.findById(userId)
   }
 
-  list(): User[] {
+  async list(): Promise<User[]> {
     return this.usersDbService.list()
   }
 
+  async findExistingIds(userIds: string[]): Promise<Set<string>> {
+    return this.usersDbService.findExistingIds(userIds)
+  }
+
   async verifyCredentials(email: string, password: string): Promise<User | undefined> {
-    const stored = this.usersDbService.findByEmail(email)
+    const stored = await this.usersDbService.findByEmail(email)
     if (stored === undefined) {
       return undefined
     }
@@ -41,13 +45,13 @@ export class UsersService {
   }
 
   async create(input: CreateUserInput): Promise<User> {
-    if (this.usersDbService.findByEmail(input.email) !== undefined) {
+    if ((await this.usersDbService.findByEmail(input.email)) !== undefined) {
       throw AppError.conflict('EMAIL_ALREADY_EXISTS', 'An account with this email already exists')
     }
 
     const bcryptRounds = this.configService.getOrThrow<number>('BCRYPT_ROUNDS')
     const passwordHash = await bcrypt.hash(input.password, bcryptRounds)
-    const stored = this.usersDbService.create({
+    const stored = await this.usersDbService.create({
       name: input.name,
       email: input.email,
       passwordHash,

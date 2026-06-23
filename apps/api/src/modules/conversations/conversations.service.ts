@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import type { Conversation } from '@chat/contract'
+import type { ClientSession } from 'mongoose'
 import { AppError } from '../../errors/AppError'
 import { UsersService } from '../users/users.service'
 import { ConversationsDbService } from './conversations.dbService'
@@ -16,17 +17,18 @@ export class ConversationsService {
     private readonly usersService: UsersService,
   ) {}
 
-  listConversations(userId: string): Conversation[] {
-    return this.conversationsDbService.listByParticipant(userId).sort((left, right) => {
-      return Date.parse(right.updatedAt) - Date.parse(left.updatedAt)
-    })
+  async listConversations(userId: string): Promise<Conversation[]> {
+    // Already sorted by last activity (lastMessageAt desc) via the DB index.
+    return this.conversationsDbService.listByParticipant(userId)
   }
 
-  createConversation(input: CreateConversationInput, creatorId: string): Conversation {
+  async createConversation(
+    input: CreateConversationInput,
+    creatorId: string,
+  ): Promise<Conversation> {
     const participantIds = [...new Set([...input.participantIds, creatorId])]
-    const missingParticipantIds = participantIds.filter((participantId) => {
-      return this.usersService.findById(participantId) === undefined
-    })
+    const existingIds = await this.usersService.findExistingIds(participantIds)
+    const missingParticipantIds = participantIds.filter((id) => !existingIds.has(id))
     if (missingParticipantIds.length > 0) {
       throw AppError.badRequest('VALIDATION_ERROR', 'One or more participants do not exist', {
         participantIds: missingParticipantIds,
@@ -34,7 +36,7 @@ export class ConversationsService {
     }
 
     if (participantIds.length === 2) {
-      const existing = this.conversationsDbService.findDirectByParticipants(participantIds)
+      const existing = await this.conversationsDbService.findDirectByParticipants(participantIds)
       if (existing !== undefined) {
         throw AppError.conflict(
           'CONVERSATION_ALREADY_EXISTS',
@@ -43,20 +45,15 @@ export class ConversationsService {
       }
     }
 
-    const nowIso = new Date().toISOString()
     return this.conversationsDbService.create({
       participantIds,
       lastMessagePreview: '',
-      updatedAt: nowIso,
       ...(input.title === undefined ? {} : { title: input.title }),
     })
   }
 
-  // Authorization rule shared with MessagesModule: a missing conversation is a
-  // 404; an existing conversation the caller is not a participant of is a 403
-  // (never reveal someone else's chat).
-  assertParticipant(conversationId: string, requesterId: string): Conversation {
-    const conversation = this.conversationsDbService.findById(conversationId)
+  async assertParticipant(conversationId: string, requesterId: string): Promise<Conversation> {
+    const conversation = await this.conversationsDbService.findById(conversationId)
     if (conversation === undefined) {
       throw AppError.notFound('Conversation not found')
     }
@@ -67,14 +64,22 @@ export class ConversationsService {
     return conversation
   }
 
-  recordMessageActivity(
+  async recordMessageActivity(
     conversationId: string,
     lastMessagePreview: string,
-    occurredAt: string,
-  ): void {
-    this.conversationsDbService.update(conversationId, {
+    occurredAt: Date,
+    session?: ClientSession,
+  ): Promise<Conversation> {
+    const updated = await this.conversationsDbService.updateLastMessage(
+      conversationId,
       lastMessagePreview,
-      updatedAt: occurredAt,
-    })
+      occurredAt,
+      session,
+    )
+    if (updated === undefined) {
+      throw AppError.notFound('Conversation not found')
+    }
+
+    return updated
   }
 }

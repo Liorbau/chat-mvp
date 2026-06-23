@@ -1,13 +1,14 @@
 import type { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { SEED_USER_IDS } from '../db/store'
 import { createTestApp, login, SEED_PASSWORD } from './test.app'
 
 describe('Auth API', () => {
   let app: INestApplication
 
   beforeEach(async () => {
-    app = await createTestApp()
+    app = await createTestApp('chat-test-auth')
   })
 
   afterEach(async () => {
@@ -86,8 +87,8 @@ describe('Auth API', () => {
       .get('/me')
       .set('Authorization', `Bearer ${samToken}`)
 
-    expect(alexMe.body).toEqual({ id: 'user-1', name: 'Alex', email: 'alex@example.com' })
-    expect(samMe.body).toEqual({ id: 'user-2', name: 'Sam', email: 'sam@example.com' })
+    expect(alexMe.body).toEqual({ id: SEED_USER_IDS.alex, name: 'Alex', email: 'alex@example.com' })
+    expect(samMe.body).toEqual({ id: SEED_USER_IDS.sam, name: 'Sam', email: 'sam@example.com' })
   })
 
   it('rejects duplicate signup with 409', async () => {
@@ -109,7 +110,7 @@ describe('Auth API', () => {
     expect(response.status).toBe(200)
     expect(response.body).toEqual({
       token: expect.any(String),
-      user: { id: 'user-1', name: expect.any(String), email: 'alex@example.com' },
+      user: { id: SEED_USER_IDS.alex, name: expect.any(String), email: 'alex@example.com' },
     })
   })
 

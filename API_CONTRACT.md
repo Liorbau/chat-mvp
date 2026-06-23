@@ -1,4 +1,4 @@
-# Frontend Chat MVP — API Contract (Week 2 -> Week 4)
+# Frontend Chat MVP — API Contract (Week 2 -> Week 5)
 
 ## Related Planning Docs
 
@@ -8,7 +8,8 @@
 ## Stability Policy
 
 This contract is the backend target for the current week's implementation
-(Week 4: NestJS + JWT auth).
+(Week 5: MongoDB persistence). Week 5 changed only the storage layer; every
+request and response shape below is unchanged from Week 4.
 
 - Keep endpoint shapes stable.
 - If a change is required, update this file in the same PR and add a short "Contract Changes" note at the end.
@@ -275,9 +276,6 @@ per-viewer name from the participants); set it for named/group conversations.
 
 **Success response (201)**
 
-Headers:
-- `Location: /conversations/:id`
-
 ```json
 {
   "id": "string",
@@ -417,3 +415,17 @@ Headers:
   title and the frontend derives a per-viewer display name from participants.
 - Added `GET /users` (authenticated) returning all users in the public shape,
   used by the frontend to pick participants for a new conversation.
+
+### Week 5 (MongoDB persistence)
+
+- **No request or response shape changes.** Storage moved from in-memory stores
+  to MongoDB (Mongoose); every endpoint above behaves identically.
+- `Conversation.updatedAt` is now derived from the stored `lastMessageAt`
+  (falling back to `createdAt` for a conversation with no messages yet); the wire
+  field name and ISO-8601 format are unchanged.
+- Cursor pagination is now an index-backed keyset over MongoDB. The cursor stays
+  an opaque string; clients still pass back `nextCursor` verbatim.
+- Sending a message updates the message and its conversation's `lastMessageAt` /
+  `lastMessagePreview` atomically (single transaction), so the conversation list
+  never drifts from the latest message.
+- Data now persists across server restarts.

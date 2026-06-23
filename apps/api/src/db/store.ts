@@ -1,126 +1,138 @@
-import type { Conversation, Message } from '@chat/contract'
+import type { Message, User } from '@chat/contract'
 import bcrypt from 'bcrypt'
-import { clearConversations, setConversation } from './conversations.store'
-import { clearMessages, setMessage } from './messages.store'
-import { clearUsers, setUser, type StoredUser } from './users.store'
 
 // Shared password for hard-coded seed users. Single source of truth: tests
 export const SEED_PASSWORD = 'password123'
 
-function buildSeedUsers(bcryptRounds: number): StoredUser[] {
+export const SEED_USER_IDS = {
+  alex: '11111111-1111-4111-8111-111111111111',
+  sam: '22222222-2222-4222-8222-222222222222',
+  dana: '33333333-3333-4333-8333-333333333333',
+  maya: '44444444-4444-4444-8444-444444444444',
+} as const
+
+export const SEED_CONVERSATION_IDS = {
+  onboarding: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  productFeedback: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+  designSync: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+} as const
+
+export function buildSeedUsers(bcryptRounds: number): (User & { passwordHash: string })[] {
   const seedPasswordHash = bcrypt.hashSync(SEED_PASSWORD, bcryptRounds)
   return [
-    { id: 'user-1', name: 'Alex', email: 'alex@example.com', passwordHash: seedPasswordHash },
-    { id: 'user-2', name: 'Sam', email: 'sam@example.com', passwordHash: seedPasswordHash },
-    { id: 'user-3', name: 'Dana', email: 'dana@example.com', passwordHash: seedPasswordHash },
-    { id: 'user-4', name: 'Maya', email: 'maya@example.com', passwordHash: seedPasswordHash },
+    {
+      id: SEED_USER_IDS.alex,
+      name: 'Alex',
+      email: 'alex@example.com',
+      passwordHash: seedPasswordHash,
+    },
+    {
+      id: SEED_USER_IDS.sam,
+      name: 'Sam',
+      email: 'sam@example.com',
+      passwordHash: seedPasswordHash,
+    },
+    {
+      id: SEED_USER_IDS.dana,
+      name: 'Dana',
+      email: 'dana@example.com',
+      passwordHash: seedPasswordHash,
+    },
+    {
+      id: SEED_USER_IDS.maya,
+      name: 'Maya',
+      email: 'maya@example.com',
+      passwordHash: seedPasswordHash,
+    },
   ]
 }
 
-const seedConversations: Conversation[] = [
+export type SeedConversation = {
+  id: string
+  title?: string
+  participantIds: string[]
+  lastMessagePreview: string
+  lastMessageAt: Date
+}
+
+export const seedConversations: SeedConversation[] = [
   {
-    id: 'conv-1',
+    id: SEED_CONVERSATION_IDS.onboarding,
     title: 'Onboarding',
-    participantIds: ['user-1', 'user-4'],
+    participantIds: [SEED_USER_IDS.alex, SEED_USER_IDS.maya],
     lastMessagePreview: 'Pick a conversation on the left and send your first message.',
-    updatedAt: '2026-05-27T08:02:00.000Z',
+    lastMessageAt: new Date('2026-05-27T08:02:00.000Z'),
   },
   {
-    id: 'conv-2',
+    id: SEED_CONVERSATION_IDS.productFeedback,
     title: 'Product Feedback',
-    participantIds: ['user-1', 'user-2'],
+    participantIds: [SEED_USER_IDS.alex, SEED_USER_IDS.sam],
     lastMessagePreview: 'Let us also include an icon for context.',
-    updatedAt: '2026-05-27T09:02:00.000Z',
+    lastMessageAt: new Date('2026-05-27T09:02:00.000Z'),
   },
   {
-    id: 'conv-3',
+    id: SEED_CONVERSATION_IDS.designSync,
     title: 'Design Sync',
-    participantIds: ['user-1', 'user-3'],
+    participantIds: [SEED_USER_IDS.alex, SEED_USER_IDS.dana],
     lastMessagePreview: 'I will focus on spacing and accessibility feedback.',
-    updatedAt: '2026-05-27T10:02:00.000Z',
+    lastMessageAt: new Date('2026-05-27T10:02:00.000Z'),
   },
 ]
 
-const seedMessages: Message[] = [
+// Message _id is generated as a uuid on insert, so seeds carry no id.
+export const seedMessageDrafts: Omit<Message, 'id'>[] = [
   {
-    id: 'msg-1',
-    conversationId: 'conv-1',
-    senderId: 'user-4',
+    conversationId: SEED_CONVERSATION_IDS.onboarding,
+    senderId: SEED_USER_IDS.maya,
     content: 'Welcome to the chat app!',
     createdAt: '2026-05-27T08:00:00.000Z',
   },
   {
-    id: 'msg-2',
-    conversationId: 'conv-1',
-    senderId: 'user-1',
+    conversationId: SEED_CONVERSATION_IDS.onboarding,
+    senderId: SEED_USER_IDS.alex,
     content: 'Great, where should I start?',
     createdAt: '2026-05-27T08:01:00.000Z',
   },
   {
-    id: 'msg-3',
-    conversationId: 'conv-1',
-    senderId: 'user-4',
+    conversationId: SEED_CONVERSATION_IDS.onboarding,
+    senderId: SEED_USER_IDS.maya,
     content: 'Pick a conversation on the left and send your first message.',
     createdAt: '2026-05-27T08:02:00.000Z',
   },
   {
-    id: 'msg-4',
-    conversationId: 'conv-2',
-    senderId: 'user-1',
+    conversationId: SEED_CONVERSATION_IDS.productFeedback,
+    senderId: SEED_USER_IDS.alex,
     content: 'Can we improve empty states?',
     createdAt: '2026-05-27T09:00:00.000Z',
   },
   {
-    id: 'msg-5',
-    conversationId: 'conv-2',
-    senderId: 'user-2',
+    conversationId: SEED_CONVERSATION_IDS.productFeedback,
+    senderId: SEED_USER_IDS.sam,
     content: 'Yes, we can add clearer guidance text and a primary action.',
     createdAt: '2026-05-27T09:01:00.000Z',
   },
   {
-    id: 'msg-6',
-    conversationId: 'conv-2',
-    senderId: 'user-2',
+    conversationId: SEED_CONVERSATION_IDS.productFeedback,
+    senderId: SEED_USER_IDS.sam,
     content: 'Let us also include an icon for context.',
     createdAt: '2026-05-27T09:02:00.000Z',
   },
   {
-    id: 'msg-7',
-    conversationId: 'conv-3',
-    senderId: 'user-3',
+    conversationId: SEED_CONVERSATION_IDS.designSync,
+    senderId: SEED_USER_IDS.dana,
     content: 'Design sync starts in 10 minutes.',
     createdAt: '2026-05-27T10:00:00.000Z',
   },
   {
-    id: 'msg-8',
-    conversationId: 'conv-3',
-    senderId: 'user-3',
+    conversationId: SEED_CONVERSATION_IDS.designSync,
+    senderId: SEED_USER_IDS.dana,
     content: 'Perfect, I will share the latest layout proposal.',
     createdAt: '2026-05-27T10:01:00.000Z',
   },
   {
-    id: 'msg-9',
-    conversationId: 'conv-3',
-    senderId: 'user-1',
+    conversationId: SEED_CONVERSATION_IDS.designSync,
+    senderId: SEED_USER_IDS.alex,
     content: 'I will focus on spacing and accessibility feedback.',
     createdAt: '2026-05-27T10:02:00.000Z',
   },
 ]
-
-// The bcrypt cost comes from the caller (bootstrap or tests) because seeding
-// runs outside Nest's DI, where ConfigService is not available yet.
-export function resetStore(bcryptRounds: number): void {
-  clearUsers()
-  clearConversations()
-  clearMessages()
-
-  for (const user of buildSeedUsers(bcryptRounds)) {
-    setUser(user)
-  }
-  for (const conversation of seedConversations) {
-    setConversation(conversation)
-  }
-  for (const message of seedMessages) {
-    setMessage(message)
-  }
-}

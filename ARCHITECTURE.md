@@ -15,8 +15,11 @@ It is organized by phase:
 - **Week 2 (Completed)** — Frontend Chat MVP against a mocked API.
 - **Week 3 (Completed)** — Express + TypeScript REST backend replacing the
   mock, with frontend wired to real API.
-- **Week 4 (Current)** — NestJS refactor of the backend with real JWT auth
+- **Week 4 (Completed)** — NestJS refactor of the backend with real JWT auth
   (signup/login, Passport JWT, Guards, bcrypt) plus FE auth screens.
+- **Week 5 (Current)** — MongoDB persistence via Mongoose: the in-memory stores
+  are replaced by a Mongoose-backed DbService (DAO) seam, with indexes, keyset
+  cursor pagination, and an atomic transactional send.
 
 When a later week supersedes an earlier decision, note it in that week's section
 rather than deleting the history.
@@ -292,7 +295,7 @@ Week 4 swaps the `tokens` lookup for real JWT verification; everything downstrea
 | `POST /auth/login` | `200` | body `{ userId }` -> `{ token, user }`; unknown user -> `401` |
 | `POST /auth/logout` | `204` | invalidates token; no body |
 | `GET /conversations` | `200` | current user's conversations, sorted `updatedAt` desc |
-| `POST /conversations` | `201` | `+ Location: /conversations/:id`; duplicate 1:1 -> `409` |
+| `POST /conversations` | `201` | returns the created conversation; duplicate 1:1 -> `409` |
 | `GET /conversations/:id/messages` | `200` | `?cursor=&limit=`; non-member or missing -> `404` |
 | `POST /conversations/:id/messages` | `201` | `{ message }`; non-member or missing -> `404` |
 
@@ -379,7 +382,7 @@ transport details. Implemented:
 
 - Error shape moved to `{ error: { code, message, details? } }`.
 - `POST /auth/login` request body uses `{ userId }`.
-- `POST /conversations` is documented with `201` + `Location` and duplicate `409`.
+- `POST /conversations` is documented with `201` returning the created conversation and duplicate `409`.
 - Message list includes `?limit=` alongside `?cursor=`.
 - Contract changes are tracked in the contract changelog section.
 
@@ -402,16 +405,16 @@ transport details. Implemented:
 
 ---
 
-# Week 4 (Current) — NestJS Backend + JWT Auth
+# Week 4 (Completed) — NestJS Backend + JWT Auth
 
-> Status: in progress. Week 4 refactors the Week 3 Express backend into a NestJS
-> application and replaces the *fake* token with real JWT authentication
+> Status: shipped. Week 4 refactored the Week 3 Express backend into a NestJS
+> application and replaced the *fake* token with real JWT authentication
 > (signup/login, password hashing, Passport JWT strategy, Guards). The wire
-> contract and the `req.userId`-style identity downstream stay equivalent, so the
-> FE keeps working; it gains login/signup screens, token persistence, and logout.
+> contract and the `req.userId`-style identity downstream stayed equivalent, so the
+> FE kept working; it gained login/signup screens, token persistence, and logout.
 >
-> Constraint reminder: **still in-memory** this week (Mongo arrives Week 5).
-> Persistence sits behind injectable repository providers so the swap stays local.
+> Persistence was still in-memory this week, sitting behind injectable repository
+> (DbService) providers so the Week 5 Mongo swap stayed local to those providers.
 
 ## What supersedes Week 3
 
@@ -664,6 +667,114 @@ Strict one-directional flow: **module -> controller -> service (provider) -> DbS
       every request, logout, `401` handling.
 - [x] Verify end-to-end auth flow between two users/tabs.
 - [x] `npx tsc --noEmit` passes; `npm run build` (Nest) passes.
+
+---
+
+# Week 5 (Current) — MongoDB Persistence (Mongoose)
+
+> Status: shipped. Week 5 replaces the in-memory `Map` stores with MongoDB via
+> Mongoose. Only the DbService (DAO) layer changes — controllers, services, the
+> DTO contract, JWT auth, and the `403` participant rule are untouched, so the FE
+> keeps working with no changes. Data now survives process restart.
+
+## What supersedes Week 4
+
+- **Storage**: the `db/*.store.ts` in-memory `Map`s are gone. Each DbService now
+  owns a Mongoose model injected via `@nestjs/mongoose` and is the only layer
+  that touches Mongoose.
+- **Atomic send**: sending a message now inserts the message **and** bumps the
+  parent conversation inside a single Mongo transaction (requires a replica set).
+- **Seeding**: moved out-of-band to `npm run seed -w @chat/api` (a standalone
+  Nest context script). The server never seeds on boot, so restarts preserve data.
+
+What stays the same: the layered flow (module → controller → service → DbService),
+the keyset pagination semantics, the `{ error: { code, message, details? } }`
+envelope, and every response shape in `API_CONTRACT.md`.
+
+## Data Model Decision (reference vs. denormalize)
+
+Rule: **reference high-volume/mutable data; denormalize only the small, read-hot
+scalars the conversation list needs.**
+
+- **Messages → referenced.** Own `messages` collection linked by
+  `conversationId`. Threads grow unbounded, so embedding would hit the 16MB
+  document cap and break cursor pagination. Reference scales; embed does not.
+- **Conversations → denormalize `lastMessageAt` + `lastMessagePreview`.** The
+  sidebar lists conversations newest-first with a snippet. An index on the
+  `messages` collection cannot sort the *conversations* collection, so storing
+  these two scalars on the conversation makes the list one indexed query. Cost:
+  each send updates them on the parent (done inside the send transaction).
+- **Users → referenced** (`senderId` on messages), never embedded. The FE loads
+  the directory once (`GET /users`) and resolves names client-side, so embedding
+  names would be duplicated, stale-prone data with no payoff.
+- **Single uuid string `_id`** across all three collections (seeds use pinned
+  uuids; creates/signups generate uuids).
+
+## Collections, Schemas, and Indexes
+
+One model per domain, registered with `MongooseModule.forFeature` in its own
+module; the connection (`MongooseModule.forRootAsync`, reads `MONGO_URI` from
+`ConfigService`) lives only in `AppModule`.
+
+| Collection | Schema file | Key fields | Index | Query it backs |
+| --- | --- | --- | --- | --- |
+| `users` | `modules/users/user.schema.ts` | `_id` (uuid), `email` (unique, lowercased), `name`, `passwordHash` | unique `email` | login/signup lookup by email; enforces one account per email (`E11000 → 409`) |
+| `conversations` | `modules/conversations/conversation.schema.ts` | `_id` (uuid), `participantIds[]`, `title?`, `lastMessagePreview`, `lastMessageAt`, `createdAt` | `{ participantIds: 1, lastMessageAt: -1 }` | `find({ participantIds: me }).sort({ lastMessageAt: -1 })` — the sidebar list |
+| `messages` | `modules/messages/message.schema.ts` | `_id` (uuid), `conversationId`, `senderId`, `content`, `createdAt` (Date) | `{ conversationId: 1, createdAt: -1, _id: -1 }` | keyset cursor page of a thread, with `_id` as a stable tiebreak for equal `createdAt` |
+
+## DbService (DAO) Seam and DTO Boundary
+
+- **DbService (DAO)** = the `*DbService` classes + `*.schema.ts`. Only these touch
+  Mongoose; domain services depend on the DbService, never on a model.
+- **Mapper at the boundary** (`toPublicUser`, `toConversation`, `toMessage`)
+  converts a Mongoose doc to a `@chat/contract` response: strips `_id → id`, drops
+  `__v` and `passwordHash`, and maps the stored `lastMessageAt` (falling back to
+  `createdAt`) to the contract's `updatedAt`. Controllers return these DTOs, never
+  raw documents — so no `_id`/`__v` ever leaks.
+
+## Keyset Cursor Pagination
+
+- Backed by the compound `messages` index above. A page reads
+  `{ conversationId, (createdAt, _id) < cursor }` ordered by `(createdAt, _id)`
+  descending, then returns oldest→newest per the contract.
+- The cursor is an opaque base64 token encoding the last `(createdAt, _id)`; the
+  `_id` component breaks ties when multiple messages share a `createdAt`.
+  `nextCursor: null` means no more pages.
+
+## Atomic Send (transaction + replica set)
+
+- `POST /conversations/:id/messages` opens a Mongo session/transaction, inserts
+  the message, and `$set`s `lastMessageAt` + `lastMessagePreview` on the parent
+  conversation, then commits — so the list snippet and a message can never drift
+  apart on a partial failure.
+- Multi-document transactions require a replica set. `docker-compose.yml` runs
+  `mongo:7` as a self-initializing single-node `rs0`; `MONGO_URI` carries
+  `?replicaSet=rs0`. A MongoDB Atlas cluster (already a replica set) also works.
+
+## Config and Seeding
+
+- `MONGO_URI` is required and validated at startup (`config/env.validation.ts`);
+  the API will not boot without it. `.env.example` documents it with the
+  `?replicaSet=rs0` suffix.
+- `npm run seed -w @chat/api` builds and runs a standalone seed script (pinned
+  uuids, shared dev password). Seeding never runs on boot.
+
+## Week 5 TODO Checklist
+
+- [x] `@nestjs/mongoose` wired; `forRootAsync` (MONGO_URI) in `AppModule`,
+      `forFeature` per module.
+- [x] Three collections with single uuid `_id`; required indexes
+      (unique `email`; conversation activity; message keyset).
+- [x] DbServices rewritten over Mongoose; in-memory `db/*.store.ts` removed.
+- [x] DTO mappers strip `_id`/`__v`/`passwordHash` and map `lastMessageAt →
+      updatedAt`; no raw documents in responses.
+- [x] Keyset cursor pagination over the compound message index (verified on a
+      150-message thread + same-`createdAt` tiebreak).
+- [x] Atomic transactional send; Mongo runs as a `rs0` replica set.
+- [x] `E11000 → 409`; new-conversation ordering (`lastMessageAt` set on create).
+- [x] Out-of-band `npm run seed`; data survives restart.
+- [x] Week-4 JWT auth + `403` participant rule preserved; contract unchanged.
+- [x] `npx tsc --noEmit` and `npm run build` pass; smoke-tested end-to-end.
 
 ---
 

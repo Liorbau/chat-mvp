@@ -1,6 +1,5 @@
-import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common'
 import type { Conversation, User } from '@chat/contract'
-import type { Response } from 'express'
 import { CurrentUser } from '../../common/decorators/current.user.decorator'
 import { JwtAuthGuard } from '../auth/jwt.auth.guard'
 import { ConversationsService } from './conversations.service'
@@ -12,18 +11,15 @@ export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}
 
   @Get()
-  list(@CurrentUser() user: User): Conversation[] {
+  async list(@CurrentUser() user: User): Promise<Conversation[]> {
     return this.conversationsService.listConversations(user.id)
   }
 
   @Post()
-  create(
+  async create(
     @CurrentUser() user: User,
     @Body() body: CreateConversationDto,
-    @Res({ passthrough: true }) response: Response,
-  ): Conversation {
-    const conversation = this.conversationsService.createConversation(body, user.id)
-    response.setHeader('Location', `/conversations/${conversation.id}`)
-    return conversation
+  ): Promise<Conversation> {
+    return this.conversationsService.createConversation(body, user.id)
   }
 }

@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+# Local, untracked personal notes
+*.local.md
 
 # Local environment files (never commit secrets); .env.example stays tracked.
 .env

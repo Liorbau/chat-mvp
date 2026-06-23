@@ -6,6 +6,7 @@
     "dev": "nest start --watch",
     "start": "nest start",
     "build": "nest build",
+    "seed": "nest build && node dist/scripts/seed",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
@@ -16,6 +17,7 @@
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.1.26",
     "@nestjs/jwt": "^11.0.2",
+    "@nestjs/mongoose": "^11.0.4",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.26",
     "bcrypt": "^6.0.0",
@@ -23,11 +25,11 @@
     "class-validator": "^0.15.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "mongoose": "^9.7.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2",
-    "zod": "^4.1.13"
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

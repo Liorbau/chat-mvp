@@ -5,7 +5,10 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { AppModule } from '../app.module'
 import { JSON_BODY_LIMIT } from '../config/http.constants'
-import { resetStore, SEED_PASSWORD } from '../db/store'
+import { buildSeedUsers, seedConversations, seedMessageDrafts, SEED_PASSWORD } from '../db/store'
+import { ConversationsDbService } from '../modules/conversations/conversations.dbService'
+import { MessagesDbService } from '../modules/messages/messages.dbService'
+import { UsersDbService } from '../modules/users/users.dbService'
 
 // Re-exported from the store so the seed password has a single source of truth.
 export { SEED_PASSWORD }
@@ -13,13 +16,28 @@ export { SEED_PASSWORD }
 // Matches the vitest-config env; low cost keeps the suite fast.
 const TEST_BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS ?? '4')
 
-export async function createTestApp(): Promise<INestApplication> {
-  resetStore(TEST_BCRYPT_ROUNDS)
+// Swap the database segment of a Mongo URI, keeping host/port/query intact.
+function uriWithDatabase(uri: string, dbName: string): string {
+  const url = new URL(uri)
+  url.pathname = `/${dbName}`
+  return url.toString()
+}
+
+// Each test file passes its own database name so files never share `chat-test`
+// and cannot race on each other's data. AppModule reads MONGO_URI from
+// ConfigService at compile time, so we override it before compiling.
+export async function createTestApp(dbName: string): Promise<INestApplication> {
+  const baseUri = process.env.MONGO_URI ?? 'mongodb://localhost:27017/chat-test?replicaSet=rs0'
+  process.env.MONGO_URI = uriWithDatabase(baseUri, dbName)
+
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile()
   // Mirror the runtime bootstrap so tests enforce the same body-size limit.
   const app = moduleRef.createNestApplication<NestExpressApplication>()
   app.useBodyParser('json', { limit: JSON_BODY_LIMIT })
   await app.init()
+  await app.get(UsersDbService).reset(buildSeedUsers(TEST_BCRYPT_ROUNDS))
+  await app.get(ConversationsDbService).reset(seedConversations)
+  await app.get(MessagesDbService).reset(seedMessageDrafts)
   return app
 }
 
