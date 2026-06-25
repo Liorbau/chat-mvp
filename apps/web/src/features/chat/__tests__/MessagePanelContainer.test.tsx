@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { GetMessagesResponse, Message, SendMessageResponse } from '../api/chatApi.types'
+import type { GetMessagesResponse, Message, SendMessageResponse } from '@chat/contract'
 import * as apiClient from '../api/apiClient'
 import MessagePanelContainer from '../components/MessagePanelContainer'
 

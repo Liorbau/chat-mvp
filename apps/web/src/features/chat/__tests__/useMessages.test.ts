@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import * as apiClient from '../api/apiClient'
 import { useMessages } from '../hooks/useMessages'
-import type { GetMessagesResponse, Message } from '../api/chatApi.types'
+import type { GetMessagesResponse, Message } from '@chat/contract'
 
 vi.mock('../api/apiClient', () => {
   return {

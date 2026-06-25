@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { LoginRequest, SignupRequest } from '@chat/contract'
 import { login as apiLogin, signup as apiSignup } from '../chat/api/apiClient'
-import { AuthContext, type AuthContextValue } from './auth-context'
+import { AuthContext, type AuthContextValue } from './auth.context'
 import { clearStoredAuth, loadAuth, saveAuth, subscribe, type StoredAuth } from './authStorage'
 
 type AuthProviderProps = {

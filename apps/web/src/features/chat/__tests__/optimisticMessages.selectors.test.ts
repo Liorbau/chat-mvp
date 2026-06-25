@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Message } from '../api/chatApi.types'
+import type { Message } from '@chat/contract'
 import type { OptimisticMessage } from '../hooks/optimisticMessages.types'
 import {
   mergeOptimisticMessages,

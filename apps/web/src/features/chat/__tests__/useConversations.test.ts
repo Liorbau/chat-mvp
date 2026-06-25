@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import * as apiClient from '../api/apiClient'
 import { useConversations } from '../hooks/useConversations'
-import type { Conversation } from '../api/chatApi.types'
+import type { Conversation } from '@chat/contract'
 
 vi.mock('../api/apiClient', () => {
   return {
@@ -17,6 +17,7 @@ vi.mock('../api/apiClient', () => {
 function buildConversation(id: string, updatedAt: string): Conversation {
   return {
     id,
+    type: 'user',
     title: id,
     participantIds: ['user-1'],
     lastMessagePreview: 'preview',

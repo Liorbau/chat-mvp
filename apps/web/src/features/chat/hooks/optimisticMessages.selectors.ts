@@ -1,4 +1,4 @@
-import type { Message } from '../api/chatApi.types'
+import type { Message } from '@chat/contract'
 import type { LoadStatus } from '../state/chatStatus'
 import type { OptimisticMessage } from './optimisticMessages.types'
 

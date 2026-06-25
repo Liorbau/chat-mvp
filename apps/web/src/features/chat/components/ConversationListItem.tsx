@@ -1,4 +1,4 @@
-import type { Conversation } from '../api/chatApi.types'
+import type { Conversation } from '@chat/contract'
 
 type ConversationListItemProps = {
   conversation: Conversation

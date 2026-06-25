@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type FormEvent } from 'react'
-import { useAuth } from '../../auth/auth-context'
+import { useAuth } from '../../auth/auth.context'
 import { ApiRequestError } from '../api/apiClient'
 
 type LoginScreenProps = {

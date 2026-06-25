@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Message } from '../api/chatApi.types'
+import type { Message } from '@chat/contract'
 import { initialMessagesState, messagesReducer, type MessagesState } from '../state/messagesReducer'
 
 function buildMessage(id: string, createdAt: string, content: string = 'hi'): Message {
