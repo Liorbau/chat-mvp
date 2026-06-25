@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import type { Conversation, User } from '../api/chatApi.types'
+import type { Conversation, User } from '@chat/contract'
 import { useConversations } from '../hooks/useConversations'
+import AssistantPanel from './AssistantPanel'
 import ConversationListContainer from './ConversationListContainer'
 import MessagePanelContainer from './MessagePanelContainer'
+import ModeToggleButton from './ModeToggleButton'
 import NewConversation from './NewConversation'
+import SwitchUserButton from './SwitchUserButton'
 
 function deriveConversationTitle(
   conversation: Conversation,
@@ -58,17 +61,18 @@ const PANEL_HEADER_STYLE = {
   justifyContent: 'space-between',
   alignItems: 'center',
 }
-const LOGOUT_BUTTON_STYLE = {
-  border: '1px solid #cbd5e1',
-  backgroundColor: '#ffffff',
-  color: '#0f172a',
-  borderRadius: '8px',
-  padding: '6px 10px',
-  cursor: 'pointer',
+const PERSISTENT_BUTTONS_STYLE = {
+  position: 'fixed' as const,
+  top: '14px',
+  right: '16px',
+  display: 'flex',
+  gap: '8px',
+  zIndex: 100,
 }
 
 function ChatLayout({ currentUserId, users, getUserDisplayName, onLogout }: ChatLayoutProps) {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
+  const [mode, setMode] = useState<'chats' | 'assistant'>('chats')
   const { status, conversations, error, markConversationActivity, refetch } = useConversations()
 
   function handleConversationCreated(conversationId: string): void {
@@ -76,59 +80,78 @@ function ChatLayout({ currentUserId, users, getUserDisplayName, onLogout }: Chat
     setSelectedConversationId(conversationId)
   }
 
-  const displayConversations = conversations.map((conversation) => ({
-    ...conversation,
-    title: deriveConversationTitle(conversation, currentUserId, getUserDisplayName),
-  }))
+  const displayConversations = conversations
+    .filter((conversation) => conversation.type !== 'assistant')
+    .map((conversation) => ({
+      ...conversation,
+      title: deriveConversationTitle(conversation, currentUserId, getUserDisplayName),
+    }))
+
+  const persistentButtons = (
+    <div style={PERSISTENT_BUTTONS_STYLE}>
+      <ModeToggleButton
+        mode={mode}
+        onToggle={() => setMode(mode === 'assistant' ? 'chats' : 'assistant')}
+      />
+      <SwitchUserButton
+        onClick={() => {
+          setSelectedConversationId(null)
+          onLogout()
+        }}
+      />
+    </div>
+  )
+
+  if (mode === 'assistant') {
+    return (
+      <>
+        {persistentButtons}
+        <AssistantPanel currentUserId={currentUserId} />
+      </>
+    )
+  }
 
   return (
-    <main style={ROOT_LAYOUT_STYLE}>
-      <section style={PANELS_LAYOUT_STYLE}>
-        <aside style={SIDEBAR_STYLE}>
-          <div style={PANEL_HEADER_STYLE}>
-            <h2 style={PANEL_HEADING_STYLE}>Conversations</h2>
-            <button
-              type="button"
-              style={LOGOUT_BUTTON_STYLE}
-              onClick={() => {
-                setSelectedConversationId(null)
-                onLogout()
-              }}
-            >
-              Switch user
-            </button>
-          </div>
-          <div style={PANEL_CONTENT_STYLE}>
-            <NewConversation
-              currentUserId={currentUserId}
-              users={users}
-              onCreated={handleConversationCreated}
-            />
-            <div style={{ marginTop: '12px' }}>
-              <ConversationListContainer
-                status={status}
-                conversations={displayConversations}
-                error={error}
+    <>
+      {persistentButtons}
+      <main style={ROOT_LAYOUT_STYLE}>
+        <section style={PANELS_LAYOUT_STYLE}>
+          <aside style={SIDEBAR_STYLE}>
+            <div style={PANEL_HEADER_STYLE}>
+              <h2 style={PANEL_HEADING_STYLE}>Conversations</h2>
+            </div>
+            <div style={PANEL_CONTENT_STYLE}>
+              <NewConversation
+                currentUserId={currentUserId}
+                users={users}
+                onCreated={handleConversationCreated}
+              />
+              <div style={{ marginTop: '12px' }}>
+                <ConversationListContainer
+                  status={status}
+                  conversations={displayConversations}
+                  error={error}
+                  selectedConversationId={selectedConversationId}
+                  onSelectConversation={setSelectedConversationId}
+                />
+              </div>
+            </div>
+          </aside>
+
+          <div style={MAIN_PANEL_STYLE}>
+            <h2 style={PANEL_HEADING_STYLE}>Messages</h2>
+            <div style={PANEL_CONTENT_STYLE}>
+              <MessagePanelContainer
                 selectedConversationId={selectedConversationId}
-                onSelectConversation={setSelectedConversationId}
+                currentUserId={currentUserId}
+                getUserDisplayName={getUserDisplayName}
+                onConversationActivity={markConversationActivity}
               />
             </div>
           </div>
-        </aside>
-
-        <div style={MAIN_PANEL_STYLE}>
-          <h2 style={PANEL_HEADING_STYLE}>Messages</h2>
-          <div style={PANEL_CONTENT_STYLE}>
-            <MessagePanelContainer
-              selectedConversationId={selectedConversationId}
-              currentUserId={currentUserId}
-              getUserDisplayName={getUserDisplayName}
-              onConversationActivity={markConversationActivity}
-            />
-          </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </>
   )
 }
 
