@@ -1,5 +1,16 @@
 import { plainToInstance } from 'class-transformer'
-import { IsInt, IsString, Min, MinLength, validateSync } from 'class-validator'
+import {
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  MinLength,
+  ValidateIf,
+  validateSync,
+} from 'class-validator'
+
+export type LlmProviderName = 'openai' | 'anthropic'
 
 export class EnvironmentVariables {
   @IsString()
@@ -25,6 +36,28 @@ export class EnvironmentVariables {
   @IsString()
   @MinLength(1)
   MONGO_URI!: string
+
+  @IsIn(['openai', 'anthropic'])
+  LLM_PROVIDER: LlmProviderName = 'openai'
+
+  @ValidateIf((env: EnvironmentVariables) => env.LLM_PROVIDER === 'openai')
+  @IsString()
+  @MinLength(1)
+  OPENAI_API_KEY?: string
+
+  @ValidateIf((env: EnvironmentVariables) => env.LLM_PROVIDER === 'anthropic')
+  @IsString()
+  @MinLength(1)
+  ANTHROPIC_API_KEY?: string
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  LLM_MODEL?: string
+
+  @IsInt()
+  @Min(1)
+  LLM_MAX_TOKENS: number = 2048
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {
