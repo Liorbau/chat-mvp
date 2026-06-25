@@ -1,13 +1,15 @@
 import { Injectable } from '@nestjs/common'
-import type { Conversation } from '@chat/contract'
+import type { Conversation, ConversationType } from '@chat/contract'
 import type { ClientSession } from 'mongoose'
+import { isDuplicateKeyError } from '../../common/mongo/is.duplicate.key.error'
 import { AppError } from '../../errors/AppError'
 import { UsersService } from '../users/users.service'
 import { ConversationsDbService } from './conversations.dbService'
 
 export type CreateConversationInput = {
+  type?: ConversationType
   title?: string
-  participantIds: string[]
+  participantIds?: string[]
 }
 
 @Injectable()
@@ -26,7 +28,36 @@ export class ConversationsService {
     input: CreateConversationInput,
     creatorId: string,
   ): Promise<Conversation> {
-    const participantIds = [...new Set([...input.participantIds, creatorId])]
+    const type = input.type ?? 'user'
+
+    // An assistant conversation has exactly one participant — the creator. The
+    // assistant is not a user row, so there are no other participants to verify
+    // and no direct-duplicate rule to apply.
+    if (type === 'assistant') {
+      const existing = await this.conversationsDbService.findAssistantByParticipant(creatorId)
+      if (existing !== undefined) {
+        return existing
+      }
+      try {
+        return await this.conversationsDbService.create({
+          type,
+          participantIds: [creatorId],
+          lastMessagePreview: '',
+          ...(input.title === undefined ? {} : { title: input.title }),
+        })
+      } catch (error) {
+        // A concurrent request won the unique-index race; return the one it made.
+        const raced = isDuplicateKeyError(error)
+          ? await this.conversationsDbService.findAssistantByParticipant(creatorId)
+          : undefined
+        if (raced !== undefined) {
+          return raced
+        }
+        throw error
+      }
+    }
+
+    const participantIds = [...new Set([...(input.participantIds ?? []), creatorId])]
     const existingIds = await this.usersService.findExistingIds(participantIds)
     const missingParticipantIds = participantIds.filter((id) => !existingIds.has(id))
     if (missingParticipantIds.length > 0) {
@@ -46,6 +77,7 @@ export class ConversationsService {
     }
 
     return this.conversationsDbService.create({
+      type,
       participantIds,
       lastMessagePreview: '',
       ...(input.title === undefined ? {} : { title: input.title }),

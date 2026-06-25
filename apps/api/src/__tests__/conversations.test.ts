@@ -53,6 +53,7 @@ describe('Conversations API', () => {
     expect(response.status).toBe(201)
     expect(response.body).toEqual({
       id: expect.any(String),
+      type: 'user',
       title: expect.stringContaining('Test conversation'),
       participantIds: expect.arrayContaining([
         SEED_USER_IDS.alex,
@@ -110,6 +111,24 @@ describe('Conversations API', () => {
 
     expect(response.status).toBe(400)
     expect(response.body.error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('returns the same single assistant conversation on repeated creation', async () => {
+    const token = await login(app, 'alex@example.com')
+    const first = await request(app.getHttpServer())
+      .post('/conversations')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ type: 'assistant' })
+    expect(first.status).toBe(201)
+    expect(first.body.type).toBe('assistant')
+    expect(first.body.participantIds).toEqual([SEED_USER_IDS.alex])
+
+    const second = await request(app.getHttpServer())
+      .post('/conversations')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ type: 'assistant' })
+    expect(second.status).toBe(201)
+    expect(second.body.id).toBe(first.body.id)
   })
 
   it('bumps lastMessageAt (updatedAt) and preview when a message is sent', async () => {

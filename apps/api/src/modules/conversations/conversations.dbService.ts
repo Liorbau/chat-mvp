@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import type { Conversation } from '@chat/contract'
+import type { Conversation, ConversationType } from '@chat/contract'
 import type { ClientSession, Model } from 'mongoose'
 import type { SeedConversation } from '../../db/store'
 import { Conversation as ConversationModel, type ConversationDocument } from './conversation.schema'
 
 export type ConversationDraft = {
+  type: ConversationType
   participantIds: string[]
   title?: string
   lastMessagePreview: string
@@ -15,6 +16,8 @@ export type ConversationDraft = {
 function toConversation(doc: ConversationDocument): Conversation {
   const base: Conversation = {
     id: doc._id,
+    // `?? 'user'` covers docs written before the type field existed.
+    type: doc.type ?? 'user',
     participantIds: doc.participantIds,
     lastMessagePreview: doc.lastMessagePreview,
     updatedAt: (doc.lastMessageAt ?? doc.createdAt).toISOString(),
@@ -49,9 +52,17 @@ export class ConversationsDbService {
     return doc === null ? undefined : toConversation(doc)
   }
 
+  async findAssistantByParticipant(userId: string): Promise<Conversation | undefined> {
+    const doc = await this.conversationModel
+      .findOne({ participantIds: userId, type: 'assistant' })
+      .exec()
+    return doc === null ? undefined : toConversation(doc)
+  }
+
   async create(draft: ConversationDraft): Promise<Conversation> {
     const doc = await this.conversationModel.create({
       _id: randomUUID(),
+      type: draft.type,
       participantIds: draft.participantIds,
       lastMessagePreview: draft.lastMessagePreview,
       lastMessageAt: new Date(),

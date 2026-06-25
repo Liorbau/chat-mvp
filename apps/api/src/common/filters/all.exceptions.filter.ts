@@ -10,6 +10,7 @@ import type { Response } from 'express'
 import { AppError } from '../../errors/AppError'
 import type { ApiErrorBody } from '../errors/error.envelope.types'
 import { toApiErrorBody } from '../errors/to.api.error.body'
+import { isDuplicateKeyError } from '../mongo/is.duplicate.key.error'
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -31,7 +32,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Mongo duplicate-key (E11000). The only unique index is users.email, so map
     // it to the same 409 the signup flow returns.
-    if (this.isDuplicateKeyError(exception)) {
+    if (isDuplicateKeyError(exception)) {
       response.status(HttpStatus.CONFLICT).json({
         error: {
           code: 'EMAIL_ALREADY_EXISTS',
@@ -67,14 +68,5 @@ export class AllExceptionsFilter implements ExceptionFilter {
   private fromAppError(error: AppError): ApiErrorBody {
     const base = { code: error.code, message: error.message }
     return { error: error.details === undefined ? base : { ...base, details: error.details } }
-  }
-
-  private isDuplicateKeyError(exception: unknown): boolean {
-    return (
-      typeof exception === 'object' &&
-      exception !== null &&
-      'code' in exception &&
-      (exception as { code: unknown }).code === 11000
-    )
   }
 }
