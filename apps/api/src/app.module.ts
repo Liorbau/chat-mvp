@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { AllExceptionsFilter } from './common/filters/all.exceptions.filter'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
 import { validateEnv } from './config/env.validation'
+import { AiModule } from './modules/ai/ai.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { ConversationsModule } from './modules/conversations/conversations.module'
 import { MessagesModule } from './modules/messages/messages.module'
@@ -27,6 +28,7 @@ import { UsersModule } from './modules/users/users.module'
     AuthModule,
     ConversationsModule,
     MessagesModule,
+    AiModule,
   ],
   providers: [
     {

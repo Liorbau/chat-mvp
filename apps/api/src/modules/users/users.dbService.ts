@@ -44,10 +44,17 @@ export class UsersDbService {
     return doc === null ? undefined : toStoredUser(doc)
   }
 
-  // One batched query (`$in`) instead of one lookup per id; projects only `_id`.
   async findExistingIds(userIds: string[]): Promise<Set<string>> {
     const docs = await this.userModel.find({ _id: { $in: userIds } }, { _id: 1 }).exec()
     return new Set(docs.map((doc) => doc._id))
+  }
+
+  async findByIds(userIds: string[]): Promise<User[]> {
+    if (userIds.length === 0) {
+      return []
+    }
+    const docs = await this.userModel.find({ _id: { $in: userIds } }).exec()
+    return docs.map(toStoredUser).map(toPublicUser)
   }
 
   async create(draft: StoredUserDraft): Promise<StoredUser> {

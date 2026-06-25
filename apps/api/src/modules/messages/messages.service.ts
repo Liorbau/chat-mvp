@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
-import type { GetMessagesResponse, SendMessageResponse } from '@chat/contract'
+import {
+  ASSISTANT_SENDER_ID,
+  type GetMessagesResponse,
+  type Message,
+  type SendMessageResponse,
+} from '@chat/contract'
 import type { Connection } from 'mongoose'
 import { AppError } from '../../errors/AppError'
 import { ConversationsService } from '../conversations/conversations.service'
@@ -76,12 +81,19 @@ export class MessagesService {
   }
 
   async createMessage(input: CreateMessageInput): Promise<SendMessageResponse> {
-    await this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
+    const conversation = await this.conversationsService.assertParticipant(
+      input.conversationId,
+      input.requesterId,
+    )
+    if (conversation.type === 'assistant') {
+      throw AppError.badRequest(
+        'VALIDATION_ERROR',
+        'Use the assistant endpoint to message an assistant conversation',
+      )
+    }
 
     const occurredAt = new Date()
     const createdAt = occurredAt.toISOString()
-    // Insert the message and bump the parent conversation's activity in one
-    // transaction so they never drift apart (requires a replica set).
     const message = await this.connection.transaction(async (session) => {
       const created = await this.messagesDbService.create(
         {
@@ -102,5 +114,27 @@ export class MessagesService {
     })
 
     return { message }
+  }
+
+  // Persists an assistant reply (senderId = ASSISTANT_SENDER_ID) and bumps the
+  // conversation's last-activity in one transaction. No participant check: the
+  // assistant is not a user, and the caller (AiService) already authorized the
+  // turn when it persisted the triggering user message.
+  async appendAssistantMessage(conversationId: string, content: string): Promise<Message> {
+    const occurredAt = new Date()
+    const createdAt = occurredAt.toISOString()
+    return this.connection.transaction(async (session) => {
+      const created = await this.messagesDbService.create(
+        { conversationId, senderId: ASSISTANT_SENDER_ID, content, createdAt },
+        session,
+      )
+      await this.conversationsService.recordMessageActivity(
+        conversationId,
+        created.content,
+        occurredAt,
+        session,
+      )
+      return created
+    })
   }
 }
