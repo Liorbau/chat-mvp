@@ -117,12 +117,9 @@ rather than deleting the history.
 
 ### `src/features/chat/api/`
 
-- `chatApi.types.ts`
-  - Contract-first shared types for frontend and backend:
-    - `User`, `Conversation`, `Message`
-    - `GetMessagesResponse`
-    - `SendMessageRequest`, `SendMessageResponse`
-    - `LoginRequest`, `LoginResponse`, `ApiError`
+- Contract-first shared types live in the `@chat/contract` package and are
+  imported directly (`User`, `Conversation`, `Message`, `GetMessagesResponse`,
+  `SendMessageRequest`/`SendMessageResponse`, `LoginRequest`, `ApiError`, …).
 
 - `apiClient.ts`
   - Fetcher module — the only module that talks to the network (or mock).
@@ -138,12 +135,6 @@ rather than deleting the history.
   - Pure reducer (no React imports) used by `useOptimisticMessages`.
   - State: `messages`, `pendingMessages`, `error`.
   - Actions: `LOAD_SUCCESS`, `SEND_START`, `SEND_SUCCESS`, `SEND_FAILURE`.
-
-### `src/features/chat/mocks/`
-
-- `mockData.ts` — in-memory seed arrays matching `chatApi.types.ts`.
-- `mockServer.ts` — async functions simulating the backend contract (latency,
-  random failures for error-state testing).
 
 ### `src/features/chat/__tests__/`
 
@@ -235,8 +226,7 @@ chat-mvp/
 
 > Shared types: `packages/contract` is the single source of truth for domain and
 > transport types used by both apps (`User`, `Conversation`, `Message`, login and
-> message DTOs, structured `ApiError`). `apps/web/src/features/chat/api/chatApi.types.ts`
-> re-exports from `@chat/contract`; backend imports `@chat/contract` directly.
+> message DTOs, structured `ApiError`). Both apps import `@chat/contract` directly.
 
 ## Layering and Responsibilities
 
@@ -781,6 +771,6 @@ module; the connection (`MongooseModule.forRootAsync`, reads `MONGO_URI` from
 ## Documentation Alignment
 
 - Keep this file aligned with implementation as structure evolves.
-- Keep `API_CONTRACT.md` aligned with `chatApi.types.ts` and `@chat/contract` usage in `apps/api`.
+- Keep `API_CONTRACT.md` aligned with `@chat/contract` usage across `apps/web` and `apps/api`.
 - If architecture decisions change, update this file in the same PR, in the
   relevant week's section.
