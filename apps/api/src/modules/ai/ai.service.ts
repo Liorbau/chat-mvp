@@ -1,11 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import { ASSISTANT_SENDER_ID, type AssistantSseEvent, type Message } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
 import { ConversationsService } from '../conversations/conversations.service'
 import { MessagesService } from '../messages/messages.service'
 import { ConversationMemoryService } from './conversation.memory.service'
 import {
-  LlmProvider,
+  LLM_PROVIDER,
+  type LlmProvider,
   type LlmMessage,
   type LlmRequest,
   type LlmStopReason,
@@ -27,7 +28,7 @@ export class AiService {
     private readonly conversationsService: ConversationsService,
     private readonly messagesService: MessagesService,
     private readonly conversationMemory: ConversationMemoryService,
-    private readonly llmProvider: LlmProvider,
+    @Inject(LLM_PROVIDER) private readonly llmProvider: LlmProvider,
     private readonly aiTools: AiToolsService,
   ) {}
 
@@ -68,7 +69,7 @@ export class AiService {
         }
 
         yield { type: 'status', state: 'tool_call' }
-        messages.push({ role: 'assistant', toolUses: result.toolUses })
+        messages.push({ role: 'assistant', content: result.text, toolUses: result.toolUses })
         const results = await Promise.all(
           result.toolUses.map((toolUse) => this.aiTools.execute(toolUse, input.requesterId)),
         )

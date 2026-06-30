@@ -7,7 +7,7 @@ import { UsersModule } from '../users/users.module'
 import { AiController } from './ai.controller'
 import { AiService } from './ai.service'
 import { ConversationMemoryService } from './conversation.memory.service'
-import { LlmProvider } from './llm.provider'
+import { LLM_PROVIDER, type LlmProvider } from './llm.provider'
 import { AnthropicProvider } from './providers/anthropic.provider'
 import { OpenAiProvider } from './providers/openai.provider'
 import { AiToolsService } from './tools/ai.tools.service'
@@ -23,19 +23,16 @@ import { SummarizeRecentMessagesTool } from './tools/summarize.recent.messages.t
     AiToolsService,
     SummarizeRecentMessagesTool,
     GetMyNameTool,
-    OpenAiProvider,
-    AnthropicProvider,
     {
-      provide: LlmProvider,
-      useFactory: (
-        configService: ConfigService,
-        openAi: OpenAiProvider,
-        anthropic: AnthropicProvider,
-      ): LlmProvider =>
-        configService.get<string>('LLM_PROVIDER') === 'anthropic' ? anthropic : openAi,
-      inject: [ConfigService, OpenAiProvider, AnthropicProvider],
+      // Build only the selected provider; the unused one is never instantiated.
+      provide: LLM_PROVIDER,
+      useFactory: (configService: ConfigService): LlmProvider =>
+        configService.get<string>('LLM_PROVIDER') === 'anthropic'
+          ? new AnthropicProvider(configService)
+          : new OpenAiProvider(configService),
+      inject: [ConfigService],
     },
   ],
-  exports: [ConversationMemoryService, LlmProvider],
+  exports: [ConversationMemoryService, LLM_PROVIDER],
 })
 export class AiModule {}

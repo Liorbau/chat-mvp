@@ -1,14 +1,20 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { ConversationsService } from '../../conversations/conversations.service'
 import { MessagesDbService } from '../../messages/messages.dbService'
 import { UsersService } from '../../users/users.service'
-import { LlmProvider, type LlmToolDef, type LlmToolResult, type LlmToolUse } from '../llm.provider'
+import {
+  LLM_PROVIDER,
+  type LlmProvider,
+  type LlmToolDef,
+  type LlmToolResult,
+  type LlmToolUse,
+} from '../llm.provider'
 import { SUMMARIZE_SYSTEM_PROMPT } from '../prompts/summarize.prompt'
-import { AiTool } from './ai.tool'
+import type { AiTool } from './ai.tool'
 import { InputSchema, OutputSchema, formatTranscript, toToolInputSchema } from './summarize.shared'
 
 @Injectable()
-export class SummarizeRecentMessagesTool extends AiTool {
+export class SummarizeRecentMessagesTool implements AiTool {
   readonly definition: LlmToolDef = {
     name: 'summarize_my_recent_messages',
     description:
@@ -20,10 +26,8 @@ export class SummarizeRecentMessagesTool extends AiTool {
     private readonly conversationsService: ConversationsService,
     private readonly messagesDbService: MessagesDbService,
     private readonly usersService: UsersService,
-    private readonly llmProvider: LlmProvider,
-  ) {
-    super()
-  }
+    @Inject(LLM_PROVIDER) private readonly llmProvider: LlmProvider,
+  ) {}
 
   // All reads are scoped to the JWT requesterId, never to model-supplied input.
   async execute(toolUse: LlmToolUse, requesterId: string): Promise<LlmToolResult> {

@@ -3,14 +3,14 @@ import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { ZodType } from 'zod'
-import {
+import type {
   LlmProvider,
-  type LlmMessage,
-  type LlmRequest,
-  type LlmStopReason,
-  type LlmStreamEvent,
-  type LlmToolUse,
-  type StructuredRequest,
+  LlmMessage,
+  LlmRequest,
+  LlmStopReason,
+  LlmStreamEvent,
+  LlmToolUse,
+  StructuredRequest,
 } from '../llm.provider'
 
 const DEFAULT_MODEL = 'claude-opus-4-8'
@@ -31,16 +31,15 @@ function toAnthropicMessage(message: LlmMessage): Anthropic.MessageParam {
       })),
     }
   }
-  if ('toolUses' in message) {
-    return {
-      role: 'assistant',
-      content: message.toolUses.map((toolUse) => ({
-        type: 'tool_use',
-        id: toolUse.id,
-        name: toolUse.name,
-        input: toolUse.input,
-      })),
+  if (message.toolUses !== undefined && message.toolUses.length > 0) {
+    const blocks: Anthropic.ContentBlockParam[] = []
+    if (message.content !== '') {
+      blocks.push({ type: 'text', text: message.content })
     }
+    for (const toolUse of message.toolUses) {
+      blocks.push({ type: 'tool_use', id: toolUse.id, name: toolUse.name, input: toolUse.input })
+    }
+    return { role: 'assistant', content: blocks }
   }
   return { role: 'assistant', content: message.content }
 }
@@ -53,13 +52,12 @@ function toStopReason(reason: string | null): LlmStopReason {
 }
 
 @Injectable()
-export class AnthropicProvider extends LlmProvider {
+export class AnthropicProvider implements LlmProvider {
   private client?: Anthropic
   private readonly model: string
   private readonly maxTokens: number
 
   constructor(private readonly configService: ConfigService) {
-    super()
     this.model = configService.get<string>('LLM_MODEL') ?? DEFAULT_MODEL
     this.maxTokens = configService.get<number>('LLM_MAX_TOKENS') ?? DEFAULT_MAX_TOKENS
   }

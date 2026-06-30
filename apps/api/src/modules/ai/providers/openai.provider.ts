@@ -3,14 +3,14 @@ import { ConfigService } from '@nestjs/config'
 import OpenAI from 'openai'
 import { zodResponseFormat } from 'openai/helpers/zod'
 import type { ZodType } from 'zod'
-import {
+import type {
   LlmProvider,
-  type LlmMessage,
-  type LlmRequest,
-  type LlmStopReason,
-  type LlmStreamEvent,
-  type LlmToolUse,
-  type StructuredRequest,
+  LlmMessage,
+  LlmRequest,
+  LlmStopReason,
+  LlmStreamEvent,
+  LlmToolUse,
+  StructuredRequest,
 } from '../llm.provider'
 
 const DEFAULT_MODEL = 'gpt-4o'
@@ -30,10 +30,10 @@ function toOpenAiMessages(request: {
       for (const result of message.results) {
         messages.push({ role: 'tool', tool_call_id: result.id, content: result.content })
       }
-    } else if ('toolUses' in message) {
+    } else if (message.toolUses !== undefined && message.toolUses.length > 0) {
       messages.push({
         role: 'assistant',
-        content: null,
+        content: message.content === '' ? null : message.content,
         tool_calls: message.toolUses.map((toolUse) => ({
           id: toolUse.id,
           type: 'function',
@@ -74,13 +74,12 @@ function toStopReason(reason: string | null | undefined): LlmStopReason {
 }
 
 @Injectable()
-export class OpenAiProvider extends LlmProvider {
+export class OpenAiProvider implements LlmProvider {
   private client?: OpenAI
   private readonly model: string
   private readonly maxTokens: number
 
   constructor(private readonly configService: ConfigService) {
-    super()
     this.model = configService.get<string>('LLM_MODEL') ?? DEFAULT_MODEL
     this.maxTokens = configService.get<number>('LLM_MAX_TOKENS') ?? DEFAULT_MAX_TOKENS
   }

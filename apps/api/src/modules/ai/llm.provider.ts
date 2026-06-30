@@ -16,8 +16,7 @@ export type LlmToolResult = { id: string; content: string; isError?: boolean }
 
 export type LlmMessage =
   | { role: 'user'; content: string }
-  | { role: 'assistant'; content: string }
-  | { role: 'assistant'; toolUses: LlmToolUse[] }
+  | { role: 'assistant'; content: string; toolUses?: LlmToolUse[] }
   | { role: 'tool'; results: LlmToolResult[] }
 
 export type LlmRequest = {
@@ -38,8 +37,9 @@ export type LlmStreamEvent =
   | { type: 'text'; text: string }
   | { type: 'done'; stopReason: LlmStopReason; toolUses: LlmToolUse[]; text: string }
 
-export abstract class LlmProvider {
-  abstract streamReply(request: LlmRequest): AsyncIterable<LlmStreamEvent>
-
-  abstract generateStructured<T>(request: StructuredRequest, schema: ZodType<T>): Promise<T>
+export type LlmProvider = {
+  streamReply(request: LlmRequest): AsyncIterable<LlmStreamEvent>
+  generateStructured<T>(request: StructuredRequest, schema: ZodType<T>): Promise<T>
 }
+
+export const LLM_PROVIDER = Symbol('LLM_PROVIDER')
