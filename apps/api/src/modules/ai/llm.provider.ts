@@ -37,7 +37,7 @@ export type LlmStreamEvent =
   | { type: 'text'; text: string }
   | { type: 'done'; stopReason: LlmStopReason; toolUses: LlmToolUse[]; text: string }
 
-export type LlmProvider = {
+export interface LlmProvider {
   streamReply(request: LlmRequest): AsyncIterable<LlmStreamEvent>
   generateStructured<T>(request: StructuredRequest, schema: ZodType<T>): Promise<T>
 }

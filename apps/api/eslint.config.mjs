@@ -11,7 +11,7 @@ export default defineConfig([
     rules: {
       curly: ['error', 'all'],
       '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+      '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
     languageOptions: {

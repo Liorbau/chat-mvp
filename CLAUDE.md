@@ -48,11 +48,13 @@ architecture/data-model/API/auth/migration decision points. See
 7. Use typed arrays + `.map()` for repeated options or repeated UI/logic branches.
 8. Add edge-case tests for mutation paths (for example, non-existent IDs).
 9. Keep formatting conventions strict (EOF newline, lint and format clean).
-10. Use `type` aliases for object/data shapes instead of `interface`. A
-    contract with no shared behaviour is a `type`, not an `abstract class`
-    (abstract classes are for shared state/implementation). Since a `type` is
-    erased at runtime, when NestJS must inject it, pair the `type` with a
-    `Symbol` injection token and `@Inject(TOKEN)`; implementers use `implements`.
+10. `interface` vs `type` (rule of thumb): use `interface` for a contract many
+    kinds of things implement (a blueprint for implementers, e.g. `LlmProvider`,
+    `AiTool`); use `type` for a data shape — the thing itself (e.g. `LlmMessage`,
+    DTO/response shapes). Neither should be an `abstract class` when there is no
+    shared state/implementation. Both are erased at runtime, so when NestJS must
+    inject a contract, pair it with a `Symbol` injection token and
+    `@Inject(TOKEN)`; implementers use `implements`.
 11. Keep a single source of truth for shared state.
 12. Guard against stale async results before writing state.
 13. Keep leaf/presentational components decoupled from infra concerns.
@@ -270,10 +272,10 @@ Concepts to show off in the implementation, beyond bare acceptance criteria:
 
 #### Reconciliation Notes (learning notes vs. formal spec — formal wins)
 
-- **Provider contract is a `type` + `Symbol` DI token, not `interface
-  ILlmProvider` nor an abstract class.** The swap-able-abstraction concept is
-  required; the spelling follows principle #10 (`type`, no `I`-prefix). Because a
-  `type` is erased at runtime, inject via `const LLM_PROVIDER = Symbol(...)` and
+- **Provider contract is an `interface` + `Symbol` DI token, not an abstract
+  class nor `interface ILlmProvider`.** It's a blueprint many providers implement,
+  so per principle #10 it's an `interface` (no `I`-prefix). Because an interface
+  is erased at runtime, inject via `const LLM_PROVIDER = Symbol(...)` and
   `@Inject(LLM_PROVIDER)`; providers `implement LlmProvider`. (Same for `AiTool`.)
 - **Eval = a script, not a CI gate (minimum).** Formal requires a script that
   runs 5-10 prompts and prints responses, with pass/fail documented in the PR.
