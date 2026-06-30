@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
 import type { OptimisticMessage } from '../hooks/optimisticMessages.types'
+import { useScrollToBottom } from '../hooks/useScrollToBottom'
 import MessageItem from './MessageItem'
 
 type MessageListProps = {
@@ -23,11 +23,7 @@ const LIST_END_MARKER_STYLE = {
 }
 
 function MessageList({ messages, currentUserId, getDisplayName }: MessageListProps) {
-  const listEndReference = useRef<HTMLLIElement | null>(null)
-
-  useEffect(() => {
-    listEndReference.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [messages])
+  const listEndReference = useScrollToBottom<HTMLLIElement>(messages.length > 0, [messages])
 
   return (
     <ul style={MESSAGE_LIST_STYLE}>

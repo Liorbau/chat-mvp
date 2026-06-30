@@ -9,6 +9,12 @@ import { UsersDbService } from '../modules/users/users.dbService'
 async function seed(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule)
   try {
+    const existingUsers = await app.get(UsersDbService).list()
+    if (existingUsers.length > 0) {
+      console.log(`Skipping seed: database already has ${existingUsers.length} users.`)
+      return
+    }
+
     const bcryptRounds = app.get(ConfigService).getOrThrow<number>('BCRYPT_ROUNDS')
     const users = buildSeedUsers(bcryptRounds)
     await app.get(UsersDbService).reset(users)

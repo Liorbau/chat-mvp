@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react'
-import type { User } from '../api/chatApi.types'
+import type { User } from '@chat/contract'
 import { ApiRequestError, createConversation } from '../api/apiClient'
 
 type NewConversationProps = {
@@ -60,7 +60,9 @@ function NewConversation({ currentUserId, users, onCreated }: NewConversationPro
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isBusy, setIsBusy] = useState(false)
 
-  const others = users.filter((candidate) => candidate.id !== currentUserId)
+  const others = users
+    .filter((candidate) => candidate.id !== currentUserId)
+    .sort((left, right) => left.name.localeCompare(right.name))
 
   function open(): void {
     setIsOpen(true)

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Message } from '../api/chatApi.types'
+import type { Message } from '@chat/contract'
 import { getMessages } from '../api/apiClient'
 import type { LoadStatus } from '../state/chatStatus'
 

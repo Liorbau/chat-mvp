@@ -17,7 +17,7 @@ Before writing code:
 
 When writing code:
 - Prefer small, reviewable diffs.
-- Change at most 3 files or around 150 lines before pausing, unless explicitly approved.
+- Change at most 3 files or around 40 lines before pausing, unless explicitly approved.
 - Implement step by step.
 - Explain why each changed file is needed.
 - Avoid unnecessary abstractions.
@@ -54,3 +54,9 @@ After coding:
 - List remaining risks or TODOs.
 - For non-trivial tasks, ask 1-3 questions to check that the human understands the implementation.
 <!-- captain:end -->
+
+## Project Instructions Pointer
+
+`CLAUDE.md` is the execution source of truth for this repo. Before working,
+open and follow `./CLAUDE.md` (engineering principles, current-week scope, and
+acceptance criteria), then `./ARCHITECTURE.md` and `./API_CONTRACT.md`.

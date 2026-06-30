@@ -1,5 +1,5 @@
 import type { LoadStatus } from '../state/chatStatus'
-import type { Message } from '../api/chatApi.types'
+import type { Message } from '@chat/contract'
 
 export type MessageDeliveryStatus = 'pending' | 'sent'
 

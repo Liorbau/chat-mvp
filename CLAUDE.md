@@ -3,7 +3,7 @@
 ## Project Context
 
 - Masterschool Fellowship (AI Software Engineering); ongoing multi-week project.
-- Current phase: **Week 5 (MongoDB persistence via Mongoose)**.
+- Current phase: **Week 6 (AI Assistant Mode — LLM, SSE streaming, tool calling)**.
 - This file tracks stable engineering principles, cross-week goals, and the
   current week's requirements.
 
@@ -48,7 +48,11 @@ architecture/data-model/API/auth/migration decision points. See
 7. Use typed arrays + `.map()` for repeated options or repeated UI/logic branches.
 8. Add edge-case tests for mutation paths (for example, non-existent IDs).
 9. Keep formatting conventions strict (EOF newline, lint and format clean).
-10. Use `type` aliases for object/data shapes instead of `interface`.
+10. Use `type` aliases for object/data shapes instead of `interface`. A
+    contract with no shared behaviour is a `type`, not an `abstract class`
+    (abstract classes are for shared state/implementation). Since a `type` is
+    erased at runtime, when NestJS must inject it, pair the `type` with a
+    `Symbol` injection token and `@Inject(TOKEN)`; implementers use `implements`.
 11. Keep a single source of truth for shared state.
 12. Guard against stale async results before writing state.
 13. Keep leaf/presentational components decoupled from infra concerns.
@@ -61,6 +65,14 @@ architecture/data-model/API/auth/migration decision points. See
 20. Logging should include enough context (method, path, status, duration, key IDs when relevant).
 21. Never store or log secrets or plaintext passwords; hash with bcrypt and load secrets (`JWT_SECRET`, `MONGO_URI`) from env only.
 22. No `any`; declare explicit return types on every function and method.
+23. Never introduce a `Promise<void>` (or any void-returning function) on a
+    guess. When a function would naturally return nothing, pause and ask the
+    developer what it should do (return a value, restructure, etc.); the
+    developer chooses.
+24. Keep each function/class/method at a single level of abstraction. If an
+    injectable (or any unit) otherwise only orchestrates named helpers and then
+    contains one inline ad-hoc block, that mixed altitude is a smell — extract
+    the block into a peer helper at the same level as the others.
 
 ## Naming and Commit Conventions
 
@@ -96,7 +108,7 @@ architecture/data-model/API/auth/migration decision points. See
   `@CurrentUser`), `class-validator` DTOs, participant authorization (403), FE
   login/signup/logout. API contract preserved.
 
-### Week 5 (Current) — MongoDB Persistence (Mongoose)
+### Week 5 (Completed) — MongoDB Persistence (Mongoose)
 
 #### Data Model Decision (PR defense)
 
@@ -159,6 +171,142 @@ gets its own database instead of sharing `chat-test`).
 - Keep the DbService (DAO) seam; services stay framework/DB-agnostic.
 - No `any`; explicit return types; preserve the error envelope and DTO contract.
 - Mongo must run as a replica set (`docker compose up -d`); seed via `npm run seed`.
+
+### Week 6 (Current) — AI Assistant Mode
+
+#### Spec summary
+
+Add an AI assistant mode. New conversation type `assistant`: posting a user
+message triggers an LLM call; the response streams back via Server-Sent Events
+(token deltas + a final "done" event); the FE renders tokens in real time; the
+full assistant message persists to MongoDB after streaming completes. Wire at
+least one tool the model can call against the authenticated user's own data.
+
+#### Spec rules
+
+- FE creates an assistant conversation via `POST /conversations` with
+  `type: "assistant"`.
+- Posting a user message to an assistant conversation triggers the LLM call.
+- Stream the response via SSE (token deltas, then a final "done" event).
+- Persist the full assistant message to MongoDB after streaming completes.
+- FE renders streaming tokens live (no waiting for the full response).
+- Multi-turn assistant conversations preserve context within sensible limits.
+
+#### Tools (≥1 required)
+
+Pick at least one:
+
+- `summarize_my_recent_messages(limit: number)` — summary of the user's last N
+  messages.
+- `list_my_conversations()` — the user's conversations.
+- `search_my_messages(query: string)` — keyword search over the user's messages.
+
+Tools must:
+
+- Be scoped to the authenticated user only — never leak another user's data.
+- Validate inputs with Zod.
+- Return structured results the model can reason over.
+
+#### Eval (lightweight)
+
+- 5-10 hand-written test prompts in a JSON file.
+- A script that runs each prompt against the assistant and prints the response.
+- Document which prompts succeed / fail in the PR description.
+
+#### Tech constraints
+
+- NestJS backend extended.
+- Anthropic OR OpenAI (choice). Keep the call behind a thin abstraction so
+  swapping providers is feasible.
+- API key from env (`ANTHROPIC_API_KEY` or `OPENAI_API_KEY`). Never logged,
+  never committed; update `.env.example`.
+- SSE for streaming. Nest controller exposes a streaming endpoint; FE consumes
+  via `EventSource` or a `fetch` streaming body reader.
+- Zod for tool input/output schemas. At least one Zod-validated structured
+  output use case in the codebase.
+- No `any`.
+- Prompts live in source files (not inline magic strings) and are commented for
+  intent.
+
+#### Acceptance criteria
+
+- [ ] Assistant conversation type works end to end.
+- [ ] Tokens stream in real time on the FE — no waiting for the full response.
+- [ ] Assistant messages persist to MongoDB after streaming.
+- [ ] ≥1 tool implemented; inputs validated with Zod; returns scoped to the
+      authenticated user.
+- [ ] Multi-turn assistant conversations preserve context within sensible limits.
+- [ ] Prompts in source files, commented for intent.
+- [ ] ≥1 Zod-validated structured output use case.
+- [ ] Small eval set committed; results documented in the PR description.
+- [ ] API keys env-only; `.env.example` updated; secrets never logged.
+- [ ] `npx tsc --noEmit` passes.
+
+#### Submission
+
+- PR on the assigned repo. PR description: summary, provider chosen + why,
+  tool(s) implemented, eval results, key tradeoffs (cost, latency, prompt
+  design). Mentor reviews Sunday.
+
+#### Learning Goals to Demonstrate (personal, this week)
+
+Concepts to show off in the implementation, beyond bare acceptance criteria:
+
+- **LLM provider abstraction.** One contract, one concrete impl (Anthropic or
+  OpenAI). No provider SDK calls scattered through controllers/services —
+  everything goes through the abstraction so providers are swappable.
+- **Streaming with SSE.** Backend SSE endpoint streams tokens as the LLM emits
+  them; FE renders partial text as it arrives.
+- **Tool calling.** Model requests a tool -> backend parses the call, validates
+  args, executes the tool, feeds the result back to the model.
+- **Structured outputs & validation.** When the model must return structured
+  data, validate against a Zod schema and **fail closed** on invalid output —
+  never trust raw JSON/text.
+- **Safety basics.** Resist prompt injection (model can't override rules or gain
+  extra access); never execute model output as code/SQL/commands; secrets in env
+  only, never in code or logs.
+- **Eval basics.** Hand-written prompt fixtures; a script runs them against the
+  assistant; document pass/fail.
+
+#### Reconciliation Notes (learning notes vs. formal spec — formal wins)
+
+- **Provider contract is a `type` + `Symbol` DI token, not `interface
+  ILlmProvider` nor an abstract class.** The swap-able-abstraction concept is
+  required; the spelling follows principle #10 (`type`, no `I`-prefix). Because a
+  `type` is erased at runtime, inject via `const LLM_PROVIDER = Symbol(...)` and
+  `@Inject(LLM_PROVIDER)`; providers `implement LlmProvider`. (Same for `AiTool`.)
+- **Eval = a script, not a CI gate (minimum).** Formal requires a script that
+  runs 5-10 prompts and prints responses, with pass/fail documented in the PR.
+  An automated scorer with an `avgScore >= 0.7` threshold gating CI is optional
+  enrichment, not a requirement — build it only as a learning extra.
+- **Enrichment, not graded by the formal rubric:** feature flag
+  `ASSISTANT_MODE_ENABLED` (keeps the old chat flow working), rate
+  limiting/quotas. Good practice; do not over-build past the spec.
+
+#### Architecture Decisions (locked)
+
+- **Assistant turn = one server-orchestrated streaming endpoint** in
+  `ai.controller` (e.g. `POST /ai/conversations/:id/messages`). It persists the
+  user message (reusing `MessagesService.createMessage`), runs the LLM+tool
+  loop, streams tokens live, then persists the assistant message. Module arrow
+  is one-way `ai -> messages` (no circular dep). The FE forks on
+  `conversation.type` at the call site (it already knows the type for UX), so a
+  separate URL — not a dual-response route — keeps the contract clean.
+- **Creating an assistant conversation stays `POST /conversations`** with a new
+  `type: 'user' | 'assistant'` field (default `'user'`) on the schema +
+  `CreateConversationDto`. Not an `ai.controller` concern. (`'user'` names the
+  participant kind; note it overlaps the message-author `Role` `'user'` — same
+  word, different axis.)
+- **Cross-user isolation is enforced in code, not the prompt.** Every tool runs
+  with `requesterId` from the verified JWT (`@CurrentUser`), never from model
+  output; same `assertParticipant` rule. No secrets in the system prompt.
+  Prompt-level guardrails are defense-in-depth only.
+
+#### Status
+
+Not started — planning pending. (`apps/api/src/modules/ai/` scaffolding exists
+on the branch but is unreviewed; `conversation-memory.service.ts` is reusable,
+the `streamFake`/`@Sse` controller is throwaway.)
 
 ## Backend Architecture and Clean Code
 

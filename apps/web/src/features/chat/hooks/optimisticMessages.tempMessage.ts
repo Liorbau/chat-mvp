@@ -1,4 +1,4 @@
-import type { Message } from '../api/chatApi.types'
+import type { Message } from '@chat/contract'
 
 export function createTemporaryMessage(
   conversationId: string,

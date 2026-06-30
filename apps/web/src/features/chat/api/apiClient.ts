@@ -1,14 +1,16 @@
 import type {
   ApiError,
+  AssistantSseEvent,
   AuthResponse,
   Conversation,
+  ConversationType,
   GetMessagesResponse,
   LoginRequest,
   SendMessageRequest,
   SendMessageResponse,
   SignupRequest,
   User,
-} from './chatApi.types'
+} from '@chat/contract'
 import { clearStoredAuth, getToken } from '../../auth/authStorage'
 
 const API_BASE_URL: string =
@@ -37,37 +39,46 @@ function isApiError(value: unknown): value is ApiError {
   )
 }
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const headers = new Headers(init.headers)
-  if (init.body !== undefined) {
+// Maps a non-OK response to an ApiRequestError (clearing auth on 401).
+async function throwApiError(response: Response): Promise<never> {
+  if (response.status === 401) {
+    clearStoredAuth()
+  }
+  const body: unknown = await response.json().catch(() => null)
+  if (isApiError(body)) {
+    throw new ApiRequestError(
+      response.status,
+      body.error.code,
+      body.error.message,
+      body.error.details,
+    )
+  }
+  throw new ApiRequestError(
+    response.status,
+    'UNKNOWN',
+    `Request failed (${response.status})`,
+    undefined,
+  )
+}
+
+function buildHeaders(hasBody: boolean, init?: HeadersInit): Headers {
+  const headers = new Headers(init)
+  if (hasBody) {
     headers.set('Content-Type', 'application/json')
   }
   const token = getToken()
   if (token !== null) {
     headers.set('Authorization', `Bearer ${token}`)
   }
+  return headers
+}
 
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const headers = buildHeaders(init.body !== undefined, init.headers)
   const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
 
   if (!response.ok) {
-    if (response.status === 401) {
-      clearStoredAuth()
-    }
-    const body: unknown = await response.json().catch(() => null)
-    if (isApiError(body)) {
-      throw new ApiRequestError(
-        response.status,
-        body.error.code,
-        body.error.message,
-        body.error.details,
-      )
-    }
-    throw new ApiRequestError(
-      response.status,
-      'UNKNOWN',
-      `Request failed (${response.status})`,
-      undefined,
-    )
+    await throwApiError(response)
   }
 
   if (response.status === 204) {
@@ -78,8 +89,51 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export type CreateConversationInput = {
+  type?: ConversationType
   title?: string
-  participantIds: string[]
+  participantIds?: string[]
+}
+
+export async function streamAssistant(
+  conversationId: string,
+  content: string,
+  onEvent: (event: AssistantSseEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/ai/conversations/${conversationId}/messages`, {
+    method: 'POST',
+    headers: buildHeaders(true),
+    body: JSON.stringify({ content }),
+    signal,
+  })
+
+  if (!response.ok || response.body === null) {
+    await throwApiError(response)
+    return
+  }
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) {
+      break
+    }
+    buffer += decoder.decode(value, { stream: true })
+    let boundary = buffer.indexOf('\n\n')
+    while (boundary !== -1) {
+      const frame = buffer.slice(0, boundary).trim()
+      buffer = buffer.slice(boundary + 2)
+      if (frame.startsWith('data:')) {
+        const json = frame.slice(5).trim()
+        if (json.length > 0) {
+          onEvent(JSON.parse(json) as AssistantSseEvent)
+        }
+      }
+      boundary = buffer.indexOf('\n\n')
+    }
+  }
 }
 
 export async function getConversations(): Promise<Conversation[]> {

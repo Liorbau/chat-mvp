@@ -26,6 +26,10 @@ export class UsersService {
     return this.usersDbService.list()
   }
 
+  async findByIds(userIds: string[]): Promise<User[]> {
+    return this.usersDbService.findByIds(userIds)
+  }
+
   async findExistingIds(userIds: string[]): Promise<Set<string>> {
     return this.usersDbService.findExistingIds(userIds)
   }

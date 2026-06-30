@@ -7,6 +7,9 @@ import { Message as MessageModel, type MessageDocument } from './message.schema'
 
 export type MessageDraft = Omit<Message, 'id'>
 
+// One $group bucket from listRecentForConversations' aggregation.
+type ConversationMessageGroup = { docs: MessageDocument[] }
+
 export type MessagePageCursor = {
   createdAt: string
   id: string
@@ -94,6 +97,34 @@ export class MessagesDbService {
       throw new Error('Failed to create message')
     }
     return toMessage(doc)
+  }
+
+  // Most recent `limit` messages, returned oldest-first for LLM context.
+  async listRecent(conversationId: string, limit: number): Promise<Message[]> {
+    const docsDesc = await this.messageModel
+      .find({ conversationId })
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .exec()
+    return docsDesc.reverse().map(toMessage)
+  }
+
+  async listRecentForConversations(
+    conversationIds: string[],
+    perConversationLimit: number,
+  ): Promise<Message[]> {
+    if (conversationIds.length === 0) {
+      return []
+    }
+    const groups = await this.messageModel
+      .aggregate<ConversationMessageGroup>([
+        { $match: { conversationId: { $in: conversationIds } } },
+        { $sort: { createdAt: -1, _id: -1 } },
+        { $group: { _id: '$conversationId', docs: { $push: '$$ROOT' } } },
+        { $project: { docs: { $slice: ['$docs', perConversationLimit] } } },
+      ])
+      .exec()
+    return groups.flatMap((group) => group.docs.map(toMessage))
   }
 
   async reset(drafts: MessageDraft[]): Promise<void> {

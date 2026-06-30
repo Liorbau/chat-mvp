@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { User } from '../api/chatApi.types'
+import type { User } from '@chat/contract'
 import { ApiRequestError, getConversations, signup } from '../api/apiClient'
 import { clearStoredAuth, getToken, saveAuth } from '../../auth/authStorage'
 
