@@ -48,7 +48,11 @@ architecture/data-model/API/auth/migration decision points. See
 7. Use typed arrays + `.map()` for repeated options or repeated UI/logic branches.
 8. Add edge-case tests for mutation paths (for example, non-existent IDs).
 9. Keep formatting conventions strict (EOF newline, lint and format clean).
-10. Use `type` aliases for object/data shapes instead of `interface`.
+10. Use `type` aliases for object/data shapes instead of `interface`. A
+    contract with no shared behaviour is a `type`, not an `abstract class`
+    (abstract classes are for shared state/implementation). Since a `type` is
+    erased at runtime, when NestJS must inject it, pair the `type` with a
+    `Symbol` injection token and `@Inject(TOKEN)`; implementers use `implements`.
 11. Keep a single source of truth for shared state.
 12. Guard against stale async results before writing state.
 13. Keep leaf/presentational components decoupled from infra concerns.
@@ -266,11 +270,11 @@ Concepts to show off in the implementation, beyond bare acceptance criteria:
 
 #### Reconciliation Notes (learning notes vs. formal spec — formal wins)
 
-- **Provider contract is an abstract class / DI token, not `interface
-  ILlmProvider`.** The swap-able-abstraction concept is required; the `I`-prefix
-  spelling is not this repo's style (principle #10 prefers `type`; NestJS DI
-  cannot inject an erased TS `interface`). Use an abstract class `LlmProvider`
-  (or an injection token).
+- **Provider contract is a `type` + `Symbol` DI token, not `interface
+  ILlmProvider` nor an abstract class.** The swap-able-abstraction concept is
+  required; the spelling follows principle #10 (`type`, no `I`-prefix). Because a
+  `type` is erased at runtime, inject via `const LLM_PROVIDER = Symbol(...)` and
+  `@Inject(LLM_PROVIDER)`; providers `implement LlmProvider`. (Same for `AiTool`.)
 - **Eval = a script, not a CI gate (minimum).** Formal requires a script that
   runs 5-10 prompts and prints responses, with pass/fail documented in the PR.
   An automated scorer with an `avgScore >= 0.7` threshold gating CI is optional
