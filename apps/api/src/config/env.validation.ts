@@ -58,6 +58,14 @@ export class EnvironmentVariables {
   @IsInt()
   @Min(1)
   LLM_MAX_TOKENS: number = 2048
+
+  @IsString()
+  @MinLength(1)
+  VOYAGE_API_KEY!: string
+
+  @IsString()
+  @MinLength(1)
+  VECTOR_INDEX_NAME: string = 'kb_chunks_vector'
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {

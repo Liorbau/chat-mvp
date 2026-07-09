@@ -1,4 +1,4 @@
-import type { Message } from '@chat/contract'
+import type { Citation, Message } from '@chat/contract'
 
 export type AssistantStatus = 'idle' | 'thinking' | 'tool_call'
 
@@ -18,7 +18,10 @@ export type AssistantAction =
   | { type: 'USER_MESSAGE'; payload: { tempId: string; message: Message } }
   | { type: 'STATUS'; payload: { status: AssistantStatus } }
   | { type: 'TOKEN'; payload: { value: string } }
-  | { type: 'DONE'; payload: { messageId: string; senderId: string; createdAt: string } }
+  | {
+      type: 'DONE'
+      payload: { messageId: string; senderId: string; createdAt: string; citations?: Citation[] }
+    }
   | { type: 'STREAM_ERROR'; payload: { error: string; tempId?: string } }
   | { type: 'STREAM_END' }
 
@@ -75,6 +78,9 @@ export function assistantChatReducer(
             senderId: action.payload.senderId,
             content: state.streamingText ?? '',
             createdAt: action.payload.createdAt,
+            ...(action.payload.citations === undefined
+              ? {}
+              : { citations: action.payload.citations }),
           },
         ],
         streamingText: null,

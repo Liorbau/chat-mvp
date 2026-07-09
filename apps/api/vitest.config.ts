@@ -14,6 +14,7 @@ export default defineConfig({
       LLM_PROVIDER: 'openai',
       OPENAI_API_KEY: 'sk-test-key',
       ANTHROPIC_API_KEY: 'sk-ant-test-key',
+      VOYAGE_API_KEY: 'pa-test-key',
     },
   },
 })

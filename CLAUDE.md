@@ -3,7 +3,7 @@
 ## Project Context
 
 - Masterschool Fellowship (AI Software Engineering); ongoing multi-week project.
-- Current phase: **Week 6 (AI Assistant Mode — LLM, SSE streaming, tool calling)**.
+- Current phase: **Week 7 (AI Tutor — RAG over a per-user knowledge base with citations)**.
 - This file tracks stable engineering principles, cross-week goals, and the
   current week's requirements.
 
@@ -46,7 +46,9 @@ architecture/data-model/API/auth/migration decision points. See
 5. Prefer clear variable names (`inputValue`, `value`) over vague names.
 6. Derive critical values from latest state in functional updates when relevant.
 7. Use typed arrays + `.map()` for repeated options or repeated UI/logic branches.
-8. Add edge-case tests for mutation paths (for example, non-existent IDs).
+8. Add edge-case tests for mutation paths (for example, non-existent IDs); cover
+   critical invariants — tenant/data isolation and idempotency (dedup) — with
+   explicit tests, not incidental coverage.
 9. Keep formatting conventions strict (EOF newline, lint and format clean).
 10. `interface` vs `type` (rule of thumb): use `interface` for a contract many
     kinds of things implement (a blueprint for implementers, e.g. `LlmProvider`,
@@ -75,6 +77,15 @@ architecture/data-model/API/auth/migration decision points. See
     injectable (or any unit) otherwise only orchestrates named helpers and then
     contains one inline ad-hoc block, that mixed altitude is a smell — extract
     the block into a peer helper at the same level as the others.
+25. Inject swappable external providers (LLM, embeddings, storage) via their
+    abstraction or DI token — never the concrete vendor class; a service stays
+    provider-agnostic (swapping is a module rebind). A module `exports` only
+    providers another module actually injects; internals stay private.
+26. When calling an external API with bulk or looped input, respect its
+    batch/size/rate limits (batch, paginate, or throttle) — never send unbounded
+    requests.
+27. Give mutually-exclusive outcomes separate code paths; never carry one path's
+    data onto another (e.g., a refusal must not include citations/sources).
 
 ## Naming and Commit Conventions
 
@@ -174,7 +185,7 @@ gets its own database instead of sharing `chat-test`).
 - No `any`; explicit return types; preserve the error envelope and DTO contract.
 - Mongo must run as a replica set (`docker compose up -d`); seed via `npm run seed`.
 
-### Week 6 (Current) — AI Assistant Mode
+### Week 6 (Completed) — AI Assistant Mode
 
 #### Spec summary
 
@@ -306,9 +317,177 @@ Concepts to show off in the implementation, beyond bare acceptance criteria:
 
 #### Status
 
-Not started — planning pending. (`apps/api/src/modules/ai/` scaffolding exists
-on the branch but is unreviewed; `conversation-memory.service.ts` is reusable,
-the `streamFake`/`@Sse` controller is throwaway.)
+All acceptance criteria met. Implemented: assistant conversation `type`
+(idempotent get-or-create, partial unique index); `POST /ai/conversations/:id/messages`
+persists the user message, runs the LLM + tool loop, streams SSE token deltas,
+then persists the assistant message; swappable `LlmProvider` abstract class
+(OpenAI active, Anthropic drop-in via `LLM_PROVIDER`); two user-scoped
+Zod-validated tools; one Zod structured-output call (`generateStructured`,
+fail-closed); multi-turn context within a token budget; eval harness
+(`apps/api/src/modules/ai/eval`). PR notes in `WEEK6_PR.local.md`.
+
+### Week 7 (Current) — AI Tutor with Knowledge Base + Citations (RAG)
+
+#### Spec summary
+
+Add a per-user knowledge base and a `tutor` conversation type. Endpoints to
+upload/list/delete documents; an ingestion pipeline (chunk -> embed -> store in
+MongoDB Atlas Vector Search, scoped by user ID); top-K vector retrieval; and a
+RAG chain that answers questions grounded ONLY in the user's uploaded content,
+returning citations (document name + chunk text per source). LangChain (TS)
+composes the RAG chain. FE renders clickable citations under each tutor message.
+
+#### Spec rules
+
+- New conversation `type: 'tutor'` (alongside `'user'` / `'assistant'`).
+- Per-user private knowledge base: uploaded docs scoped to the uploader; no
+  cross-user retrieval possible.
+- Ingestion (sync for simplicity is allowed) stores chunks + embeddings in Atlas
+  with the user ID as a filter.
+- Tutor answers use ONLY the user's KB for grounded questions — no general LLM
+  knowledge; when retrieval is empty, do not hallucinate.
+- Every tutor answer includes citations (list of source chunks: document name +
+  chunk text); FE renders them clearly and clickable.
+- Re-uploading the same document must not duplicate chunks.
+
+#### Endpoints
+
+- `POST /knowledge/documents` — upload a document, kick off ingestion; returns
+  ingestion status.
+- `GET /knowledge/documents` — list the user's uploaded documents.
+- `DELETE /knowledge/documents/:id` — remove a document and its chunks.
+- Tutor messages flow through the existing assistant message path but use the
+  tutor RAG chain instead of a plain LLM call.
+
+#### Tech constraints
+
+- **MongoDB Atlas required** (local Mongo has no Vector Search). Atlas Vector
+  Search index defined in the repo (JSON config or migration script), provisioned.
+- **LangChain (TypeScript)** composes the RAG chain (LLMs, prompts, retrievers,
+  Runnables) where they earn their keep.
+- **Embeddings:** Anthropic has none — use OpenAI `text-embedding-3-small` or
+  Voyage AI (document the choice). LLM provider: same abstraction as Week 6.
+- **Chunking:** pick size + overlap; document the strategy and reasoning.
+- **Citations:** every chunk has a stable ID, document name, and source text in
+  the API response.
+- No `any`; secrets env-only; update `.env.example`.
+
+#### Eval
+
+- 10-20 question / expected-source pairs in a JSON file.
+- Per question: did retrieval return the expected chunk? Did the answer cover the
+  expected information?
+- Document retrieval recall + a qualitative answer-quality summary in the PR.
+
+#### Acceptance criteria
+
+- [ ] Document upload works for the committed formats.
+- [ ] Ingestion produces chunks + embeddings in Atlas with correct metadata.
+- [ ] Atlas Vector Search index exists in the repo (config) and is provisioned.
+- [ ] Retrieval returns top-K chunks scoped to the authenticated user only.
+- [ ] Tutor answers grounded in retrieved context; no hallucination on empty
+      retrieval.
+- [ ] Every tutor answer carries citations; FE renders them clearly.
+- [ ] Eval set committed; recall + answer quality documented in the PR.
+- [ ] Re-uploading the same document doesn't duplicate chunks.
+- [ ] `npx tsc --noEmit` passes.
+
+#### Submission
+
+- PR on the assigned repo. PR description: summary, chunking strategy +
+  reasoning, embedding/LLM provider choices, Atlas index config, eval results
+  (numbers + commentary), key tradeoffs. Mentor reviews Sunday.
+
+#### Architecture Decisions (locked)
+
+Decided in the Week 7 design discussion. Optimized for fewest moving parts and
+least code while meeting every acceptance criterion.
+
+- **DB topology — whole app on MongoDB Atlas.** Atlas is mandatory (local Mongo
+  has no Vector Search). Point the existing single `MONGO_URI`
+  (`MongooseModule.forRootAsync` in `AppModule`) at one Atlas M0 free cluster —
+  zero new connection code. M0 is a 3-node replica set, so Week-5's transactional
+  send still works (verified: transactions are supported on M0). The Atlas SRV
+  string auto-discovers the replica set, so drop the manual `?replicaSet=rs0`.
+  **Tests stay on local docker Mongo** (per-file DB isolation is unchanged; Atlas
+  Vector Search can't run locally, so retrieval is exercised by the eval script,
+  not the unit suite).
+- **Upload formats — markdown + plain text now, via multipart upload + an
+  extraction seam.** `POST /knowledge/documents` accepts real files
+  (`multipart/form-data`, `multer`) from day one so the contract never changes
+  when richer formats arrive. All formats funnel through one
+  `documentToText(file)` seam; today it reads md/txt buffers as UTF-8. PDF/DOCX
+  via IBM **Docling** (a `docling-serve` sidecar + the typed `docling-sdk`) is a
+  later additive case in that seam — no rewrite upstream or downstream.
+- **Embeddings — Voyage AI** (`text-embedding` family on the free 200M-token
+  tier; on-spec — spec names OpenAI or Voyage — and MongoDB-native). Pin one
+  output dimension (1024) to match the Atlas index. Exact model id is a code
+  constant (no config for a value that never changes).
+- **RAG composition — LangChain owns the tutor chain end-to-end** (chat model +
+  Atlas retriever + prompt + `RunnableSequence`). The Week-6 `LlmProvider`
+  abstraction is untouched and keeps serving `assistant` mode. Clean split by
+  conversation type; no wrapping LangChain behind the old abstraction.
+- **Data model — two collections, single uuid `_id` (Week-5 convention).**
+  `kb_documents` `{ _id, userId, name, mimeType, contentHash, status, chunkCount,
+  createdAt }` backs the list/delete endpoints; `kb_chunks` `{ _id, documentId,
+  userId, text, embedding[1024], chunkIndex }` backs retrieval. `userId` is
+  denormalized onto chunks because the Atlas vector query filters on the same
+  collection — this is what enforces per-user isolation in the query itself.
+- **Dedup — content hash → skip.** Hash the file bytes; if a `ready`
+  `kb_document` with that hash already exists for the user, no-op and return it
+  (satisfies "re-upload doesn't duplicate" with the least work — no delete + no
+  re-embed). A non-`ready` (failed/partial) doc with the same hash is re-ingested
+  so it can heal. Deliberate re-processing after a pipeline change is covered by
+  the DELETE endpoint + re-upload, not the happy path.
+- **Ingestion — synchronous.** Chunk + embed + store inside the POST request,
+  return final status (`ready`/`failed`). No queue, worker, or polling. Fine for
+  assignment-sized docs.
+- **Tutor turn — reuse the Week-6 path, branch on type.** Tutor conversations use
+  the existing `POST /ai/conversations/:id/messages`; `ai.service` branches on
+  `conversation.type`: `assistant` → the Week-6 `LlmProvider` tool loop
+  (unchanged); `tutor` → the LangChain RAG chain. Module arrow stays one-way
+  (`ai → knowledge`, like `ai → messages`).
+- **Tutor LLM — reuse the Week-6 provider** (OpenAI/Anthropic via LangChain's
+  chat model). On-spec ("LLM provider: same as Week 6") and reuses the existing
+  key. `temperature: 0` for grounded, deterministic answers.
+- **Empty retrieval — short-circuit a canned refusal.** If retrieval returns
+  nothing (or top score < ~0.7 threshold), skip the LLM entirely and return a
+  fixed grounded message with no citations. Guarantees no hallucination and saves
+  a call.
+- **Citations — bibliography list, delivered inside the `done` SSE event,
+  persisted on the `Message`.** No new SSE event type: add a `citations` field to
+  the existing `done` event and to `Message` in `@chat/contract`. The FE renders
+  a clickable Sources list under the finished tutor message (no inline `[^1]`
+  markers — more code, not required by the spec). Citation shape:
+  `{ chunkId, documentId, documentName, text, score? }`.
+- **Module boundary — new `knowledge` module.** Owns documents CRUD + ingestion +
+  retrieval (a retriever provider wrapping Atlas Vector Search). Named for the
+  resource (route is `/knowledge/documents`), not a consumer; the `tutor` RAG
+  *generation* lives in `ai`. `ai` imports `KnowledgeModule` for the composer.
+- **Atlas Vector Search index — committed JSON + manual UI creation.** Commit
+  `vector-index.json` (the "index config in repo" criterion); create it once via
+  the Atlas UI. M0 does not support driver/`createSearchIndex` provisioning, and
+  the Admin-API alternative is ~30-50 lines + API keys — not worth it for one
+  cluster. A driver/script provision is the upgrade path on a paid tier.
+- **Chunking — LangChain `RecursiveCharacterTextSplitter`, 1000 chars / 150
+  overlap.** No custom splitter; structure-aware chunking (Docling
+  `HybridChunker`) arrives with PDF support.
+- **Retrieval params — top-K 4, similarity threshold ~0.7** (the empty-retrieval
+  cutoff). Both tunable constants.
+- **Eval — reuse the Week-6 harness.** 10-20 question/expected-source fixtures,
+  `temperature: 0`, deterministic. Report recall@k (required); hit-rate@k and
+  precision@k fall out of the same retrieval results for free. No new scoring
+  framework.
+- **Env additions — `VOYAGE_API_KEY`, Atlas `MONGO_URI` (SRV), `VECTOR_INDEX_NAME`.**
+  Tutor LLM reuses the Week-6 `OPENAI`/`ANTHROPIC` key. Update `.env.example`;
+  never commit real secrets.
+
+#### Status
+
+Branch `feature/backend/week-7-rag` created; CLAUDE.md scope + architecture
+decisions recorded. Design discussion complete — nothing built yet.
+`ARCHITECTURE.md` / `API_CONTRACT.md` still end at Week 5 (Week 6 was never
+backfilled there); to be updated at implementation time so they match real code.
 
 ## Backend Architecture and Clean Code
 

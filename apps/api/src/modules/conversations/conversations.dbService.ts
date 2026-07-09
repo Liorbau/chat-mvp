@@ -52,10 +52,9 @@ export class ConversationsDbService {
     return doc === null ? undefined : toConversation(doc)
   }
 
-  async findAssistantByParticipant(userId: string): Promise<Conversation | undefined> {
-    const doc = await this.conversationModel
-      .findOne({ participantIds: userId, type: 'assistant' })
-      .exec()
+  // The single-participant AI conversation (assistant or tutor) owned by a user.
+  async findOwnedByType(userId: string, type: ConversationType): Promise<Conversation | undefined> {
+    const doc = await this.conversationModel.findOne({ participantIds: userId, type }).exec()
     return doc === null ? undefined : toConversation(doc)
   }
 
@@ -71,8 +70,6 @@ export class ConversationsDbService {
     return toConversation(doc)
   }
 
-  // Returns the updated conversation, or undefined when none matched. A thrown
-  // error therefore means a real failure, never a missing conversation.
   async updateLastMessage(
     conversationId: string,
     lastMessagePreview: string,

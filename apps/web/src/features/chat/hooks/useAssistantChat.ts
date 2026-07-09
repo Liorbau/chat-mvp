@@ -18,7 +18,10 @@ type AssistantChat = {
   send: (content: string) => void
 }
 
-export function useAssistantChat(currentUserId: string): AssistantChat {
+export function useAssistantChat(
+  currentUserId: string,
+  conversationType: 'assistant' | 'tutor' = 'assistant',
+): AssistantChat {
   const [state, dispatch] = useReducer(assistantChatReducer, initialAssistantState)
   const abortRef = useRef<AbortController | null>(null)
 
@@ -31,7 +34,7 @@ export function useAssistantChat(currentUserId: string): AssistantChat {
 
   useEffect(() => {
     let active = true
-    void createConversation({ type: 'assistant' })
+    void createConversation({ type: conversationType })
       .then(async (conversation) => {
         const page = await getMessages(conversation.id)
         if (active) {
@@ -52,7 +55,7 @@ export function useAssistantChat(currentUserId: string): AssistantChat {
     return () => {
       active = false
     }
-  }, [])
+  }, [conversationType])
 
   const send = useCallback(
     (content: string) => {
@@ -94,6 +97,7 @@ export function useAssistantChat(currentUserId: string): AssistantChat {
                 messageId: event.messageId,
                 senderId: ASSISTANT_SENDER_ID,
                 createdAt: new Date().toISOString(),
+                citations: event.citations,
               },
             })
           } else {

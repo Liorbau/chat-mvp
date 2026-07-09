@@ -21,13 +21,14 @@ export type MessagePage = {
 }
 
 function toMessage(doc: MessageDocument): Message {
-  return {
+  const message: Message = {
     id: doc._id,
     conversationId: doc.conversationId,
     senderId: doc.senderId,
     content: doc.content,
     createdAt: doc.createdAt.toISOString(),
   }
+  return doc.citations === undefined ? message : { ...message, citations: doc.citations }
 }
 
 function toMessageDocument(draft: MessageDraft) {
@@ -37,6 +38,7 @@ function toMessageDocument(draft: MessageDraft) {
     senderId: draft.senderId,
     content: draft.content,
     createdAt: new Date(draft.createdAt),
+    ...(draft.citations === undefined ? {} : { citations: draft.citations }),
   }
 }
 

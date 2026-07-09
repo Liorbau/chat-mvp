@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import type { Citation } from '@chat/contract'
 import type { HydratedDocument } from 'mongoose'
 
 export type MessageDocument = HydratedDocument<Message>
@@ -19,6 +20,11 @@ export class Message {
 
   @Prop({ type: Date, required: true })
   createdAt!: Date
+
+  // Present only on tutor answers: the retrieved sources the answer cited.
+  // Stored as-is (never queried into), so a plain object array is enough.
+  @Prop({ type: [Object], default: undefined })
+  citations?: Citation[]
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message)

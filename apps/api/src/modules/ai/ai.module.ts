@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { AuthModule } from '../auth/auth.module'
 import { ConversationsModule } from '../conversations/conversations.module'
+import { KnowledgeModule } from '../knowledge/knowledge.module'
 import { MessagesModule } from '../messages/messages.module'
 import { UsersModule } from '../users/users.module'
 import { AiController } from './ai.controller'
@@ -13,12 +14,14 @@ import { OpenAiProvider } from './providers/openai.provider'
 import { AiToolsService } from './tools/ai.tools.service'
 import { GetMyNameTool } from './tools/get.my.name.tool'
 import { SummarizeRecentMessagesTool } from './tools/summarize.recent.messages.tool'
+import { TutorService } from './tutor.service'
 
 @Module({
-  imports: [AuthModule, ConversationsModule, MessagesModule, UsersModule],
+  imports: [AuthModule, ConversationsModule, MessagesModule, UsersModule, KnowledgeModule],
   controllers: [AiController],
   providers: [
     AiService,
+    TutorService,
     ConversationMemoryService,
     AiToolsService,
     SummarizeRecentMessagesTool,

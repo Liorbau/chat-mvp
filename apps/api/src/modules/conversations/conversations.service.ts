@@ -30,11 +30,8 @@ export class ConversationsService {
   ): Promise<Conversation> {
     const type = input.type ?? 'user'
 
-    // An assistant conversation has exactly one participant — the creator. The
-    // assistant is not a user row, so there are no other participants to verify
-    // and no direct-duplicate rule to apply.
-    if (type === 'assistant') {
-      const existing = await this.conversationsDbService.findAssistantByParticipant(creatorId)
+    if (type === 'assistant' || type === 'tutor') {
+      const existing = await this.conversationsDbService.findOwnedByType(creatorId, type)
       if (existing !== undefined) {
         return existing
       }
@@ -48,7 +45,7 @@ export class ConversationsService {
       } catch (error) {
         // A concurrent request won the unique-index race; return the one it made.
         const raced = isDuplicateKeyError(error)
-          ? await this.conversationsDbService.findAssistantByParticipant(creatorId)
+          ? await this.conversationsDbService.findOwnedByType(creatorId, type)
           : undefined
         if (raced !== undefined) {
           return raced

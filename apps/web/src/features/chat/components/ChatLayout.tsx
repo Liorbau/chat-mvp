@@ -4,9 +4,10 @@ import { useConversations } from '../hooks/useConversations'
 import AssistantPanel from './AssistantPanel'
 import ConversationListContainer from './ConversationListContainer'
 import MessagePanelContainer from './MessagePanelContainer'
-import ModeToggleButton from './ModeToggleButton'
+import ModeSwitcher, { type ChatMode } from './ModeSwitcher'
 import NewConversation from './NewConversation'
 import SwitchUserButton from './SwitchUserButton'
+import TutorPanel from './TutorPanel'
 
 function deriveConversationTitle(
   conversation: Conversation,
@@ -72,7 +73,7 @@ const PERSISTENT_BUTTONS_STYLE = {
 
 function ChatLayout({ currentUserId, users, getUserDisplayName, onLogout }: ChatLayoutProps) {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
-  const [mode, setMode] = useState<'chats' | 'assistant'>('chats')
+  const [mode, setMode] = useState<ChatMode>('chats')
   const { status, conversations, error, markConversationActivity, refetch } = useConversations()
 
   function handleConversationCreated(conversationId: string): void {
@@ -81,7 +82,7 @@ function ChatLayout({ currentUserId, users, getUserDisplayName, onLogout }: Chat
   }
 
   const displayConversations = conversations
-    .filter((conversation) => conversation.type !== 'assistant')
+    .filter((conversation) => conversation.type === 'user')
     .map((conversation) => ({
       ...conversation,
       title: deriveConversationTitle(conversation, currentUserId, getUserDisplayName),
@@ -89,10 +90,7 @@ function ChatLayout({ currentUserId, users, getUserDisplayName, onLogout }: Chat
 
   const persistentButtons = (
     <div style={PERSISTENT_BUTTONS_STYLE}>
-      <ModeToggleButton
-        mode={mode}
-        onToggle={() => setMode(mode === 'assistant' ? 'chats' : 'assistant')}
-      />
+      <ModeSwitcher mode={mode} onSelect={setMode} />
       <SwitchUserButton
         onClick={() => {
           setSelectedConversationId(null)
@@ -107,6 +105,15 @@ function ChatLayout({ currentUserId, users, getUserDisplayName, onLogout }: Chat
       <>
         {persistentButtons}
         <AssistantPanel currentUserId={currentUserId} />
+      </>
+    )
+  }
+
+  if (mode === 'tutor') {
+    return (
+      <>
+        {persistentButtons}
+        <TutorPanel currentUserId={currentUserId} />
       </>
     )
   }

@@ -1,4 +1,4 @@
-# Frontend Chat MVP — API Contract (Week 2 -> Week 5)
+# Frontend Chat MVP — API Contract (Week 2 -> Week 7)
 
 ## Related Planning Docs
 
@@ -387,6 +387,89 @@ per-viewer name from the participants); set it for named/group conversations.
 }
 ```
 
+## AI Assistant & Tutor (Weeks 6-7)
+
+### Conversation types
+
+`POST /conversations` accepts an optional `type: 'user' | 'assistant' | 'tutor'`
+(default `'user'`). `assistant` and `tutor` are single-participant (the creator)
+and **get-or-create, one per user** — posting `{ type: 'assistant' }` or
+`{ type: 'tutor' }` returns the existing one if present. `participantIds` is
+ignored for these types.
+
+### New shared types
+
+```ts
+type Citation = {
+  chunkId: string
+  documentId: string
+  documentName: string
+  text: string
+  score?: number
+}
+
+// Present only on tutor answers.
+type Message = { /* ...existing... */; citations?: Citation[] }
+
+type DocumentStatus = 'pending' | 'ready' | 'failed'
+type KnowledgeDocument = {
+  id: string
+  name: string
+  mimeType: string
+  status: DocumentStatus
+  chunkCount: number
+  createdAt: string // ISO 8601
+}
+```
+
+### `POST /ai/conversations/:id/messages` (SSE)
+
+Posts a user message to an `assistant` or `tutor` conversation and streams the
+reply. Persists the user message, runs the LLM (assistant) or RAG chain (tutor),
+streams tokens, then persists the assistant message. `400` if the conversation
+is not `assistant`/`tutor`; `403` if the caller is not a participant.
+
+**Response:** `text/event-stream`. Each line is `data: <json>\n\n` where the
+JSON is an `AssistantSseEvent`:
+
+```ts
+type AssistantSseEvent =
+  | { type: 'user_message'; message: Message }
+  | { type: 'token'; value: string }
+  | { type: 'status'; state: 'thinking' | 'tool_call' }
+  | { type: 'done'; messageId: string; citations?: Citation[] }
+  | { type: 'error'; code: string; message: string }
+```
+
+Tutor answers carry `citations` on the `done` event (and on the persisted
+`Message`). On empty retrieval the tutor returns a fixed refusal with no
+citations (never hallucinates).
+
+### `POST /knowledge/documents` (multipart)
+
+Upload a document (`multipart/form-data`, field `file`; `.md`/`.txt`). Ingests
+synchronously (chunk -> embed -> store) and returns the document with its final
+status. Re-uploading identical content is deduped (returns the existing `ready`
+document; no duplicate chunks).
+
+- `201` -> `KnowledgeDocument` (status `ready`, or `failed` on an ingestion-infra
+  error).
+- `400` `VALIDATION_ERROR` — unsupported/empty file.
+- `401` — missing/invalid token.
+
+### `GET /knowledge/documents`
+
+Returns the authenticated user's documents (newest first).
+
+- `200` -> `KnowledgeDocument[]`.
+
+### `DELETE /knowledge/documents/:id`
+
+Removes a document and its chunks. Scoped to the owner (another user's id -> `404`).
+
+- `200` -> `{ id: string }`.
+- `404` `RESOURCE_NOT_FOUND` — not found / not owned.
+
 ## Contract Changes
 
 ### Week 3
@@ -429,3 +512,21 @@ per-viewer name from the participants); set it for named/group conversations.
   `lastMessagePreview` atomically (single transaction), so the conversation list
   never drifts from the latest message.
 - Data now persists across server restarts.
+
+### Week 6 (AI assistant mode)
+
+- `POST /conversations` gains optional `type: 'user' | 'assistant'` (default
+  `'user'`); `assistant` is get-or-create, one per user.
+- Added `POST /ai/conversations/:id/messages` — SSE stream of `AssistantSseEvent`
+  (token deltas + `done`/`error`); persists user + assistant messages.
+
+### Week 7 (AI tutor / RAG)
+
+- `type` union extends to include `'tutor'` (also get-or-create, one per user).
+- `Message` gains optional `citations: Citation[]` (tutor answers only); the
+  `done` SSE event gains optional `citations`.
+- Added `POST /knowledge/documents` (multipart upload, returns `KnowledgeDocument`),
+  `GET /knowledge/documents` (list), `DELETE /knowledge/documents/:id`
+  (`-> { id }`).
+- The tutor reuses `POST /ai/conversations/:id/messages`; the server branches on
+  `conversation.type`.
