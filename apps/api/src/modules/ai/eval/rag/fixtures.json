@@ -1,0 +1,86 @@
+[
+  {
+    "id": "photo-inputs",
+    "question": "What are the inputs of photosynthesis?",
+    "expectedDocument": "photosynthesis.md",
+    "expectedKeywords": ["carbon dioxide", "water", "light"]
+  },
+  {
+    "id": "photo-location",
+    "question": "Where in the plant does photosynthesis happen?",
+    "expectedDocument": "photosynthesis.md",
+    "expectedKeywords": ["chloroplast"]
+  },
+  {
+    "id": "photo-stages",
+    "question": "What are the two stages of photosynthesis?",
+    "expectedDocument": "photosynthesis.md",
+    "expectedKeywords": ["calvin", "light-dependent"]
+  },
+  {
+    "id": "photo-chlorophyll",
+    "question": "What does chlorophyll do?",
+    "expectedDocument": "photosynthesis.md",
+    "expectedKeywords": ["light"]
+  },
+  {
+    "id": "water-driver",
+    "question": "What provides the energy that drives the water cycle?",
+    "expectedDocument": "water-cycle.md",
+    "expectedKeywords": ["sun"]
+  },
+  {
+    "id": "water-evaporation",
+    "question": "What happens during evaporation?",
+    "expectedDocument": "water-cycle.md",
+    "expectedKeywords": ["vapor"]
+  },
+  {
+    "id": "water-precipitation",
+    "question": "What is precipitation?",
+    "expectedDocument": "water-cycle.md",
+    "expectedKeywords": ["rain"]
+  },
+  {
+    "id": "water-salt-fresh",
+    "question": "Is most of Earth's water fresh or salt water?",
+    "expectedDocument": "water-cycle.md",
+    "expectedKeywords": ["salt"]
+  },
+  {
+    "id": "rome-start",
+    "question": "When did the Roman Empire begin and under whom?",
+    "expectedDocument": "roman-empire.md",
+    "expectedKeywords": ["27 bc", "augustus"]
+  },
+  {
+    "id": "rome-first-emperor",
+    "question": "Who was the first Roman emperor?",
+    "expectedDocument": "roman-empire.md",
+    "expectedKeywords": ["augustus"]
+  },
+  {
+    "id": "rome-fall",
+    "question": "When did the Western Roman Empire fall?",
+    "expectedDocument": "roman-empire.md",
+    "expectedKeywords": ["476"]
+  },
+  {
+    "id": "rome-extent",
+    "question": "How far did the Roman Empire stretch at its height?",
+    "expectedDocument": "roman-empire.md",
+    "expectedKeywords": ["britain"]
+  },
+  {
+    "id": "oob-france",
+    "question": "What is the capital of France?",
+    "expectedDocument": null,
+    "expectedKeywords": []
+  },
+  {
+    "id": "oob-sourdough",
+    "question": "How do I bake sourdough bread?",
+    "expectedDocument": null,
+    "expectedKeywords": []
+  }
+]
