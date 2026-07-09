@@ -154,10 +154,8 @@ function Sources({ citations }: { citations: Citation[] }) {
 }
 
 function TutorPanel({ currentUserId }: TutorPanelProps) {
-  const { messages, streamingText, isStreaming, isReady, error, send } = useAssistantChat(
-    currentUserId,
-    'tutor',
-  )
+  const { messages, streamingText, toolLabel, isStreaming, isReady, error, send } =
+    useAssistantChat(currentUserId, 'tutor')
   const [input, setInput] = useState('')
   const endRef = useScrollToBottom<HTMLDivElement>(messages.length > 0 || streamingText !== null, [
     messages,
@@ -232,7 +230,7 @@ function TutorPanel({ currentUserId }: TutorPanelProps) {
               {streamingText !== null && streamingText.length > 0 ? (
                 streamingText
               ) : (
-                <span style={STATUS_STYLE}>Searching your notes…</span>
+                <span style={STATUS_STYLE}>{toolLabel ?? 'Thinking…'}</span>
               )}
             </div>
           </div>
