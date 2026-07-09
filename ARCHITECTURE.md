@@ -17,9 +17,13 @@ It is organized by phase:
   mock, with frontend wired to real API.
 - **Week 4 (Completed)** — NestJS refactor of the backend with real JWT auth
   (signup/login, Passport JWT, Guards, bcrypt) plus FE auth screens.
-- **Week 5 (Current)** — MongoDB persistence via Mongoose: the in-memory stores
+- **Week 5 (Completed)** — MongoDB persistence via Mongoose: the in-memory stores
   are replaced by a Mongoose-backed DbService (DAO) seam, with indexes, keyset
   cursor pagination, and an atomic transactional send.
+- **Week 6 (Completed)** — AI assistant mode: `ai` module, swappable
+  `LlmProvider`, SSE streaming, user-scoped tools.
+- **Week 7 (Current)** — AI tutor (RAG): per-user knowledge base on Atlas Vector
+  Search, LangChain retrieval + grounded answers with citations.
 
 When a later week supersedes an earlier decision, note it in that week's section
 rather than deleting the history.
@@ -660,7 +664,7 @@ Strict one-directional flow: **module -> controller -> service (provider) -> DbS
 
 ---
 
-# Week 5 (Current) — MongoDB Persistence (Mongoose)
+# Week 5 (Completed) — MongoDB Persistence (Mongoose)
 
 > Status: shipped. Week 5 replaces the in-memory `Map` stores with MongoDB via
 > Mongoose. Only the DbService (DAO) layer changes — controllers, services, the
@@ -765,6 +769,115 @@ module; the connection (`MongooseModule.forRootAsync`, reads `MONGO_URI` from
 - [x] Out-of-band `npm run seed`; data survives restart.
 - [x] Week-4 JWT auth + `403` participant rule preserved; contract unchanged.
 - [x] `npx tsc --noEmit` and `npm run build` pass; smoke-tested end-to-end.
+
+---
+
+# Week 6 (Completed) — AI Assistant Mode
+
+> Status: shipped. Adds an `ai` module alongside the existing chat. A new
+> conversation `type: 'assistant'` triggers an LLM turn that streams over SSE and
+> persists like any message. No existing endpoint changed shape.
+
+## What's added
+
+- **`ConversationType`** `'user' | 'assistant'` on the conversation schema
+  (default `'user'`), with a partial unique index enforcing one assistant
+  conversation per user (idempotent get-or-create).
+- **`LlmProvider`** — an abstract class (DI token) with `streamReply` and
+  `generateStructured`. `OpenAiProvider` is active; `AnthropicProvider` is a
+  drop-in selected by `LLM_PROVIDER`. SDK specifics stay inside each provider.
+- **`AiController`** — `POST /ai/conversations/:id/messages`, the one
+  server-orchestrated streaming endpoint. Sets SSE headers and writes each
+  `AssistantSseEvent`.
+- **`AiService`** — `prepareTurn` (authz + persist the user message) and
+  `streamReply` (the LLM + tool loop: stream tokens, run tool calls, persist the
+  assistant message).
+- **`ConversationMemoryService`** — loads recent history within a token budget
+  for multi-turn context.
+- **`AiToolsService` + tools** — user-scoped, Zod-validated tools the model can
+  call against the caller's own data (`requesterId` from the JWT, never the model).
+
+Module arrow is one-way `ai -> messages` / `ai -> conversations`.
+
+# Week 7 (Current) — AI Tutor with Knowledge Base + Citations (RAG)
+
+> Status: shipped. Adds a per-user knowledge base and a `tutor` conversation
+> type that answers grounded **only** in the user's uploaded documents, with
+> citations. Reuses the Week-6 streaming path end-to-end.
+
+## What supersedes earlier weeks
+
+- **Storage moves to MongoDB Atlas** (local Mongo has no Vector Search). The app
+  points the single `MONGO_URI` at an Atlas M0 cluster (a replica set, so the
+  Week-5 transactional send still works). The **test suite stays on local docker
+  Mongo** (`test.app.ts` overrides `MONGO_URI`); vector retrieval is exercised by
+  the eval, not the unit suite.
+- **`ConversationType`** extends to `'user' | 'assistant' | 'tutor'`; `tutor` is
+  one-per-user get-or-create, reusing the assistant's partial-unique-index
+  pattern (`findOwnedByType`).
+
+## `knowledge` module
+
+Owns the knowledge base: documents CRUD + ingestion + retrieval. `ai` imports it
+for the tutor composer (one-way `ai -> knowledge`).
+
+| Collection | Schema | Key fields | Notes |
+| --- | --- | --- | --- |
+| `kb_documents` | `document.schema.ts` | `_id` (uuid), `userId`, `name`, `mimeType`, `contentHash`, `status`, `chunkCount`, `createdAt` | explicit collection name; indexes on `{userId, createdAt}` and `{userId, contentHash}` (dedup) |
+| `kb_chunks` | `chunk.schema.ts` | `_id` (uuid), `documentId`, `documentName`, `userId`, `text`, `embedding[1024]`, `chunkIndex` | `userId`/`documentName` denormalized; vector search served by the Atlas index, not Mongoose |
+
+- **`KnowledgeDbService`** (DAO) — the only layer touching Mongoose; also exposes
+  the native `chunkCollection()` the vector store needs.
+- **`KnowledgeService`** — `ingest` (extraction seam -> hash/dedup -> chunk ->
+  embed -> store), `listDocuments`, `removeDocument`. Chunking is LangChain
+  `RecursiveCharacterTextSplitter` (500 / 75). Dedup by content hash: an existing
+  `ready` doc with the same hash is returned as-is (no duplicate chunks).
+- **`VoyageEmbeddings`** — a ~20-line `Embeddings` adapter over Voyage's REST API
+  (`voyage-3.5-lite`, 1024 dims, `input_type` document/query).
+- **`KnowledgeRetrieverService`** — wraps `MongoDBAtlasVectorSearch` (built lazily
+  once Mongo is connected). `retrieve` embeds the query and runs `$vectorSearch`
+  with a **`userId` pre-filter** — the per-user isolation guarantee.
+- **`KnowledgeController`** — `POST` (multipart upload), `GET` (list), `DELETE`
+  (`-> { id }`).
+
+## Atlas Vector Search index
+
+Committed at `apps/api/atlas/vector-index.json` (`embedding`: 1024, cosine;
+`userId` as a filter field). Created once via the Atlas UI (M0 doesn't support
+driver index creation). `VECTOR_INDEX_NAME` defaults to `kb_chunks_vector`.
+
+## Tutor turn (reuses the Week-6 path)
+
+`POST /ai/conversations/:id/messages`; `AiController` branches on
+`conversation.type`: `assistant` -> `AiService.streamReply`; `tutor` ->
+`TutorService.streamTutorReply`. Both are async generators of the same
+`AssistantSseEvent`, so the SSE write loop, auth, user-message persistence, and
+history loading are shared. `TutorService`:
+
+1. Loads history (reused `ConversationMemoryService`).
+2. Builds the retrieval query by concatenating the last few user turns (so a
+   follow-up's antecedent is in the query — no extra rewrite call).
+3. Retrieves top-4; keeps chunks scoring >= ~0.7.
+4. **Empty -> a fixed refusal**, no LLM call, no citations (no hallucination).
+5. Otherwise grounds a LangChain `ChatOpenAI` (`temperature 0`) on the retrieved
+   context, streams tokens, then persists the answer with `citations`.
+
+Citations ride the `done` SSE event and persist on the `Message`; the FE renders
+a clickable Sources list under each tutor answer.
+
+## Eval
+
+HTTP harness (`src/modules/ai/eval/rag/`, `npm run eval:rag`): uploads committed
+docs, asks fixture questions through the real tutor, and reads recall straight
+from the answer's citations. Reports precision@k / recall@k / hit-rate@k and a
+keyword-based answer score (temperature 0). Self-throttles to Voyage's 3 RPM.
+
+## Frontend
+
+A third **Tutor** mode (dark-reddish theme) reuses the assistant streaming hook
+(`useAssistantChat(userId, 'tutor')`). A `KnowledgeDocuments` panel handles
+upload (picker + drag-drop) / list / delete; answers show a clickable Sources
+list.
 
 ---
 
