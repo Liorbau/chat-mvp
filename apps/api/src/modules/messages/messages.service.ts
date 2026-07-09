@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
 import {
   ASSISTANT_SENDER_ID,
+  type Citation,
   type GetMessagesResponse,
   type Message,
   type SendMessageResponse,
@@ -120,12 +121,22 @@ export class MessagesService {
   // conversation's last-activity in one transaction. No participant check: the
   // assistant is not a user, and the caller (AiService) already authorized the
   // turn when it persisted the triggering user message.
-  async appendAssistantMessage(conversationId: string, content: string): Promise<Message> {
+  async appendAssistantMessage(
+    conversationId: string,
+    content: string,
+    citations?: Citation[],
+  ): Promise<Message> {
     const occurredAt = new Date()
     const createdAt = occurredAt.toISOString()
     return this.connection.transaction(async (session) => {
       const created = await this.messagesDbService.create(
-        { conversationId, senderId: ASSISTANT_SENDER_ID, content, createdAt },
+        {
+          conversationId,
+          senderId: ASSISTANT_SENDER_ID,
+          content,
+          createdAt,
+          ...(citations === undefined ? {} : { citations }),
+        },
         session,
       )
       await this.conversationsService.recordMessageActivity(

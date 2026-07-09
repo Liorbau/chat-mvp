@@ -14,7 +14,7 @@ import { Trim, TrimEach } from '../../../common/decorators/trim.decorator'
 export class CreateConversationDto {
   // Defaults to 'user' in the service when omitted.
   @IsOptional()
-  @IsIn(['user', 'assistant'])
+  @IsIn(['user', 'assistant', 'tutor'])
   type?: ConversationType
 
   @IsOptional()
@@ -24,8 +24,8 @@ export class CreateConversationDto {
   title?: string
 
   // Required for 'user' conversations (need the other participant); ignored for
-  // 'assistant' conversations, whose only participant is the creator.
-  @ValidateIf((dto: CreateConversationDto) => dto.type !== 'assistant')
+  // 'assistant'/'tutor' conversations, whose only participant is the creator.
+  @ValidateIf((dto: CreateConversationDto) => dto.type !== 'assistant' && dto.type !== 'tutor')
   @TrimEach()
   @IsArray()
   @ArrayMinSize(1)
