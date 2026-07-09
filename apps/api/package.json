@@ -14,9 +14,11 @@
     "eval:rag": "tsx src/modules/ai/eval/rag/run.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.105.0",
     "@chat/contract": "*",
+    "@langchain/anthropic": "^1.5.1",
     "@langchain/core": "^1.2.1",
+    "@langchain/langgraph": "^1.4.7",
+    "@langchain/langgraph-checkpoint-mongodb": "^1.4.0",
     "@langchain/mongodb": "^1.3.0",
     "@langchain/openai": "^1.5.3",
     "@langchain/textsplitters": "^1.0.1",
@@ -36,7 +38,6 @@
     "langchain": "^1.5.2",
     "mongoose": "^9.7.0",
     "multer": "^2.1.1",
-    "openai": "^6.44.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
