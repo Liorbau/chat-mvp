@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import type { INestApplication } from '@nestjs/common'
 import type { NestExpressApplication } from '@nestjs/platform-express'
-import { Test } from '@nestjs/testing'
+import { Test, type TestingModuleBuilder } from '@nestjs/testing'
 import request from 'supertest'
 import { AppModule } from '../app.module'
 import { JSON_BODY_LIMIT } from '../config/http.constants'
@@ -26,11 +26,15 @@ function uriWithDatabase(uri: string, dbName: string): string {
 // Each test file passes its own database name so files never share `chat-test`
 // and cannot race on each other's data. AppModule reads MONGO_URI from
 // ConfigService at compile time, so we override it before compiling.
-export async function createTestApp(dbName: string): Promise<INestApplication> {
+export async function createTestApp(
+  dbName: string,
+  configure?: (builder: TestingModuleBuilder) => TestingModuleBuilder,
+): Promise<INestApplication> {
   const baseUri = process.env.MONGO_URI ?? 'mongodb://localhost:27017/chat-test?replicaSet=rs0'
   process.env.MONGO_URI = uriWithDatabase(baseUri, dbName)
 
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile()
+  const builder = Test.createTestingModule({ imports: [AppModule] })
+  const moduleRef = await (configure ? configure(builder) : builder).compile()
   // Mirror the runtime bootstrap so tests enforce the same body-size limit.
   const app = moduleRef.createNestApplication<NestExpressApplication>()
   app.useBodyParser('json', { limit: JSON_BODY_LIMIT })

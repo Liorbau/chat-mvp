@@ -1,0 +1,20 @@
+{
+  "name": "kb_chunks_vector",
+  "database": "chat",
+  "collectionName": "kb_chunks",
+  "type": "vectorSearch",
+  "definition": {
+    "fields": [
+      {
+        "type": "vector",
+        "path": "embedding",
+        "numDimensions": 1024,
+        "similarity": "cosine"
+      },
+      {
+        "type": "filter",
+        "path": "userId"
+      }
+    ]
+  }
+}

@@ -8,6 +8,7 @@ import { validateEnv } from './config/env.validation'
 import { AiModule } from './modules/ai/ai.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { ConversationsModule } from './modules/conversations/conversations.module'
+import { KnowledgeModule } from './modules/knowledge/knowledge.module'
 import { MessagesModule } from './modules/messages/messages.module'
 import { UsersModule } from './modules/users/users.module'
 
@@ -28,6 +29,7 @@ import { UsersModule } from './modules/users/users.module'
     AuthModule,
     ConversationsModule,
     MessagesModule,
+    KnowledgeModule,
     AiModule,
   ],
   providers: [
