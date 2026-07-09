@@ -1,4 +1,4 @@
-# Frontend Chat MVP — API Contract (Week 2 -> Week 7)
+# Frontend Chat MVP — API Contract (Week 2 -> Week 8)
 
 ## Related Planning Docs
 
@@ -425,9 +425,10 @@ type KnowledgeDocument = {
 ### `POST /ai/conversations/:id/messages` (SSE)
 
 Posts a user message to an `assistant` or `tutor` conversation and streams the
-reply. Persists the user message, runs the LLM (assistant) or RAG chain (tutor),
-streams tokens, then persists the assistant message. `400` if the conversation
-is not `assistant`/`tutor`; `403` if the caller is not a participant.
+reply. Persists the user message, runs the **LangGraph agent** (which may call
+retrieval + user-data tools), streams tokens and tool progress, then persists the
+assistant message. `400` if the conversation is not `assistant`/`tutor`; `403` if
+the caller is not a participant.
 
 **Response:** `text/event-stream`. Each line is `data: <json>\n\n` where the
 JSON is an `AssistantSseEvent`:
@@ -437,13 +438,16 @@ type AssistantSseEvent =
   | { type: 'user_message'; message: Message }
   | { type: 'token'; value: string }
   | { type: 'status'; state: 'thinking' | 'tool_call' }
+  | { type: 'tool_call'; tool: string; label: string } // a tool started (Week 8)
+  | { type: 'tool_result'; tool: string } // a tool finished (Week 8)
   | { type: 'done'; messageId: string; citations?: Citation[] }
   | { type: 'error'; code: string; message: string }
 ```
 
-Tutor answers carry `citations` on the `done` event (and on the persisted
-`Message`). On empty retrieval the tutor returns a fixed refusal with no
-citations (never hallucinates).
+`tool_call` / `tool_result` announce the agent's progress; the FE renders `label`
+(e.g. "Searching your documents…"). Tutor answers carry `citations` on the `done`
+event (and on the persisted `Message`). On empty retrieval the tutor returns a
+fixed refusal with no citations (never hallucinates).
 
 ### `POST /knowledge/documents` (multipart)
 
@@ -530,3 +534,12 @@ Removes a document and its chunks. Scoped to the owner (another user's id -> `40
   (`-> { id }`).
 - The tutor reuses `POST /ai/conversations/:id/messages`; the server branches on
   `conversation.type`.
+
+### Week 8 (LangGraph agent)
+
+- `AssistantSseEvent` gains `tool_call` (`{ tool, label }`) and `tool_result`
+  (`{ tool }`) — the agent's tool progress; the FE renders `label`.
+- No endpoint or request-shape changes: both `assistant` and `tutor` now run
+  through one LangGraph agent behind the same SSE endpoint. Agent state is
+  checkpointed in MongoDB (`thread_id = conversationId`) so conversations resume
+  after a restart.

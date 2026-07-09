@@ -799,7 +799,7 @@ module; the connection (`MongooseModule.forRootAsync`, reads `MONGO_URI` from
 
 Module arrow is one-way `ai -> messages` / `ai -> conversations`.
 
-# Week 7 (Current) — AI Tutor with Knowledge Base + Citations (RAG)
+# Week 7 (Completed) — AI Tutor with Knowledge Base + Citations (RAG)
 
 > Status: shipped. Adds a per-user knowledge base and a `tutor` conversation
 > type that answers grounded **only** in the user's uploaded documents, with
@@ -878,6 +878,76 @@ A third **Tutor** mode (dark-reddish theme) reuses the assistant streaming hook
 (`useAssistantChat(userId, 'tutor')`). A `KnowledgeDocuments` panel handles
 upload (picker + drag-drop) / list / delete; answers show a clickable Sources
 list.
+
+# Week 8 (Completed) — Capstone: LangGraph Agent
+
+> Status: shipped. Refactors the tutor into an explicit LangGraph agent that also
+> serves assistant mode, with MongoDB checkpointing and streamed tool progress.
+
+## What supersedes earlier weeks
+
+- **One agent replaces two stacks.** `AiService.streamReply` (Week-6 hand-rolled
+  tool loop) and `TutorService` (Week-7 chain) are **deleted**; a single
+  `AgentService` runs a LangGraph `StateGraph` for both `assistant` and `tutor`,
+  branching on `conversationType` inside the graph.
+- **`LLM_PROVIDER` fully retired** — the abstraction and both concrete providers
+  are deleted. All LLM access goes through one factory + a `generateStructured`
+  helper (`ai/chat-model.ts`, over `withStructuredOutput`).
+
+## `ai/agent` subsystem
+
+| File | Role |
+| --- | --- |
+| `agent.state.ts` | `Annotation`-based graph state (see below) |
+| `../chat-model.ts` (ai root) | `createChatModel` provider registry + `generateStructured` (`withStructuredOutput`) |
+| `tools/{retrieve-knowledge,get-my-name,summarize-my-recent-messages}.tool.ts` | LangChain `tool()` wrappers; `requesterId` bound from run config, never model input |
+| `tools/tool-context.ts` | `requesterIdFromConfig` — the JWT-scope helper |
+| `tools/agent-tools.service.ts` | assembles + exposes the bound tool list |
+| `agent.graph.ts` | builds + compiles the `StateGraph` |
+| `checkpointer.provider.ts` | `MongoDBSaver` from the shared Mongoose connection |
+| `stream-to-sse.ts` | pure translator: LangGraph `streamEvents` → `AssistantSseEvent` |
+| `agent.service.ts` | orchestrates a turn: seed messages → stream → persist |
+| `citations.ts` (in `ai/`) | shared `SOURCES:` parser + citation mapper |
+
+## Graph
+
+Nodes `route / retrieve / tool_call / tool_result / answer`; conditional edge
+`decideNext` off `route`:
+
+```
+START -> route
+route  --(retrieval call)--> retrieve   --> route
+       --(user-data call)--> tool_call  --> tool_result --> route
+       --(no call)--------> answer      --> END
+```
+
+- `route` — LLM decision (tools bound). `decideNext` reads the last message's tool
+  calls: retrieval → `retrieve`; other → `tool_call`; none → `answer`.
+- `retrieve` — runs the RAG tool, fills `state.retrieved` from its
+  `content_and_artifact` result, appends a `ToolMessage`, loops back.
+- `tool_call` → `tool_result` — executes user-data tools, folds results into the
+  transcript, loops back (tools chain across turns).
+- `answer` — the sole generator: streams the reply, strips `SOURCES:`, derives
+  citations. Tutor + empty retrieval → canned refusal, **no LLM call**.
+
+State (`agent.state.ts`): `messages` (`messagesStateReducer`), `conversationType`,
+`requesterId`, `conversationId`, `retrieved`, `citations`, `pendingToolMessages`.
+
+## Checkpointing
+
+`MongoDBSaver` keyed `thread_id = conversationId`, reusing the pooled Mongoose
+connection (`connection.getClient()`; the mongodb 6/7 type skew is bridged with a
+cast, as the Week-7 vector store does). The checkpointer is the agent's working
+memory; Mongo `messages` stays the UI source of truth. Warm threads feed only the
+new user message; cold threads seed history from Mongo once → conversations resume
+after a restart.
+
+## Streaming + frontend
+
+`AssistantSseEvent` gains `tool_call` / `tool_result`. The FE hook dispatches a
+tool label into reducer state; both AI panels show the BE-supplied progress line
+("Searching your documents…"). Tokens and tutor citations render as before; all
+three conversation types coexist via the existing mode switcher (no panel merge).
 
 ---
 

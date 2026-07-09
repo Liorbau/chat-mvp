@@ -3,7 +3,7 @@
 ## Project Context
 
 - Masterschool Fellowship (AI Software Engineering); ongoing multi-week project.
-- Current phase: **Week 7 (AI Tutor — RAG over a per-user knowledge base with citations)**.
+- Current phase: **Week 8 (Capstone — refactor the RAG tutor into a LangGraph agent with MongoDB checkpointing, streamed agent events, and one polished multi-type UI)**.
 - This file tracks stable engineering principles, cross-week goals, and the
   current week's requirements.
 
@@ -326,7 +326,7 @@ Zod-validated tools; one Zod structured-output call (`generateStructured`,
 fail-closed); multi-turn context within a token budget; eval harness
 (`apps/api/src/modules/ai/eval`). PR notes in `WEEK6_PR.local.md`.
 
-### Week 7 (Current) — AI Tutor with Knowledge Base + Citations (RAG)
+### Week 7 (Completed) — AI Tutor with Knowledge Base + Citations (RAG)
 
 #### Spec summary
 
@@ -484,10 +484,146 @@ least code while meeting every acceptance criterion.
 
 #### Status
 
-Branch `feature/backend/week-7-rag` created; CLAUDE.md scope + architecture
-decisions recorded. Design discussion complete — nothing built yet.
-`ARCHITECTURE.md` / `API_CONTRACT.md` still end at Week 5 (Week 6 was never
-backfilled there); to be updated at implementation time so they match real code.
+All acceptance criteria met and shipped on `feature/backend/week-7-rag` (see
+git history + `WEEK7_PR.local.md`). Implemented: `knowledge` module
+(`kb_documents` + `kb_chunks`, single uuid `_id`) with multipart upload,
+synchronous chunk→embed→store ingestion, content-hash dedup, and per-user Atlas
+Vector Search retrieval (`knowledge.retriever.service`); Voyage embeddings
+(`voyage.embeddings.ts`, 1024-dim); committed `apps/api/atlas/vector-index.json`;
+`tutor` conversation type; `TutorService` LangChain RAG chain (ChatOpenAI +
+retriever + prompt) reached via the shared `POST /ai/conversations/:id/messages`
+path, branching on `conversation.type` in `ai.controller`; empty-retrieval
+short-circuit refusal (threshold 0.7, top-K 4); citations in the `done` SSE event
++ persisted on `Message`; FE `TutorPanel` + `KnowledgeDocuments` render clickable
+sources; RAG eval harness (`ai/eval/rag`).
+
+Doc debt carried forward: `ARCHITECTURE.md` / `API_CONTRACT.md` still end at
+Week 5 (Weeks 6-7 never backfilled there). Backfill Weeks 6-8 when the capstone
+lands so the architecture/contract docs match real code.
+
+### Week 8 (Current) — Capstone: LangGraph Agent (final shipping week)
+
+#### Spec summary
+
+Final week. Compose Weeks 1-7 into one product: React FE + NestJS BE + MongoDB +
+JWT + a **LangGraph agent** that wraps the Week-7 RAG tutor **and** at least one
+user-data tool. Persist agent state via a LangGraph MongoDB checkpoint saver.
+Stream agent events (token deltas, tool-call announcements, tool-result
+completions) to the FE. All three conversation types (`user`, `assistant`,
+`tutor`) work in one polished UI. Ship.
+
+#### Spec rules
+
+Refactor the Week-7 tutor into a LangGraph agent. The agent must:
+
+- Have an explicit **state schema** (`Annotation`-based): conversation history,
+  retrieved context, last tool call, etc. — typed and documented.
+- Use **nodes** for distinct steps — at minimum: `route` (decide next step),
+  `retrieve`, `answer`, `tool_call`, `tool_result`.
+- Use **conditional edges** to route between "needs retrieval", "needs tool
+  call", and "ready to answer" (≥1 conditional edge required).
+- Use the **LangGraph MongoDB checkpoint saver** so conversation state survives
+  restarts and the agent resumes mid-conversation. Keyed by userId + threadId
+  (conversationId).
+- **Stream events** to the FE: token deltas, tool-call announcements, tool-result
+  completions.
+- Use Week-7 **RAG retrieval as a tool** the agent invokes when a question needs
+  grounded knowledge.
+- Expose **≥1 additional user-data tool** (reuse/extend Week 6):
+  `summarize_my_messages`, `list_my_conversations`, `search_my_messages`, or own.
+
+#### FE
+
+- All three conversation types work in one polished UI: human, assistant, tutor.
+- Tutor messages render citations (clickable).
+- Streaming UX: tokens appear progressively; tool-call indicators show agent
+  progress (e.g. "Searching your documents…", "Looking up your messages…").
+
+#### Tech constraints
+
+- **LangGraph (TypeScript)** for the agent graph. **LangGraph MongoDB checkpoint
+  saver** for persistence.
+- All prior constraints carry forward: TS strict, no `any`, env-only secrets,
+  JWT-protected, scoped to the authenticated user.
+- The full repo runs locally end-to-end with a documented setup checklist in the
+  PR description.
+
+#### Acceptance criteria
+
+- [ ] Agent defined as a LangGraph state graph with ≥1 conditional edge.
+- [ ] Agent state schema typed and documented.
+- [ ] MongoDB checkpoint saver wired — kill server mid-conversation, restart,
+      conversation resumes.
+- [ ] Retrieval (Week 7) + ≥1 user-data tool (Week 6) both available to the agent.
+- [ ] FE streams tokens and shows tool-call progress.
+- [ ] Tutor citations still rendered correctly.
+- [ ] All three conversation types work in the same polished UI.
+- [ ] Authorization enforced — tools + retrieval scoped to the authenticated user.
+- [ ] `npx tsc --noEmit` passes across FE and BE.
+- [ ] PR description includes a graph diagram (mermaid ok), the state schema, the
+      tool list, and an eight-week-journey reflection.
+
+#### Submission
+
+- PR on the capstone branch. PR description: agent graph diagram, agent state
+  schema, tool list, tradeoffs reflection, demo notes, end-to-end local setup
+  checklist. Mentor reviews Sunday.
+
+#### Insights vs. formal spec (formal wins)
+
+Supplementary course notes were provided alongside the spec. Where they conflict
+with the official instructions, **the instructions win.** Reconciliations:
+
+- **TypeScript, in-process — not a Python sidecar.** The notes repeatedly assume
+  a Python LangGraph runtime with tools calling NestJS over HTTP. The formal
+  techstraint is **LangGraph (TypeScript)**. Build the graph in-process inside the
+  Nest `ai` module; tools call the existing TS services directly (no Python
+  process, no HTTP tool adapters). This also matches the current codebase
+  (`TutorService` already uses `@langchain/*` in TS).
+- **Reuse the existing SSE endpoint + contract.** Keep streaming over the current
+  `POST /ai/conversations/:id/messages` and the `AssistantSseEvent` union in
+  `@chat/contract`; extend that union for tool-call/tool-result events rather than
+  inventing a parallel `/ai/stream` route with a different event vocabulary.
+- **Everything else in the notes is confirmatory** (graph nodes/edges, typed
+  state, checkpoint collection, per-message citations, JWT-guarded SSE, e2e happy
+  path) and aligns with the acceptance criteria above.
+
+#### Architecture Decisions (locked & built)
+
+- **Unified agent, not two stacks.** One `AgentService` runs a LangGraph
+  `StateGraph` for both `assistant` and `tutor` (branch on `conversationType`
+  inside the graph). The Week-6 hand-rolled tool loop and the Week-7 tutor chain
+  were deleted — they were legacy the moment LangGraph landed.
+- **Explicit named nodes** `route / retrieve / tool_call / tool_result / answer`
+  with a conditional edge (`decideNext`) off `route`; `retrieve` and
+  `tool_result` loop back to `route`, so tools chain across turns. `route` decides
+  (invoke), `answer` is the sole streamed generator (keeps refusals deterministic).
+- **Checkpointer = agent memory; Mongo `messages` = UI truth.** `MongoDBSaver`
+  keyed `thread_id = conversationId`, built from the shared Mongoose connection
+  (`connection.getClient()`); warm threads feed only the new message, cold threads
+  seed history from Mongo once.
+- **One LangChain chat-model factory** (`createChatModel`, `ChatOpenAI`/
+  `ChatAnthropic`, provider registry, `temperature: 0`) plus a `generateStructured`
+  helper over `withStructuredOutput`. The Week-6 `LLM_PROVIDER` abstraction and both
+  concrete providers were deleted — one LLM path for the whole module.
+- **Two new SSE events** (`tool_call` / `tool_result`) on the existing envelope; a
+  pure `stream-to-sse` translator maps LangGraph `streamEvents` → SSE with
+  `SOURCES:` held back. FE renders BE-supplied progress labels; no panel merge.
+- **Reuse ladder throughout** — reused `BaseMessage.text`,
+  `coerceMessageLikeToMessage`, extracted `citations.ts`, reused the Week-6 tools
+  and Week-7 retriever; built new only where neither we nor LangChain had it.
+
+#### Status
+
+All acceptance criteria met (eval numbers pending a live Atlas run). Implemented:
+the `ai/agent/` subsystem (state, chat-model factory, four tool files + assembler,
+graph, checkpointer provider, stream-to-sse translator, `AgentService`); contract
+extended with `tool_call`/`tool_result`; controller routes both AI types through
+the agent; dead Week-6/7 services removed; the `LLM_PROVIDER` stack fully retired
+(one chat-model factory + `generateStructured`). FE renders tool progress +
+citations. `verify:precommit` green — **API 73 + Web 56 = 129 tests**
+(29 new unit bricks). PR notes in `WEEK8_PR.local.md`. `ARCHITECTURE.md` /
+`API_CONTRACT.md` backfilled for Weeks 6-8.
 
 ## Backend Architecture and Clean Code
 
