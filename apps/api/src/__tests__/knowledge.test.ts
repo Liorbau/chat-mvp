@@ -36,7 +36,9 @@ describe('Knowledge API', () => {
       builder.overrideProvider(Embeddings).useValue(new FakeEmbeddings()),
     )
     // kb collections aren't seeded/reset by createTestApp, so clear them per test.
-    await app.get<Model<MongooseKnowledgeDocument>>(getModelToken(KnowledgeDocumentModel.name)).deleteMany({})
+    await app
+      .get<Model<MongooseKnowledgeDocument>>(getModelToken(KnowledgeDocumentModel.name))
+      .deleteMany({})
     await app.get<Model<ChunkDocument>>(getModelToken(Chunk.name)).deleteMany({})
   })
 

@@ -11,12 +11,6 @@ export const OutputSchema = z.object({
   summaries: z.array(z.object({ conversationId: z.string(), summary: z.string() })),
 })
 
-export function toToolInputSchema(): Record<string, unknown> {
-  const schema = z.toJSONSchema(InputSchema) as Record<string, unknown>
-  delete schema.$schema
-  return schema
-}
-
 export function formatTranscript(
   recentMostRecentFirst: Message[],
   requesterId: string,

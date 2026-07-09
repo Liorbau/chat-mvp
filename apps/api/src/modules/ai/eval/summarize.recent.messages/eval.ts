@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { ConfigService } from '@nestjs/config'
 import type { Message } from '@chat/contract'
-import type { LlmProvider } from '../../llm.provider'
+import { generateStructured } from '../../chat-model'
 import { SUMMARIZE_SYSTEM_PROMPT } from '../../prompts/summarize.prompt'
 import { formatTranscript, OutputSchema } from '../../tools/summarize.shared'
 import { scoreSummary } from './scorer'
@@ -30,7 +31,8 @@ function toMessages(fixture: Fixture): Message[] {
     .reverse()
 }
 
-export async function run(provider: LlmProvider): Promise<number[]> {
+export async function run(): Promise<number[]> {
+  const configService = new ConfigService()
   const fixtures: Fixture[] = JSON.parse(
     readFileSync(
       join(
@@ -49,13 +51,15 @@ export async function run(provider: LlmProvider): Promise<number[]> {
   const scores: number[] = []
   for (const fixture of fixtures) {
     const transcript = formatTranscript(toMessages(fixture), ME, 50)
-    const result = await provider.generateStructured(
-      { system: SUMMARIZE_SYSTEM_PROMPT, messages: [{ role: 'user', content: transcript }] },
+    const result = await generateStructured(
+      configService,
+      SUMMARIZE_SYSTEM_PROMPT,
+      transcript,
       OutputSchema,
     )
     const summary = result.summaries.map((entry) => entry.summary).join('\n')
     const { score, reasons } = await scoreSummary({
-      provider,
+      configService,
       transcript,
       summary,
       good: fixture.good,

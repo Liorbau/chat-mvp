@@ -117,10 +117,6 @@ export class MessagesService {
     return { message }
   }
 
-  // Persists an assistant reply (senderId = ASSISTANT_SENDER_ID) and bumps the
-  // conversation's last-activity in one transaction. No participant check: the
-  // assistant is not a user, and the caller (AiService) already authorized the
-  // turn when it persisted the triggering user message.
   async appendAssistantMessage(
     conversationId: string,
     content: string,
