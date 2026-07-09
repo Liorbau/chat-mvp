@@ -1,5 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { ASSISTANT_SENDER_ID, type AssistantSseEvent, type Message } from '@chat/contract'
+import {
+  ASSISTANT_SENDER_ID,
+  type AssistantSseEvent,
+  type ConversationType,
+  type Message,
+} from '@chat/contract'
 import { AppError } from '../../errors/AppError'
 import { ConversationsService } from '../conversations/conversations.service'
 import { MessagesService } from '../messages/messages.service'
@@ -32,19 +37,21 @@ export class AiService {
     private readonly aiTools: AiToolsService,
   ) {}
 
-  async prepareTurn(input: TurnInput): Promise<Message> {
+  async prepareTurn(
+    input: TurnInput,
+  ): Promise<{ message: Message; conversationType: ConversationType }> {
     const conversation = await this.conversationsService.assertParticipant(
       input.conversationId,
       input.requesterId,
     )
-    if (conversation.type !== 'assistant') {
+    if (conversation.type !== 'assistant' && conversation.type !== 'tutor') {
       throw AppError.badRequest(
         'VALIDATION_ERROR',
-        'This endpoint is only for assistant conversations',
+        'This endpoint is only for assistant or tutor conversations',
       )
     }
     const { message } = await this.messagesService.createMessage(input)
-    return message
+    return { message, conversationType: conversation.type }
   }
 
   async *streamReply(input: Omit<TurnInput, 'content'>): AsyncGenerator<AssistantSseEvent> {
