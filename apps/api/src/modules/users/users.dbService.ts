@@ -13,14 +13,26 @@ function toStoredUser(doc: UserDocument): StoredUser {
   return {
     id: doc._id,
     name: doc.name,
+    firstName: doc.firstName,
+    lastName: doc.lastName,
     email: doc.email,
     passwordHash: doc.passwordHash,
   }
 }
 
 export function toPublicUser(user: StoredUser): User {
-  return { id: user.id, name: user.name, email: user.email }
+  return {
+    id: user.id,
+    name: user.name,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+  }
 }
+
+// Fields a profile update may change. `name` is derived by the service from
+// firstName/lastName, so the DAO stays a dumb persistence step.
+export type UserUpdate = Partial<Pick<StoredUser, 'firstName' | 'lastName' | 'name' | 'email'>>
 
 @Injectable()
 export class UsersDbService {
@@ -61,10 +73,19 @@ export class UsersDbService {
     const doc = await this.userModel.create({
       _id: randomUUID(),
       name: draft.name,
+      firstName: draft.firstName,
+      lastName: draft.lastName,
       email: draft.email,
       passwordHash: draft.passwordHash,
     })
     return toStoredUser(doc)
+  }
+
+  async update(userId: string, changes: UserUpdate): Promise<User | undefined> {
+    const doc = await this.userModel
+      .findByIdAndUpdate(userId, { $set: changes }, { returnDocument: 'after' })
+      .exec()
+    return doc === null ? undefined : toPublicUser(toStoredUser(doc))
   }
 
   async reset(users: StoredUser[]): Promise<void> {
@@ -74,6 +95,8 @@ export class UsersDbService {
         users.map((user) => ({
           _id: user.id,
           name: user.name,
+          firstName: user.firstName,
+          lastName: user.lastName,
           email: user.email,
           passwordHash: user.passwordHash,
         })),

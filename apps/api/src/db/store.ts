@@ -19,32 +19,17 @@ export const SEED_CONVERSATION_IDS = {
 
 export function buildSeedUsers(bcryptRounds: number): (User & { passwordHash: string })[] {
   const seedPasswordHash = bcrypt.hashSync(SEED_PASSWORD, bcryptRounds)
-  return [
-    {
-      id: SEED_USER_IDS.alex,
-      name: 'Alex',
-      email: 'alex@example.com',
-      passwordHash: seedPasswordHash,
-    },
-    {
-      id: SEED_USER_IDS.sam,
-      name: 'Sam',
-      email: 'sam@example.com',
-      passwordHash: seedPasswordHash,
-    },
-    {
-      id: SEED_USER_IDS.dana,
-      name: 'Dana',
-      email: 'dana@example.com',
-      passwordHash: seedPasswordHash,
-    },
-    {
-      id: SEED_USER_IDS.maya,
-      name: 'Maya',
-      email: 'maya@example.com',
-      passwordHash: seedPasswordHash,
-    },
+  const seeds = [
+    { id: SEED_USER_IDS.alex, firstName: 'Alex', lastName: 'Rivera', email: 'alex@example.com' },
+    { id: SEED_USER_IDS.sam, firstName: 'Sam', lastName: 'Chen', email: 'sam@example.com' },
+    { id: SEED_USER_IDS.dana, firstName: 'Dana', lastName: 'Park', email: 'dana@example.com' },
+    { id: SEED_USER_IDS.maya, firstName: 'Maya', lastName: 'Singh', email: 'maya@example.com' },
   ]
+  return seeds.map((seed) => ({
+    ...seed,
+    name: `${seed.firstName} ${seed.lastName}`,
+    passwordHash: seedPasswordHash,
+  }))
 }
 
 export type SeedConversation = {

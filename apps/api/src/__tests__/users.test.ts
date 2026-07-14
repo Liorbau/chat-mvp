@@ -32,12 +32,14 @@ describe('Users API', () => {
     const users = response.body as Array<Record<string, unknown>>
     expect(users.length).toBeGreaterThanOrEqual(4)
     for (const user of users) {
-      expect(Object.keys(user).sort()).toEqual(['email', 'id', 'name'])
+      expect(Object.keys(user).sort()).toEqual(['email', 'firstName', 'id', 'lastName', 'name'])
       expect(user).not.toHaveProperty('passwordHash')
     }
     expect(users).toContainEqual({
       id: SEED_USER_IDS.alex,
-      name: 'Alex',
+      name: 'Alex Rivera',
+      firstName: 'Alex',
+      lastName: 'Rivera',
       email: 'alex@example.com',
     })
   })

@@ -1,14 +1,19 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import type { User } from '@chat/contract'
+import type { UpdateProfileRequest, User } from '@chat/contract'
 import bcrypt from 'bcrypt'
 import { AppError } from '../../errors/AppError'
-import { toPublicUser, UsersDbService } from './users.dbService'
+import { toPublicUser, type UserUpdate, UsersDbService } from './users.dbService'
 
 export type CreateUserInput = {
   email: string
   password: string
-  name: string
+  firstName: string
+  lastName: string
+}
+
+function deriveName(firstName: string, lastName: string): string {
+  return `${firstName} ${lastName}`
 }
 
 @Injectable()
@@ -56,10 +61,54 @@ export class UsersService {
     const bcryptRounds = this.configService.getOrThrow<number>('BCRYPT_ROUNDS')
     const passwordHash = await bcrypt.hash(input.password, bcryptRounds)
     const stored = await this.usersDbService.create({
-      name: input.name,
+      name: deriveName(input.firstName, input.lastName),
+      firstName: input.firstName,
+      lastName: input.lastName,
       email: input.email,
       passwordHash,
     })
     return toPublicUser(stored)
+  }
+
+  async updateProfile(userId: string, changes: UpdateProfileRequest): Promise<User> {
+    const current = await this.usersDbService.findById(userId)
+    if (current === undefined) {
+      throw AppError.notFound('User not found')
+    }
+
+    const update = await this.buildUserUpdate(current, changes)
+    if (Object.keys(update).length === 0) {
+      throw AppError.badRequest('VALIDATION_ERROR', 'No fields to update')
+    }
+
+    const updated = await this.usersDbService.update(userId, update)
+    if (updated === undefined) {
+      throw AppError.notFound('User not found')
+    }
+    return updated
+  }
+
+  // Translates a partial profile request into a concrete DAO update: re-derives the
+  // display name when either name part changes, and guards email uniqueness.
+  private async buildUserUpdate(current: User, changes: UpdateProfileRequest): Promise<UserUpdate> {
+    const update: UserUpdate = {}
+
+    if (changes.firstName !== undefined || changes.lastName !== undefined) {
+      const firstName = changes.firstName ?? current.firstName
+      const lastName = changes.lastName ?? current.lastName
+      update.firstName = firstName
+      update.lastName = lastName
+      update.name = deriveName(firstName, lastName)
+    }
+
+    if (changes.email !== undefined && changes.email !== current.email) {
+      const existing = await this.usersDbService.findByEmail(changes.email)
+      if (existing !== undefined && existing.id !== current.id) {
+        throw AppError.conflict('EMAIL_ALREADY_EXISTS', 'An account with this email already exists')
+      }
+      update.email = changes.email
+    }
+
+    return update
   }
 }
