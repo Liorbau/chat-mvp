@@ -17,6 +17,9 @@
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
+  /* Always reserve the scrollbar gutter so fixed elements (the top button bar)
+     don't shift sideways between modes that scroll and modes that don't. */
+  scrollbar-gutter: stable;
   color-scheme: light dark;
   color: var(--text);
   background: var(--bg);

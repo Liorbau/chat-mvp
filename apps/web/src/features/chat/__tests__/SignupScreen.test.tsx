@@ -20,7 +20,8 @@ function renderSignup() {
 }
 
 async function fillValidForm(user: ReturnType<typeof userEvent.setup>) {
-  await user.type(screen.getByLabelText('Name'), 'New User')
+  await user.type(screen.getByLabelText('First name'), 'New')
+  await user.type(screen.getByLabelText('Last name'), 'User')
   await user.type(screen.getByLabelText('Email'), 'new@example.com')
   await user.type(screen.getByLabelText('Password'), 'password123')
 }
@@ -31,11 +32,17 @@ beforeEach(() => {
 })
 
 describe('SignupScreen', () => {
-  it('submits name, email and password to sign up', async () => {
+  it('submits first name, last name, email and password to sign up', async () => {
     const user = userEvent.setup()
     vi.mocked(apiClient.signup).mockResolvedValue({
       token: 'tok',
-      user: { id: 'user-9', name: 'New User', email: 'new@example.com' },
+      user: {
+        id: 'user-9',
+        name: 'New User',
+        firstName: 'New',
+        lastName: 'User',
+        email: 'new@example.com',
+      },
     })
     renderSignup()
 
@@ -43,7 +50,8 @@ describe('SignupScreen', () => {
     await user.click(screen.getByRole('button', { name: 'Sign up' }))
 
     expect(apiClient.signup).toHaveBeenCalledWith({
-      name: 'New User',
+      firstName: 'New',
+      lastName: 'User',
       email: 'new@example.com',
       password: 'password123',
     })

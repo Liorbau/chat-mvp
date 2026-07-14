@@ -29,7 +29,13 @@ describe('LoginScreen', () => {
     const user = userEvent.setup()
     vi.mocked(apiClient.login).mockResolvedValue({
       token: 'tok',
-      user: { id: 'user-1', name: 'Alex', email: 'alex@example.com' },
+      user: {
+        id: 'user-1',
+        name: 'Alex Rivera',
+        firstName: 'Alex',
+        lastName: 'Rivera',
+        email: 'alex@example.com',
+      },
     })
     renderLogin()
 

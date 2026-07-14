@@ -1,4 +1,4 @@
-import type { AuthResponse } from '@chat/contract'
+import type { AuthResponse, User } from '@chat/contract'
 
 const STORAGE_KEY = 'chat.auth'
 
@@ -37,6 +37,13 @@ export function saveAuth(auth: StoredAuth): void {
   cached = auth
   localStorage.setItem(STORAGE_KEY, JSON.stringify(auth))
   emit()
+}
+
+export function updateUser(user: User): void {
+  if (cached === null) {
+    throw new Error('Cannot update the stored user before authentication')
+  }
+  saveAuth({ ...cached, user })
 }
 
 export function clearStoredAuth(): void {

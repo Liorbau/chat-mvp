@@ -1,11 +1,12 @@
 import { createContext, useContext } from 'react'
-import type { LoginRequest, SignupRequest, User } from '@chat/contract'
+import type { LoginRequest, SignupRequest, UpdateProfileRequest, User } from '@chat/contract'
 
 export type AuthContextValue = {
   user: User | null
   isAuthenticated: boolean
   signIn: (credentials: LoginRequest) => Promise<void>
   signUp: (input: SignupRequest) => Promise<void>
+  updateProfile: (input: UpdateProfileRequest) => Promise<User>
   signOut: () => void
 }
 

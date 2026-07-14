@@ -4,7 +4,13 @@ import { clearStoredAuth, getToken, loadAuth, saveAuth, subscribe } from '../aut
 
 const session: AuthResponse = {
   token: 'tok-123',
-  user: { id: 'user-1', name: 'Alex', email: 'alex@example.com' },
+  user: {
+    id: 'user-1',
+    name: 'Alex Rivera',
+    firstName: 'Alex',
+    lastName: 'Rivera',
+    email: 'alex@example.com',
+  },
 }
 
 beforeEach(() => {
