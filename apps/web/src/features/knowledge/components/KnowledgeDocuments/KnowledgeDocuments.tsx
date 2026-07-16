@@ -1,0 +1,56 @@
+import { useState } from 'react'
+import {
+  DRAGGING_STYLE,
+  ERROR_STYLE,
+  HEADER_STYLE,
+  LIST_STYLE,
+  TITLE_STYLE,
+  WRAP_STYLE,
+} from './KnowledgeDocuments.constants'
+import { KnowledgeDocumentItem } from './KnowledgeDocumentItem'
+import { KnowledgeUpload } from './KnowledgeUpload'
+import type { KnowledgeDocumentsViewProps } from './KnowledgeDocuments.types'
+
+export function KnowledgeDocuments({
+  documents,
+  error,
+  busy,
+  onUpload,
+  onRemove,
+}: KnowledgeDocumentsViewProps) {
+  const [dragging, setDragging] = useState(false)
+
+  return (
+    <div
+      className={dragging ? `${WRAP_STYLE} ${DRAGGING_STYLE}` : WRAP_STYLE}
+      onDragOver={(event) => {
+        event.preventDefault()
+        setDragging(true)
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(event) => {
+        event.preventDefault()
+        setDragging(false)
+        const file = event.dataTransfer.files?.[0]
+        if (file !== undefined) {
+          onUpload(file)
+        }
+      }}
+    >
+      <div className={HEADER_STYLE}>
+        <span className={TITLE_STYLE}>My documents</span>
+        <KnowledgeUpload busy={busy} onFile={onUpload} />
+      </div>
+
+      {documents.length > 0 ? (
+        <div className={LIST_STYLE}>
+          {documents.map((document) => (
+            <KnowledgeDocumentItem key={document.id} document={document} onRemove={onRemove} />
+          ))}
+        </div>
+      ) : null}
+
+      {error !== null ? <div className={ERROR_STYLE}>{error}</div> : null}
+    </div>
+  )
+}
