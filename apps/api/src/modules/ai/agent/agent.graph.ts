@@ -21,7 +21,7 @@ type AgentGraphDeps = {
   checkpointer?: BaseCheckpointSaver
 }
 
-type Route = 'retrieve' | 'tool_call' | 'answer'
+type Route = 'retrieve' | 'tool_call' | 'end'
 
 function systemPromptFor(type: AgentConversationType): string {
   return type === 'tutor' ? TUTOR_SYSTEM_PROMPT : ASSISTANT_SYSTEM_PROMPT
@@ -51,18 +51,31 @@ export function buildAgentGraph(
     state: AgentStateType,
     config: RunnableConfig,
   ): Promise<Partial<AgentStateType>> {
+    if (
+      state.conversationType === 'tutor' &&
+      state.retrievalAttempted &&
+      state.retrieved.length === 0
+    ) {
+      return { messages: [answerMessage(undefined, NO_CONTEXT_REPLY)], citations: [] }
+    }
     const system = systemPromptFor(state.conversationType)
     const response = await modelWithTools.invoke(
       [new SystemMessage(system), ...state.messages],
       config,
     )
-    return { messages: [response] }
+    if ((response.tool_calls ?? []).length > 0) {
+      return { messages: [response] }
+    }
+    const { answer: text, usedIndices } = parseAnswer(response.text)
+    const citations =
+      state.conversationType === 'tutor' ? toCitations(usedIndices, state.retrieved) : []
+    return { messages: [answerMessage(response.id, text)], citations }
   }
 
   function decideNext(state: AgentStateType): Route {
     const calls = pendingToolCalls(state)
     if (calls.length === 0) {
-      return 'answer'
+      return 'end'
     }
     return calls.some((call) => tools.isRetrieval(call.name)) ? 'retrieve' : 'tool_call'
   }
@@ -94,7 +107,7 @@ export function buildAgentGraph(
     config: RunnableConfig,
   ): Promise<Partial<AgentStateType>> {
     const { toolMessages, retrieved } = await runTools(state, config)
-    return { messages: toolMessages, retrieved }
+    return { messages: toolMessages, retrieved, retrievalAttempted: true }
   }
 
   async function toolCall(
@@ -109,43 +122,20 @@ export function buildAgentGraph(
     return { messages: state.pendingToolMessages, pendingToolMessages: [] }
   }
 
-  async function answer(
-    state: AgentStateType,
-    config: RunnableConfig,
-  ): Promise<Partial<AgentStateType>> {
-    // The last message is route's (unstreamed) decision; replace it by id with the
-    // streamed, SOURCES-stripped answer so the transcript holds one clean reply.
-    const replaceId = state.messages.at(-1)?.id
-    if (state.conversationType === 'tutor' && state.retrieved.length === 0) {
-      return { messages: [answerMessage(replaceId, NO_CONTEXT_REPLY)], citations: [] }
-    }
-    const system = systemPromptFor(state.conversationType)
-    const response = await chatModel.invoke(
-      [new SystemMessage(system), ...state.messages.slice(0, -1)],
-      config,
-    )
-    const { answer: text, usedIndices } = parseAnswer(response.text)
-    const citations =
-      state.conversationType === 'tutor' ? toCitations(usedIndices, state.retrieved) : []
-    return { messages: [answerMessage(replaceId, text)], citations }
-  }
-
   const workflow = new StateGraph(AgentState)
     .addNode('route', route)
     .addNode('retrieve', retrieve)
     .addNode('tool_call', toolCall)
     .addNode('tool_result', toolResult)
-    .addNode('answer', answer)
     .addEdge(START, 'route')
     .addConditionalEdges('route', decideNext, {
       retrieve: 'retrieve',
       tool_call: 'tool_call',
-      answer: 'answer',
+      end: END,
     })
     .addEdge('retrieve', 'route')
     .addEdge('tool_call', 'tool_result')
     .addEdge('tool_result', 'route')
-    .addEdge('answer', END)
 
   // Widen LangGraph's node-name-literal generics to the state-only form the service uses.
   return workflow.compile(checkpointer ? { checkpointer } : {}) as unknown as CompiledStateGraph<

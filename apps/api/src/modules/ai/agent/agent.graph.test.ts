@@ -20,16 +20,14 @@ const retrievalCall = new AIMessage({
     { id: 'tc1', name: 'retrieve_knowledge', args: { query: 'sky' }, type: 'tool_call' },
   ],
 })
-const noToolCall = new AIMessage('')
-
-// Fake chat model: the tool-bound model returns each route response in order; the
-// plain model returns the final answer.
-function fakeModel(routeResponses: AIMessage[], answer: AIMessage) {
+// Fake chat model: the single tool-bound generation node consumes these responses
+// in order — a tool-call response routes to a tool, a plain response is the answer.
+function fakeModel(routeResponses: AIMessage[]) {
   const boundInvoke = vi.fn()
   for (const response of routeResponses) {
     boundInvoke.mockResolvedValueOnce(response)
   }
-  return { bindTools: () => ({ invoke: boundInvoke }), invoke: vi.fn().mockResolvedValue(answer) }
+  return { bindTools: () => ({ invoke: boundInvoke }), invoke: vi.fn() }
 }
 
 function fakeTools(artifact: RetrievedChunk[]) {
@@ -63,10 +61,7 @@ async function invokeGraph(
 
 describe('agent graph routing', () => {
   it('tutor: routes through retrieval and cites the used chunk', async () => {
-    const model = fakeModel(
-      [retrievalCall, noToolCall],
-      new AIMessage('It scatters blue light.\nSOURCES: 1'),
-    )
+    const model = fakeModel([retrievalCall, new AIMessage('It scatters blue light.\nSOURCES: 1')])
     const state = await invokeGraph(model, fakeTools([CHUNK]), 'tutor')
 
     expect(state.messages.at(-1)?.text).toBe('It scatters blue light.')
@@ -75,7 +70,9 @@ describe('agent graph routing', () => {
   })
 
   it('tutor: refuses without hallucinating when retrieval is empty', async () => {
-    const model = fakeModel([retrievalCall, noToolCall], new AIMessage('should not be used'))
+    // Only one bound call is queued: the refusal short-circuits before a second
+    // model call, proving retrieval ran and produced nothing.
+    const model = fakeModel([retrievalCall])
     const state = await invokeGraph(model, fakeTools([]), 'tutor')
 
     expect(state.messages.at(-1)?.text).toBe(NO_CONTEXT_REPLY)
@@ -83,7 +80,7 @@ describe('agent graph routing', () => {
   })
 
   it('assistant: answers directly when no tool is needed, with no citations', async () => {
-    const model = fakeModel([noToolCall], new AIMessage('Hello there!'))
+    const model = fakeModel([new AIMessage('Hello there!')])
     const state = await invokeGraph(model, fakeTools([]), 'assistant')
 
     expect(state.messages.at(-1)?.text).toBe('Hello there!')
@@ -93,7 +90,7 @@ describe('agent graph routing', () => {
 
 describe('agent graph checkpointing', () => {
   it('remembers earlier turns from the checkpointer on the same thread', async () => {
-    const model = fakeModel([new AIMessage(''), new AIMessage('')], new AIMessage('ok'))
+    const model = fakeModel([new AIMessage(''), new AIMessage('')])
     const graph = buildAgentGraph({
       chatModel: model as never,
       tools: fakeTools([]) as never,

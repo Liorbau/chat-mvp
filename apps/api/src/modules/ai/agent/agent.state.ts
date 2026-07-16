@@ -13,8 +13,8 @@ export const AgentState = Annotation.Root({
   requesterId: Annotation<string>(),
   conversationId: Annotation<string>(),
   retrieved: Annotation<RetrievedChunk[]>({ reducer: replace, default: () => [] }),
+  retrievalAttempted: Annotation<boolean>({ reducer: replace, default: () => false }),
   citations: Annotation<Citation[]>({ reducer: replace, default: () => [] }),
-  // Handed from tool_call to tool_result, then folded into messages and cleared.
   pendingToolMessages: Annotation<BaseMessage[]>({ reducer: replace, default: () => [] }),
 })
 
