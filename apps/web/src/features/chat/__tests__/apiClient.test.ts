@@ -3,7 +3,13 @@ import type { User } from '@chat/contract'
 import { ApiRequestError, getConversations, signup } from '../api/apiClient'
 import { clearStoredAuth, getToken, saveAuth } from '../../auth/authStorage'
 
-const user: User = { id: 'user-1', name: 'Alex', email: 'alex@example.com' }
+const user: User = {
+  id: 'user-1',
+  name: 'Alex Rivera',
+  firstName: 'Alex',
+  lastName: 'Rivera',
+  email: 'alex@example.com',
+}
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -54,9 +60,12 @@ describe('apiClient', () => {
       ),
     )
 
-    const error = await signup({ email: 'a@b.com', password: 'short', name: 'A' }).catch(
-      (caught: unknown) => caught,
-    )
+    const error = await signup({
+      email: 'a@b.com',
+      password: 'short',
+      firstName: 'A',
+      lastName: 'B',
+    }).catch((caught: unknown) => caught)
 
     expect(error).toBeInstanceOf(ApiRequestError)
     const apiError = error as ApiRequestError

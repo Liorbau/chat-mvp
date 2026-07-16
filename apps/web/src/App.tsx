@@ -36,6 +36,9 @@ function App() {
   }, [isAuthenticated, loadUsers])
 
   function getUserDisplayName(userId: string): string {
+    if (user !== null && userId === user.id) {
+      return user.name
+    }
     return users.find((directoryUser) => directoryUser.id === userId)?.name ?? userId
   }
 

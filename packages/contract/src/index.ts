@@ -1,13 +1,25 @@
 export type User = {
   id: string
+  // `name` is the display full name, derived server-side from firstName + lastName.
   name: string
+  firstName: string
+  lastName: string
   email: string
 }
 
 export type SignupRequest = {
   email: string
   password: string
-  name: string
+  firstName: string
+  lastName: string
+}
+
+// Partial profile update: the name form sends firstName+lastName, the email form
+// sends email; either may be omitted independently.
+export type UpdateProfileRequest = {
+  firstName?: string
+  lastName?: string
+  email?: string
 }
 
 export type LoginRequest = {

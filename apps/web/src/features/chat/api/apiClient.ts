@@ -10,6 +10,7 @@ import type {
   SendMessageRequest,
   SendMessageResponse,
   SignupRequest,
+  UpdateProfileRequest,
   User,
 } from '@chat/contract'
 import { clearStoredAuth, getToken } from '../../auth/authStorage'
@@ -203,6 +204,13 @@ export async function login(credentials: LoginRequest): Promise<AuthResponse> {
 export async function signup(input: SignupRequest): Promise<AuthResponse> {
   return request<AuthResponse>('/auth/signup', {
     method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export async function updateProfile(input: UpdateProfileRequest): Promise<User> {
+  return request<User>('/me', {
+    method: 'PATCH',
     body: JSON.stringify(input),
   })
 }

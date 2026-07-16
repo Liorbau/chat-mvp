@@ -93,7 +93,8 @@ function toSignupErrors(error: unknown): string[] {
 
 function SignupScreen({ onSwitchToLogin }: SignupScreenProps) {
   const { signUp } = useAuth()
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -105,7 +106,7 @@ function SignupScreen({ onSwitchToLogin }: SignupScreenProps) {
     setErrorMessages([])
 
     try {
-      await signUp({ name, email, password })
+      await signUp({ firstName, lastName, email, password })
     } catch (error: unknown) {
       setErrorMessages(toSignupErrors(error))
       setIsSubmitting(false)
@@ -124,15 +125,30 @@ function SignupScreen({ onSwitchToLogin }: SignupScreenProps) {
           }}
         >
           <label style={FIELD_STYLE}>
-            <span>Name</span>
+            <span>First name</span>
             <input
               type="text"
               required
               maxLength={100}
-              value={name}
-              autoComplete="name"
+              value={firstName}
+              autoComplete="given-name"
               onChange={(event) => {
-                setName(event.target.value)
+                setFirstName(event.target.value)
+              }}
+              style={INPUT_STYLE}
+            />
+          </label>
+
+          <label style={FIELD_STYLE}>
+            <span>Last name</span>
+            <input
+              type="text"
+              required
+              maxLength={100}
+              value={lastName}
+              autoComplete="family-name"
+              onChange={(event) => {
+                setLastName(event.target.value)
               }}
               style={INPUT_STYLE}
             />

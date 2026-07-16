@@ -1,8 +1,19 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import type { LoginRequest, SignupRequest } from '@chat/contract'
-import { login as apiLogin, signup as apiSignup } from '../chat/api/apiClient'
+import type { LoginRequest, SignupRequest, UpdateProfileRequest, User } from '@chat/contract'
+import {
+  login as apiLogin,
+  signup as apiSignup,
+  updateProfile as apiUpdateProfile,
+} from '../chat/api/apiClient'
 import { AuthContext, type AuthContextValue } from './auth.context'
-import { clearStoredAuth, loadAuth, saveAuth, subscribe, type StoredAuth } from './authStorage'
+import {
+  clearStoredAuth,
+  loadAuth,
+  saveAuth,
+  subscribe,
+  updateUser,
+  type StoredAuth,
+} from './authStorage'
 
 type AuthProviderProps = {
   children: ReactNode
@@ -24,6 +35,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     saveAuth(result)
   }
 
+  async function updateProfile(input: UpdateProfileRequest): Promise<User> {
+    const updated = await apiUpdateProfile(input)
+    updateUser(updated)
+    return updated
+  }
+
   function signOut(): void {
     clearStoredAuth()
   }
@@ -33,6 +50,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated: auth !== null,
     signIn,
     signUp,
+    updateProfile,
     signOut,
   }
 

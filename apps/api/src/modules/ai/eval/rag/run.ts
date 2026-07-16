@@ -26,7 +26,7 @@ async function signup(): Promise<string> {
   const res = await fetch(`${API}/auth/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password: 'password123', name: 'Eval' }),
+    body: JSON.stringify({ email, password: 'password123', firstName: 'Eval', lastName: 'Run' }),
   })
   if (!res.ok) {
     throw new Error(`signup failed (${String(res.status)})`)

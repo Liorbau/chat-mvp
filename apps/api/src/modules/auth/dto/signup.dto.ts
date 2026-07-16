@@ -17,5 +17,10 @@ export class SignupDto {
   @Trim()
   @IsString()
   @Length(1, 100)
-  name!: string
+  firstName!: string
+
+  @Trim()
+  @IsString()
+  @Length(1, 100)
+  lastName!: string
 }

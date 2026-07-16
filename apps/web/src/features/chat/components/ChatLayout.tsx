@@ -6,6 +6,7 @@ import ConversationListContainer from './ConversationListContainer'
 import MessagePanelContainer from './MessagePanelContainer'
 import ModeSwitcher, { type ChatMode } from './ModeSwitcher'
 import NewConversation from './NewConversation'
+import ProfilePanel from './ProfilePanel'
 import SwitchUserButton from './SwitchUserButton'
 import TutorPanel from './TutorPanel'
 
@@ -71,14 +72,61 @@ const PERSISTENT_BUTTONS_STYLE = {
   zIndex: 100,
 }
 
+const BACK_BUTTON_STYLE = {
+  position: 'fixed' as const,
+  top: '14px',
+  left: '16px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '40px',
+  height: '40px',
+  border: 'none',
+  background: 'transparent',
+  color: '#2563eb',
+  cursor: 'pointer',
+  zIndex: 100,
+}
+
+// Thick blue left arrow that returns from the profile page to the prior mode.
+function BackButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" aria-label="Back" style={BACK_BUTTON_STYLE} onClick={onClick}>
+      <svg
+        width="28"
+        height="28"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M19 12H5" />
+        <path d="M12 19l-7-7 7-7" />
+      </svg>
+    </button>
+  )
+}
+
 function ChatLayout({ currentUserId, users, getUserDisplayName, onLogout }: ChatLayoutProps) {
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [mode, setMode] = useState<ChatMode>('chats')
+  // The mode to return to when leaving the profile page via the back arrow.
+  const [returnMode, setReturnMode] = useState<ChatMode>('chats')
   const { status, conversations, error, markConversationActivity, refetch } = useConversations()
 
   function handleConversationCreated(conversationId: string): void {
     refetch()
     setSelectedConversationId(conversationId)
+  }
+
+  function handleSelectMode(next: ChatMode): void {
+    if (next === 'profile') {
+      setReturnMode(mode)
+    }
+    setMode(next)
   }
 
   const displayConversations = conversations
@@ -90,7 +138,7 @@ function ChatLayout({ currentUserId, users, getUserDisplayName, onLogout }: Chat
 
   const persistentButtons = (
     <div style={PERSISTENT_BUTTONS_STYLE}>
-      <ModeSwitcher mode={mode} onSelect={setMode} />
+      <ModeSwitcher mode={mode} onSelect={handleSelectMode} />
       <SwitchUserButton
         onClick={() => {
           setSelectedConversationId(null)
@@ -114,6 +162,15 @@ function ChatLayout({ currentUserId, users, getUserDisplayName, onLogout }: Chat
       <>
         {persistentButtons}
         <TutorPanel currentUserId={currentUserId} />
+      </>
+    )
+  }
+
+  if (mode === 'profile') {
+    return (
+      <>
+        <BackButton onClick={() => setMode(returnMode)} />
+        <ProfilePanel />
       </>
     )
   }
