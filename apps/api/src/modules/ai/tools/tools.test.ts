@@ -1,14 +1,19 @@
+import type { RunnableConfig } from '@langchain/core/runnables'
 import { describe, expect, it, vi } from 'vitest'
-import type { LlmToolUse } from '../llm.provider'
-import { GetMyNameTool } from './get.my.name.tool'
+import { buildGetMyNameTool } from '../agent/tools/get-my-name.tool'
 import { SummarizeRecentMessagesTool } from './summarize.recent.messages.tool'
 
-function toolUse(input: Record<string, unknown> = {}): LlmToolUse {
-  return { id: 't1', name: 'tool', input }
-}
+// generateStructured hits the LLM; stub it so we can assert the scoping logic.
+vi.mock('../chat-model', () => ({
+  generateStructured: vi.fn().mockResolvedValue({
+    summaries: [{ conversationId: 'c-user', summary: 'chat with Dana' }],
+  }),
+}))
 
-describe('GetMyNameTool', () => {
-  it('returns only the name, never id/email/hash', async () => {
+const config: RunnableConfig = { configurable: { requesterId: 'u-alex' } }
+
+describe('buildGetMyNameTool', () => {
+  it('returns only the name, scoped to the JWT requester', async () => {
     const usersService = {
       findById: vi.fn().mockResolvedValue({
         id: 'u-alex',
@@ -17,15 +22,12 @@ describe('GetMyNameTool', () => {
         passwordHash: 'secret-hash',
       }),
     }
-    const tool = new GetMyNameTool(usersService as never)
+    const result = await buildGetMyNameTool(usersService as never).invoke({}, config)
 
-    const result = await tool.execute(toolUse(), 'u-alex')
-
-    // Identity comes from the JWT requesterId, not from model input.
     expect(usersService.findById).toHaveBeenCalledWith('u-alex')
-    expect(JSON.parse(result.content)).toEqual({ name: 'Alex' })
-    expect(result.content).not.toContain('secret-hash')
-    expect(result.content).not.toContain('alex@example.com')
+    expect(result).toContain('Alex')
+    expect(result).not.toContain('secret-hash')
+    expect(result).not.toContain('alex@example.com')
   })
 })
 
@@ -33,7 +35,7 @@ describe('SummarizeRecentMessagesTool', () => {
   it('scopes reads to the JWT requesterId and skips assistant conversations', async () => {
     const conversationsService = {
       listConversations: vi.fn().mockResolvedValue([
-        { id: 'c-user', type: 'user', participantIds: ['u-alex', 'u-dana'] },
+        { id: 'c-user', type: 'user', participantIds: ['u-alex', 'u-dana'], title: 'Dana' },
         { id: 'c-assistant', type: 'assistant', participantIds: ['u-alex'] },
       ]),
     }
@@ -47,28 +49,21 @@ describe('SummarizeRecentMessagesTool', () => {
     const usersService = {
       findByIds: vi.fn().mockResolvedValue([{ id: 'u-dana', name: 'Dana' }]),
     }
-    const llmProvider = {
-      generateStructured: vi.fn().mockResolvedValue({
-        summaries: [{ conversationId: 'c-user', summary: 'chat with Dana' }],
-      }),
-    }
     const tool = new SummarizeRecentMessagesTool(
       conversationsService as never,
       messagesDbService as never,
       usersService as never,
-      llmProvider as never,
+      {} as never,
     )
 
-    const result = await tool.execute(toolUse({ limit: 5 }), 'u-alex')
+    const content = await tool.summarize({ limit: 5 }, 'u-alex')
 
     // Identity is the requesterId param, never anything from tool input.
     expect(conversationsService.listConversations).toHaveBeenCalledWith('u-alex')
     // Only the 'user' conversation is read; the assistant conversation is excluded.
     expect(messagesDbService.listRecentForConversations).toHaveBeenCalledWith(['c-user'], 5)
-    // Names are resolved only for the other participant, not the whole table.
     expect(usersService.findByIds).toHaveBeenCalledWith(['u-dana'])
-    const parsed = JSON.parse(result.content) as { summaries: Array<{ conversationId: string }> }
-    expect(parsed.summaries).toHaveLength(1)
+    const parsed = JSON.parse(content) as { summaries: Array<{ conversationId: string }> }
     expect(parsed.summaries[0]?.conversationId).toBe('c-user')
   })
 })

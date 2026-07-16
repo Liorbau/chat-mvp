@@ -1,5 +1,6 @@
+import type { ConfigService } from '@nestjs/config'
 import { z } from 'zod'
-import type { LlmProvider } from '../../llm.provider'
+import { generateStructured } from '../../chat-model'
 
 const EMAIL = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b/
 const PHONE = /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/
@@ -32,7 +33,7 @@ export type ScoreResult = { score: number; reasons: string[] }
 // 0..1. Hard-fails (PII, hallucination) zero the score; otherwise
 // 0.7 * outcome + 0.3 * lengthOk.
 export async function scoreSummary(args: {
-  provider: LlmProvider
+  configService: ConfigService
   transcript: string
   summary: string
   good: string
@@ -45,21 +46,15 @@ export async function scoreSummary(args: {
     return { score: 0, reasons: ['HARD FAIL: PII (email/phone) in summary'] }
   }
 
-  const judge = await args.provider.generateStructured(
-    {
-      system: JUDGE_SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            `TRANSCRIPT:\n${args.transcript}`,
-            `SUMMARY:\n${args.summary}`,
-            `A GOOD SUMMARY: ${args.good}`,
-            `A BAD SUMMARY: ${args.bad}`,
-          ].join('\n\n'),
-        },
-      ],
-    },
+  const judge = await generateStructured(
+    args.configService,
+    JUDGE_SYSTEM_PROMPT,
+    [
+      `TRANSCRIPT:\n${args.transcript}`,
+      `SUMMARY:\n${args.summary}`,
+      `A GOOD SUMMARY: ${args.good}`,
+      `A BAD SUMMARY: ${args.bad}`,
+    ].join('\n\n'),
     JudgeSchema,
   )
 

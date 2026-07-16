@@ -1,12 +1,11 @@
 import type { Citation, Message } from '@chat/contract'
 
-export type AssistantStatus = 'idle' | 'thinking' | 'tool_call'
-
 export type AssistantState = {
   conversationId: string | null
   messages: Message[]
   streamingText: string | null
-  status: AssistantStatus
+  // Display label of the tool the agent is currently running (from the BE).
+  toolLabel: string | null
   isStreaming: boolean
   error: string | null
 }
@@ -16,7 +15,7 @@ export type AssistantAction =
   | { type: 'LOAD_ERROR'; payload: { error: string } }
   | { type: 'SEND_START'; payload: { optimistic: Message } }
   | { type: 'USER_MESSAGE'; payload: { tempId: string; message: Message } }
-  | { type: 'STATUS'; payload: { status: AssistantStatus } }
+  | { type: 'TOOL_CALL'; payload: { label: string } }
   | { type: 'TOKEN'; payload: { value: string } }
   | {
       type: 'DONE'
@@ -29,7 +28,7 @@ export const initialAssistantState: AssistantState = {
   conversationId: null,
   messages: [],
   streamingText: null,
-  status: 'idle',
+  toolLabel: null,
   isStreaming: false,
   error: null,
 }
@@ -52,7 +51,7 @@ export function assistantChatReducer(
         ...state,
         messages: [...state.messages, action.payload.optimistic],
         isStreaming: true,
-        status: 'thinking',
+        toolLabel: null,
         streamingText: '',
         error: null,
       }
@@ -63,8 +62,8 @@ export function assistantChatReducer(
           message.id === action.payload.tempId ? action.payload.message : message,
         ),
       }
-    case 'STATUS':
-      return { ...state, status: action.payload.status }
+    case 'TOOL_CALL':
+      return { ...state, toolLabel: action.payload.label }
     case 'TOKEN':
       return { ...state, streamingText: (state.streamingText ?? '') + action.payload.value }
     case 'DONE':
@@ -85,7 +84,7 @@ export function assistantChatReducer(
         ],
         streamingText: null,
         isStreaming: false,
-        status: 'idle',
+        toolLabel: null,
       }
     case 'STREAM_ERROR':
       return {
@@ -97,7 +96,7 @@ export function assistantChatReducer(
             : state.messages.filter((message) => message.id !== action.payload.tempId),
       }
     case 'STREAM_END':
-      return { ...state, isStreaming: false, status: 'idle', streamingText: null }
+      return { ...state, isStreaming: false, streamingText: null, toolLabel: null }
     default:
       return state
   }

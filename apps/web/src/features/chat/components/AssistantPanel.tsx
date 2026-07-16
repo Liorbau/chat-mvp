@@ -100,7 +100,7 @@ const ERROR_STYLE = {
 const EMPTY_STYLE = { margin: 'auto', textAlign: 'center' as const, opacity: 0.6, fontSize: '15px' }
 
 function AssistantPanel({ currentUserId }: AssistantPanelProps) {
-  const { messages, streamingText, status, isStreaming, isReady, error, send } =
+  const { messages, streamingText, toolLabel, isStreaming, isReady, error, send } =
     useAssistantChat(currentUserId)
   const [input, setInput] = useState('')
   const endRef = useScrollToBottom<HTMLDivElement>(messages.length > 0 || streamingText !== null, [
@@ -171,9 +171,7 @@ function AssistantPanel({ currentUserId }: AssistantPanelProps) {
               {streamingText !== null && streamingText.length > 0 ? (
                 streamingText
               ) : (
-                <span style={STATUS_STYLE}>
-                  {status === 'tool_call' ? 'Looking through your chats…' : 'Thinking…'}
-                </span>
+                <span style={STATUS_STYLE}>{toolLabel ?? 'Thinking…'}</span>
               )}
             </div>
           </div>

@@ -2,16 +2,12 @@ import { useCallback, useEffect, useReducer, useRef } from 'react'
 import { ASSISTANT_SENDER_ID } from '@chat/contract'
 import type { Message } from '@chat/contract'
 import { createConversation, getMessages, streamAssistant } from '../api/apiClient'
-import {
-  assistantChatReducer,
-  initialAssistantState,
-  type AssistantStatus,
-} from '../state/assistantChatReducer'
+import { assistantChatReducer, initialAssistantState } from '../state/assistantChatReducer'
 
 type AssistantChat = {
   messages: Message[]
   streamingText: string | null
-  status: AssistantStatus
+  toolLabel: string | null
   isStreaming: boolean
   isReady: boolean
   error: string | null
@@ -86,8 +82,9 @@ export function useAssistantChat(
         (event) => {
           if (event.type === 'user_message') {
             dispatch({ type: 'USER_MESSAGE', payload: { tempId, message: event.message } })
-          } else if (event.type === 'status') {
-            dispatch({ type: 'STATUS', payload: { status: event.state } })
+          } else if (event.type === 'tool_call') {
+            // tool_result needs no UI change; the label persists until tokens start.
+            dispatch({ type: 'TOOL_CALL', payload: { label: event.label } })
           } else if (event.type === 'token') {
             dispatch({ type: 'TOKEN', payload: { value: event.value } })
           } else if (event.type === 'done') {
@@ -100,7 +97,7 @@ export function useAssistantChat(
                 citations: event.citations,
               },
             })
-          } else {
+          } else if (event.type === 'error') {
             dispatch({ type: 'STREAM_ERROR', payload: { error: event.message, tempId } })
           }
         },
@@ -129,7 +126,7 @@ export function useAssistantChat(
   return {
     messages: state.messages,
     streamingText: state.streamingText,
-    status: state.status,
+    toolLabel: state.toolLabel,
     isStreaming: state.isStreaming,
     isReady: state.conversationId !== null,
     error: state.error,
