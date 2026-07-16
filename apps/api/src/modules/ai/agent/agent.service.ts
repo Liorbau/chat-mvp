@@ -64,7 +64,6 @@ export class AgentService {
     }
     try {
       const messages = await this.turnMessages(input.conversationId, config)
-      yield { type: 'status', state: 'thinking' }
       const events = this.graph.streamEvents(
         {
           messages,

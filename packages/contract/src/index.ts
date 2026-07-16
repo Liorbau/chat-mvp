@@ -92,7 +92,6 @@ export type SendMessageResponse = {
 export type AssistantSseEvent =
   | { type: 'user_message'; message: Message }
   | { type: 'token'; value: string }
-  | { type: 'status'; state: 'thinking' | 'tool_call' }
   // Agent tool progress: a tool started (with a display label) / finished.
   | { type: 'tool_call'; tool: string; label: string }
   | { type: 'tool_result'; tool: string }

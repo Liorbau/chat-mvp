@@ -911,27 +911,34 @@ list.
 
 ## Graph
 
-Nodes `route / retrieve / tool_call / tool_result / answer`; conditional edge
+Nodes `route / retrieve / tool_call / tool_result`; conditional edge
 `decideNext` off `route`:
 
 ```
 START -> route
 route  --(retrieval call)--> retrieve   --> route
        --(user-data call)--> tool_call  --> tool_result --> route
-       --(no call)--------> answer      --> END
+       --(no call)--------> END
 ```
 
-- `route` — LLM decision (tools bound). `decideNext` reads the last message's tool
-  calls: retrieval → `retrieve`; other → `tool_call`; none → `answer`.
+- `route` — the single generation node. It both decides (tools bound, may emit tool
+  calls) and, when no tool is needed, produces the final answer that is streamed to
+  the client — so a plain reply costs one model call, not two. It strips `SOURCES:`
+  and derives citations on that final answer. `decideNext` reads the last message's
+  tool calls: retrieval → `retrieve`; other → `tool_call`; none → `END`.
 - `retrieve` — runs the RAG tool, fills `state.retrieved` from its
-  `content_and_artifact` result, appends a `ToolMessage`, loops back.
+  `content_and_artifact` result, sets `retrievalAttempted`, appends a `ToolMessage`,
+  loops back.
 - `tool_call` → `tool_result` — executes user-data tools, folds results into the
   transcript, loops back (tools chain across turns).
-- `answer` — the sole generator: streams the reply, strips `SOURCES:`, derives
-  citations. Tutor + empty retrieval → canned refusal, **no LLM call**.
+- Tutor refusal — when `retrievalAttempted && retrieved.length === 0`, `route`
+  returns the canned refusal with **no LLM call**. Gating on `retrievalAttempted`
+  distinguishes "retrieval ran and found nothing" from "retrieval was never needed"
+  (e.g. "thanks"), so ordinary chatter is not refused.
 
 State (`agent.state.ts`): `messages` (`messagesStateReducer`), `conversationType`,
-`requesterId`, `conversationId`, `retrieved`, `citations`, `pendingToolMessages`.
+`requesterId`, `conversationId`, `retrieved`, `retrievalAttempted`, `citations`,
+`pendingToolMessages`.
 
 ## Checkpointing
 

@@ -12,7 +12,7 @@ function events(...items: unknown[]): AsyncGenerator<StreamEvent> {
   })()
 }
 
-function token(text: string, node = 'answer'): unknown {
+function token(text: string, node = 'route'): unknown {
   return {
     event: 'on_chat_model_stream',
     name: 'model',
@@ -53,7 +53,7 @@ describe('streamToSse', () => {
     ])
   })
 
-  it('streams answer-node tokens and returns the full text', async () => {
+  it('streams route-node tokens and returns the full text', async () => {
     const { emitted, returned } = await collect(
       streamToSse(events(token('Hello '), token('world'))),
     )
@@ -69,8 +69,8 @@ describe('streamToSse', () => {
     expect(tokenText(emitted)).not.toContain('SOURCES')
   })
 
-  it('ignores tokens from non-answer nodes', async () => {
-    const { emitted } = await collect(streamToSse(events(token('deciding', 'route'))))
+  it('ignores tokens from non-route nodes', async () => {
+    const { emitted } = await collect(streamToSse(events(token('deciding', 'retrieve'))))
     expect(emitted).toHaveLength(0)
   })
 })

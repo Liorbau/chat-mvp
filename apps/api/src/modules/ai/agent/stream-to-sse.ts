@@ -14,7 +14,7 @@ function labelFor(tool: string): string {
 }
 
 // Translates the agent graph's event stream into SSE events: tool start/end, and
-// answer-node tokens with the trailing "SOURCES:" line held back. Returns the full
+// route-node tokens with the trailing "SOURCES:" line held back. Returns the full
 // streamed text so the caller can tell whether the LLM produced anything.
 export async function* streamToSse(
   events: AsyncIterable<StreamEvent>,
@@ -30,7 +30,7 @@ export async function* streamToSse(
       yield { type: 'tool_result', tool: event.name }
     } else if (
       event.event === 'on_chat_model_stream' &&
-      event.metadata.langgraph_node === 'answer'
+      event.metadata.langgraph_node === 'route'
     ) {
       full += (event.data.chunk as BaseMessage).text
       if (sourcesReached) {
