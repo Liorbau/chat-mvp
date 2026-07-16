@@ -10,7 +10,10 @@
 ## How to Use This Document
 
 - `CLAUDE.md` = execution source of truth; `ARCHITECTURE.md` = architecture;
-  `API_CONTRACT.md` = endpoint contract.
+  `API_CONTRACT.md` = endpoint contract;
+  `docs/FRONTEND_CONVENTIONS.md` = frontend directory/file structure rules
+  (feature slices, component-as-folder, presentational/container, context-over-props,
+  api actions) — follow it for all `apps/web` work.
 - On conflict: follow `CLAUDE.md` acceptance criteria, then `ARCHITECTURE.md`
   structure, and keep `API_CONTRACT.md` aligned.
 
