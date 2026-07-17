@@ -1,5 +1,6 @@
-import type { Message, User } from '@chat/contract'
+import type { Message } from '@chat/contract'
 import bcrypt from 'bcrypt'
+import type { StoredUser } from '../modules/users/users.dbService'
 
 // Shared password for hard-coded seed users. Single source of truth: tests
 export const SEED_PASSWORD = 'password123'
@@ -17,7 +18,7 @@ export const SEED_CONVERSATION_IDS = {
   designSync: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
 } as const
 
-export function buildSeedUsers(bcryptRounds: number): (User & { passwordHash: string })[] {
+export function buildSeedUsers(bcryptRounds: number): StoredUser[] {
   const seedPasswordHash = bcrypt.hashSync(SEED_PASSWORD, bcryptRounds)
   const seeds = [
     { id: SEED_USER_IDS.alex, firstName: 'Alex', lastName: 'Rivera', email: 'alex@example.com' },
@@ -29,6 +30,7 @@ export function buildSeedUsers(bcryptRounds: number): (User & { passwordHash: st
     ...seed,
     name: `${seed.firstName} ${seed.lastName}`,
     passwordHash: seedPasswordHash,
+    avatarVersion: null,
   }))
 }
 

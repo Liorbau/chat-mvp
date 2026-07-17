@@ -1,12 +1,22 @@
 import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { InjectModel } from '@nestjs/mongoose'
 import type { User } from '@chat/contract'
 import type { Model } from 'mongoose'
+import { buildAvatarKey } from '../storage/storage.constants'
 import { User as UserModel, type UserDocument } from './user.schema'
 
-// Server-only persisted shape: the public `User` plus the bcrypt password hash.
-export type StoredUser = User & { passwordHash: string }
+export type StoredUser = {
+  id: string
+  name: string
+  firstName: string
+  lastName: string
+  email: string
+  passwordHash: string
+  // Cache-bust token for the fixed avatar key. null = no avatar.
+  avatarVersion: string | null
+}
 export type StoredUserDraft = Omit<StoredUser, 'id'>
 
 function toStoredUser(doc: UserDocument): StoredUser {
@@ -17,21 +27,30 @@ function toStoredUser(doc: UserDocument): StoredUser {
     lastName: doc.lastName,
     email: doc.email,
     passwordHash: doc.passwordHash,
+    avatarVersion: doc.avatarVersion ?? null,
   }
 }
 
-export function toPublicUser(user: StoredUser): User {
+// The avatar lives at a fixed per-user key; the version query-param busts the CDN
+// cache when it's replaced. Fails visibly if the base URL is unconfigured.
+export function toPublicUser(user: StoredUser, avatarBaseUrl: string | undefined): User {
+  let avatarUrl: string | null = null
+  if (user.avatarVersion !== null) {
+    if (avatarBaseUrl === undefined || avatarBaseUrl === '') {
+      throw new Error('STORAGE_PUBLIC_BASE_URL is not configured but a user has an avatar')
+    }
+    avatarUrl = `${avatarBaseUrl}/${buildAvatarKey(user.id)}?v=${user.avatarVersion}`
+  }
   return {
     id: user.id,
     name: user.name,
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    avatarUrl,
   }
 }
 
-// Fields a profile update may change. `name` is derived by the service from
-// firstName/lastName, so the DAO stays a dumb persistence step.
 export type UserUpdate = Partial<Pick<StoredUser, 'firstName' | 'lastName' | 'name' | 'email'>>
 
 @Injectable()
@@ -39,16 +58,25 @@ export class UsersDbService {
   constructor(
     @InjectModel(UserModel.name)
     private readonly userModel: Model<UserDocument>,
+    private readonly configService: ConfigService,
   ) {}
+
+  private avatarBaseUrl(): string | undefined {
+    return this.configService.get<string>('STORAGE_PUBLIC_BASE_URL')
+  }
+
+  private toPublic(stored: StoredUser): User {
+    return toPublicUser(stored, this.avatarBaseUrl())
+  }
 
   async list(): Promise<User[]> {
     const docs = await this.userModel.find().exec()
-    return docs.map(toStoredUser).map(toPublicUser)
+    return docs.map(toStoredUser).map((stored) => this.toPublic(stored))
   }
 
   async findById(userId: string): Promise<User | undefined> {
     const doc = await this.userModel.findById(userId).exec()
-    return doc === null ? undefined : toPublicUser(toStoredUser(doc))
+    return doc === null ? undefined : this.toPublic(toStoredUser(doc))
   }
 
   async findByEmail(email: string): Promise<StoredUser | undefined> {
@@ -66,7 +94,7 @@ export class UsersDbService {
       return []
     }
     const docs = await this.userModel.find({ _id: { $in: userIds } }).exec()
-    return docs.map(toStoredUser).map(toPublicUser)
+    return docs.map(toStoredUser).map((stored) => this.toPublic(stored))
   }
 
   async create(draft: StoredUserDraft): Promise<StoredUser> {
@@ -77,6 +105,7 @@ export class UsersDbService {
       lastName: draft.lastName,
       email: draft.email,
       passwordHash: draft.passwordHash,
+      avatarVersion: draft.avatarVersion,
     })
     return toStoredUser(doc)
   }
@@ -85,7 +114,16 @@ export class UsersDbService {
     const doc = await this.userModel
       .findByIdAndUpdate(userId, { $set: changes }, { returnDocument: 'after' })
       .exec()
-    return doc === null ? undefined : toPublicUser(toStoredUser(doc))
+    return doc === null ? undefined : this.toPublic(toStoredUser(doc))
+  }
+
+  // Sets a fresh version (avatar present) or null (removed). Returns the updated
+  // public user, or undefined if the user no longer exists.
+  async setAvatarVersion(userId: string, avatarVersion: string | null): Promise<User | undefined> {
+    const doc = await this.userModel
+      .findByIdAndUpdate(userId, { $set: { avatarVersion } }, { returnDocument: 'after' })
+      .exec()
+    return doc === null ? undefined : this.toPublic(toStoredUser(doc))
   }
 
   async reset(users: StoredUser[]): Promise<void> {
@@ -99,6 +137,7 @@ export class UsersDbService {
           lastName: user.lastName,
           email: user.email,
           passwordHash: user.passwordHash,
+          avatarVersion: user.avatarVersion,
         })),
       )
     }

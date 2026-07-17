@@ -32,6 +32,7 @@ describe('Auth API', () => {
         firstName: 'New',
         lastName: 'User',
         email: 'new@example.com',
+        avatarUrl: null,
       },
     })
   })
@@ -96,6 +97,7 @@ describe('Auth API', () => {
       firstName: 'Me',
       lastName: 'Myself',
       email: 'me@example.com',
+      avatarUrl: null,
     })
   })
 
@@ -116,6 +118,7 @@ describe('Auth API', () => {
       firstName: 'Alex',
       lastName: 'Rivera',
       email: 'alex@example.com',
+      avatarUrl: null,
     })
     expect(samMe.body).toEqual({
       id: SEED_USER_IDS.sam,
@@ -123,6 +126,7 @@ describe('Auth API', () => {
       firstName: 'Sam',
       lastName: 'Chen',
       email: 'sam@example.com',
+      avatarUrl: null,
     })
   })
 
@@ -154,6 +158,7 @@ describe('Auth API', () => {
         firstName: expect.any(String),
         lastName: expect.any(String),
         email: 'alex@example.com',
+        avatarUrl: null,
       },
     })
   })
@@ -236,6 +241,7 @@ describe('Auth API', () => {
       firstName: 'Alexander',
       lastName: 'Rivera',
       email: 'alex@example.com',
+      avatarUrl: null,
     })
   })
 
@@ -254,6 +260,7 @@ describe('Auth API', () => {
       firstName: 'Alex',
       lastName: 'Rivera',
       email: 'alex.new@example.com',
+      avatarUrl: null,
     })
   })
 

@@ -22,6 +22,11 @@ export class User {
 
   @Prop({ required: true })
   passwordHash!: string
+
+  // Object-storage key of the uploaded avatar (e.g. `avatars/<userId>/<uuid>`), or
+  // null when unset. The public CDN URL is derived from this at read time.
+  @Prop({ type: String, default: null })
+  avatarVersion!: string | null
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)
