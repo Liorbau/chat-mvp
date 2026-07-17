@@ -3,7 +3,12 @@ import { MessageItem } from '@/features/messages/components/MessageItem/MessageI
 import { LIST_END_MARKER_STYLE, MESSAGE_LIST_STYLE } from './MessageList.constants'
 import type { MessageListProps } from './MessageList.types'
 
-export function MessageList({ messages, currentUserId, getDisplayName }: MessageListProps) {
+export function MessageList({
+  messages,
+  currentUserId,
+  getDisplayName,
+  getAvatarUrl,
+}: MessageListProps) {
   const listEndReference = useScrollToBottom<HTMLLIElement>(messages.length > 0, [messages])
 
   return (
@@ -15,6 +20,7 @@ export function MessageList({ messages, currentUserId, getDisplayName }: Message
             message={message}
             currentUserId={currentUserId}
             senderDisplayName={getDisplayName(message.senderId)}
+            senderAvatarUrl={getAvatarUrl(message.senderId)}
           />
         )
       })}

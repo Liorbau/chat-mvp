@@ -9,6 +9,7 @@ const user: User = {
   firstName: 'Alex',
   lastName: 'Rivera',
   email: 'alex@example.com',
+  avatarUrl: null,
 }
 
 function jsonResponse(body: unknown, status = 200): Response {

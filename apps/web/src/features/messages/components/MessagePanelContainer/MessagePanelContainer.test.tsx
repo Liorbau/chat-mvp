@@ -48,7 +48,7 @@ const getUserDisplayName = (userId: string): string => `User ${userId}`
 // The panel reads names from UserContext; tests provide a stub directory.
 function Wrapper({ children }: { children: ReactNode }) {
   return (
-    <UserContext.Provider value={{ users: [], getUserDisplayName }}>
+    <UserContext.Provider value={{ users: [], getUserDisplayName, getUserAvatarUrl: () => null }}>
       {children}
     </UserContext.Provider>
   )

@@ -5,10 +5,9 @@ import { getUsers } from '@/api'
 type UserDirectory = {
   users: User[]
   getUserDisplayName: (userId: string) => string
+  getUserAvatarUrl: (userId: string) => string | null
 }
 
-// Loads the user directory (once authenticated, refreshed on focus) and resolves
-// display names — the current user from the live auth value, others from the list.
 export function useUserDirectory(
   currentUser: User | null,
   isAuthenticated: boolean,
@@ -18,9 +17,7 @@ export function useUserDirectory(
   const loadUsers = useCallback(() => {
     void getUsers()
       .then(setUsers)
-      .catch(() => {
-        // Non-fatal: names fall back to ids until the next successful load.
-      })
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -42,5 +39,12 @@ export function useUserDirectory(
     return users.find((directoryUser) => directoryUser.id === userId)?.name ?? userId
   }
 
-  return { users, getUserDisplayName }
+  function getUserAvatarUrl(userId: string): string | null {
+    if (currentUser !== null && userId === currentUser.id) {
+      return currentUser.avatarUrl
+    }
+    return users.find((directoryUser) => directoryUser.id === userId)?.avatarUrl ?? null
+  }
+
+  return { users, getUserDisplayName, getUserAvatarUrl }
 }

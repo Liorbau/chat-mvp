@@ -16,7 +16,7 @@ export function MessagePanelContainer({
   currentUserId,
   onConversationActivity,
 }: MessagePanelContainerProps) {
-  const { getUserDisplayName } = useUsers()
+  const { getUserDisplayName, getUserAvatarUrl } = useUsers()
   const { status, messages, error, sendMessage, refetch } = useOptimisticMessages(
     selectedConversationId,
     currentUserId,
@@ -59,6 +59,7 @@ export function MessagePanelContainer({
             messages={messages}
             currentUserId={currentUserId}
             getDisplayName={getUserDisplayName}
+            getAvatarUrl={getUserAvatarUrl}
           />
         )}
       </div>
