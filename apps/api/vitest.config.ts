@@ -15,6 +15,13 @@ export default defineConfig({
       OPENAI_API_KEY: 'sk-test-key',
       ANTHROPIC_API_KEY: 'sk-ant-test-key',
       VOYAGE_API_KEY: 'pa-test-key',
+      // Dummy avatar-storage config so env validation passes at boot; unit tests
+      // mock ObjectStorage, so no test constructs a real client or hits a provider.
+      STORAGE_PUBLIC_BASE_URL: 'https://cdn.test.example',
+      STORAGE_S3_REGION: 'auto',
+      STORAGE_S3_ACCESS_KEY_ID: 'test-access-key',
+      STORAGE_S3_SECRET_ACCESS_KEY: 'test-secret-key',
+      STORAGE_S3_BUCKET: 'test-avatars',
     },
   },
 })
