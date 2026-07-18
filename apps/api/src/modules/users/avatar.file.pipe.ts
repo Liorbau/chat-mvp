@@ -1,6 +1,6 @@
 import { Injectable, type PipeTransform } from '@nestjs/common'
 import { AppError } from '../../errors/AppError'
-import type { AvatarUpload } from './avatar.service'
+import type { AvatarUpload } from './avatar.types'
 import { detectImageMime } from './image.signature'
 
 @Injectable()

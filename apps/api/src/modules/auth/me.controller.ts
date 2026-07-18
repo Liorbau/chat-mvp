@@ -13,8 +13,10 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import type { User } from '@chat/contract'
 import { memoryStorage } from 'multer'
 import { CurrentUser } from '../../common/decorators/current.user.decorator'
-import { AvatarService, type AvatarUpload } from '../users/avatar.service'
 import { AvatarFilePipe } from '../users/avatar.file.pipe'
+import type { AvatarUpload } from '../users/avatar.types'
+import { UploadAvatarOrchestrator } from '../users/upload-avatar.orchestrator'
+import { RemoveAvatarOrchestrator } from '../users/remove-avatar.orchestrator'
 import { UpdateProfileDto } from '../users/dto/update.profile.dto'
 import { UsersService } from '../users/users.service'
 import { AVATAR_MAX_BYTES } from '../storage/storage.constants'
@@ -25,7 +27,8 @@ import { JwtAuthGuard } from './jwt.auth.guard'
 export class MeController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly avatarService: AvatarService,
+    private readonly uploadAvatarOrchestrator: UploadAvatarOrchestrator,
+    private readonly removeAvatarOrchestrator: RemoveAvatarOrchestrator,
   ) {}
 
   @Get('me')
@@ -46,11 +49,11 @@ export class MeController {
     @CurrentUser() user: User,
     @UploadedFile(AvatarFilePipe) upload: AvatarUpload,
   ): Promise<User> {
-    return this.avatarService.uploadAvatar(user.id, upload)
+    return this.uploadAvatarOrchestrator.execute(user.id, upload)
   }
 
   @Delete('me/avatar')
   async removeAvatar(@CurrentUser() user: User): Promise<User> {
-    return this.avatarService.removeAvatar(user.id)
+    return this.removeAvatarOrchestrator.execute(user.id)
   }
 }

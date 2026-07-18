@@ -1,48 +1,19 @@
-import { randomUUID } from 'node:crypto'
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import type { User } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
 import { STORAGE_PROVIDER, type StorageProvider } from '../storage/storage.provider'
-import { AVATAR_CACHE_CONTROL, buildAvatarKey } from '../storage/storage.constants'
 import { UsersDbService } from './users.dbService'
 
-export type AvatarUpload = {
-  buffer: Buffer
-  mimeType: string
-  size: number
-}
-
 @Injectable()
-export class AvatarService {
-  private readonly logger = new Logger(AvatarService.name)
+export class RemoveAvatarOrchestrator {
+  private readonly logger = new Logger(RemoveAvatarOrchestrator.name)
 
   constructor(
     @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider,
     private readonly usersDbService: UsersDbService,
-    private readonly configService: ConfigService,
   ) {}
 
-  async uploadAvatar(userId: string, file: AvatarUpload): Promise<User> {
-    const storageKey = buildAvatarKey(userId)
-    await this.storage.put({
-      key: storageKey,
-      body: file.buffer,
-      contentType: file.mimeType,
-      cacheControl: AVATAR_CACHE_CONTROL,
-    })
-
-    const baseUrl = this.configService.getOrThrow<string>('STORAGE_PUBLIC_BASE_URL')
-    const srcUrl = `${baseUrl}/${storageKey}?v=${randomUUID()}`
-
-    const updated = await this.usersDbService.setAvatar(userId, { srcUrl, storageKey })
-    if (updated === undefined) {
-      throw AppError.notFound('User not found')
-    }
-    return updated
-  }
-
-  async removeAvatar(userId: string): Promise<User> {
+  async execute(userId: string): Promise<User> {
     const stored = await this.usersDbService.findStoredById(userId)
     if (stored === undefined) {
       throw AppError.notFound('User not found')
