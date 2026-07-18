@@ -2,11 +2,9 @@ import { avatarFallbackClass, avatarImageClass, initialsFromName } from './UserA
 import type { UserAvatarProps } from './UserAvatar.types'
 
 export function UserAvatar({ name, avatarUrl, size = 'md' }: UserAvatarProps) {
-  if (avatarUrl !== null) {
-    return <img src={avatarUrl} alt={name} className={avatarImageClass(size)} />
-  }
-
-  return (
+  return avatarUrl !== null ? (
+    <img src={avatarUrl} alt={name} className={avatarImageClass(size)} />
+  ) : (
     <span role="img" aria-label={name} className={avatarFallbackClass(size)}>
       {initialsFromName(name)}
     </span>

@@ -1,27 +1,34 @@
 import { useState } from 'react'
 import type { Conversation } from '@chat/contract'
 import { useConversations } from '@/features/conversations/hooks/useConversations'
+import type { DisplayConversation } from '@/features/conversations/types'
 import { useUsers } from '@/features/user/context/user.context'
 import { ChatLayout } from './ChatLayout'
 import type { ChatLayoutProps } from './ChatLayout.types'
 import type { ChatMode } from '@/features/app/components/ModeSwitcher/ModeSwitcher.types'
 
-function deriveConversationTitle(
+// Resolves the counterpart once: the derived title plus their avatar + name, so
+// the list item stays a pure leaf.
+function toDisplayConversation(
   conversation: Conversation,
   currentUserId: string,
   getUserDisplayName: (userId: string) => string,
-): string {
+  getUserAvatarUrl: (userId: string) => string | null,
+): DisplayConversation {
   const otherIds = conversation.participantIds.filter((id) => id !== currentUserId)
   const otherId = otherIds.length === 1 ? otherIds[0] : undefined
-  if (otherId !== undefined) {
-    return `Chat with ${getUserDisplayName(otherId)}`
+  const fallback = conversation.title ?? 'Conversation'
+  const name = otherId !== undefined ? getUserDisplayName(otherId) : fallback
+  return {
+    ...conversation,
+    title: otherId !== undefined ? `Chat with ${name}` : fallback,
+    avatarName: name,
+    avatarUrl: otherId !== undefined ? getUserAvatarUrl(otherId) : null,
   }
-
-  return conversation.title ?? 'Conversation'
 }
 
 export function ChatLayoutContainer({ currentUserId, onLogout }: ChatLayoutProps) {
-  const { getUserDisplayName } = useUsers()
+  const { getUserDisplayName, getUserAvatarUrl } = useUsers()
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [mode, setMode] = useState<ChatMode>('chats')
   // The mode to return to when leaving the profile page via the back arrow.
@@ -47,10 +54,9 @@ export function ChatLayoutContainer({ currentUserId, onLogout }: ChatLayoutProps
 
   const displayConversations = conversations
     .filter((conversation) => conversation.type === 'user')
-    .map((conversation) => ({
-      ...conversation,
-      title: deriveConversationTitle(conversation, currentUserId, getUserDisplayName),
-    }))
+    .map((conversation) =>
+      toDisplayConversation(conversation, currentUserId, getUserDisplayName, getUserAvatarUrl),
+    )
 
   return (
     <ChatLayout

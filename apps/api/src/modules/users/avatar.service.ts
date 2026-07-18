@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import type { User } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
-import { OBJECT_STORAGE, type ObjectStorage } from '../storage/object-storage'
+import { OBJECT_STORAGE, type ObjectStorage } from '../storage/object.storage'
 import {
   ALLOWED_AVATAR_CONTENT_TYPES,
   AVATAR_CACHE_CONTROL,

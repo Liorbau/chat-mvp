@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
-import type { ObjectStorage } from '../storage/object-storage'
+import type { ObjectStorage } from '../storage/object.storage'
 import { AvatarService, type AvatarUpload } from './avatar.service'
 import type { UsersDbService } from './users.dbService'
 

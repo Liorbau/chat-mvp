@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { OBJECT_STORAGE } from './object-storage'
+import { OBJECT_STORAGE } from './object.storage'
 import { S3ObjectStorage } from './s3.storage'
 
 // To swap providers, implement ObjectStorage in a new class and change `useClass`

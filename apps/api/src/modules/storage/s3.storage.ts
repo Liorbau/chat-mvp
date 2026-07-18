@@ -1,7 +1,7 @@
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import type { ObjectStorage, PutObjectInput } from './object-storage'
+import type { ObjectStorage, PutObjectInput } from './object.storage'
 
 // Works with any S3-compatible store (AWS S3, Cloudflare R2, Supabase, Backblaze
 // B2, MinIO, ...). Server-side only (the API proxies the bytes), so there are no

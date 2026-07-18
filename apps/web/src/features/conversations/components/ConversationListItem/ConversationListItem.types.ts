@@ -1,7 +1,7 @@
-import type { Conversation } from '@chat/contract'
+import type { DisplayConversation } from '@/features/conversations/types'
 
 export type ConversationListItemProps = {
-  conversation: Conversation
+  conversation: DisplayConversation
   isSelected: boolean
-  onSelect: (id: Conversation['id']) => void
+  onSelect: (id: DisplayConversation['id']) => void
 }

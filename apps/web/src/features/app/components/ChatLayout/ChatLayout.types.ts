@@ -1,4 +1,4 @@
-import type { Conversation } from '@chat/contract'
+import type { DisplayConversation } from '@/features/conversations/types'
 import type { LoadStatus } from '@/shared/state/chatStatus'
 import type { ChatMode } from '@/features/app/components/ModeSwitcher/ModeSwitcher.types'
 
@@ -11,7 +11,7 @@ export type ChatLayoutViewProps = {
   mode: ChatMode
   currentUserId: string
   status: LoadStatus
-  conversations: Conversation[]
+  conversations: DisplayConversation[]
   error: string | null
   selectedConversationId: string | null
   onSelectMode: (mode: ChatMode) => void
@@ -25,7 +25,7 @@ export type ChatLayoutViewProps = {
 export type ChatsViewProps = {
   currentUserId: string
   status: LoadStatus
-  conversations: Conversation[]
+  conversations: DisplayConversation[]
   error: string | null
   selectedConversationId: string | null
   onSelectConversation: (id: string) => void
@@ -46,7 +46,7 @@ export type BackButtonProps = {
 export type ConversationsSidebarProps = {
   currentUserId: string
   status: LoadStatus
-  conversations: Conversation[]
+  conversations: DisplayConversation[]
   error: string | null
   selectedConversationId: string | null
   onSelectConversation: (id: string) => void
