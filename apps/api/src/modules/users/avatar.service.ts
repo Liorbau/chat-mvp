@@ -4,11 +4,7 @@ import { ConfigService } from '@nestjs/config'
 import type { User } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
 import { STORAGE_PROVIDER, type StorageProvider } from '../storage/storage.provider'
-import {
-  ALLOWED_AVATAR_CONTENT_TYPES,
-  AVATAR_CACHE_CONTROL,
-  buildAvatarKey,
-} from '../storage/storage.constants'
+import { AVATAR_CACHE_CONTROL, buildAvatarKey } from '../storage/storage.constants'
 import { UsersDbService } from './users.dbService'
 
 export type AvatarUpload = {
@@ -28,13 +24,6 @@ export class AvatarService {
   ) {}
 
   async uploadAvatar(userId: string, file: AvatarUpload): Promise<User> {
-    if (!ALLOWED_AVATAR_CONTENT_TYPES.includes(file.mimeType)) {
-      throw AppError.badRequest(
-        'VALIDATION_ERROR',
-        'Unsupported image type (use PNG, JPEG, or WEBP)',
-      )
-    }
-
     const storageKey = buildAvatarKey(userId)
     await this.storage.put({
       key: storageKey,

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ConfigService } from '@nestjs/config'
 import type { User } from '@chat/contract'
-import { AppError } from '../../errors/AppError'
 import type { StorageProvider } from '../storage/storage.provider'
 import { AvatarService, type AvatarUpload } from './avatar.service'
 import type { UsersDbService } from './users.dbService'
@@ -84,17 +83,6 @@ describe('AvatarService', () => {
       })
       expect(storage.delete).not.toHaveBeenCalled()
       expect(updated.avatarUrl).toBe('https://cdn/x?v=1')
-    })
-
-    it('rejects an unsupported mime type without storing anything (400)', async () => {
-      await expect(
-        service.uploadAvatar(USER_ID, {
-          buffer: Buffer.from('x'),
-          mimeType: 'image/gif',
-          size: 10,
-        }),
-      ).rejects.toBeInstanceOf(AppError)
-      expect(storage.put).not.toHaveBeenCalled()
     })
   })
 

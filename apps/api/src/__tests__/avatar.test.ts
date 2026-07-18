@@ -29,6 +29,19 @@ describe('Avatar API', () => {
     expect((response.body as { error: { code: string } }).error.code).toBe('VALIDATION_ERROR')
   })
 
+  it('rejects a mislabeled non-image (claimed image/png) with a 400', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/me/avatar')
+      .set('Authorization', `Bearer ${token}`)
+      .attach('file', Buffer.from('this is not an image'), {
+        filename: 'fake.png',
+        contentType: 'image/png',
+      })
+
+    expect(response.status).toBe(400)
+    expect((response.body as { error: { code: string } }).error.code).toBe('VALIDATION_ERROR')
+  })
+
   it('rejects a request with no file with a 400', async () => {
     const response = await request(app.getHttpServer())
       .post('/me/avatar')

@@ -1,6 +1,7 @@
 import { Injectable, type PipeTransform } from '@nestjs/common'
 import { AppError } from '../../errors/AppError'
 import type { AvatarUpload } from './avatar.service'
+import { detectImageMime } from './image.signature'
 
 @Injectable()
 export class AvatarFilePipe implements PipeTransform<
@@ -11,6 +12,13 @@ export class AvatarFilePipe implements PipeTransform<
     if (file === undefined) {
       throw AppError.badRequest('VALIDATION_ERROR', 'No file uploaded (form field "file").')
     }
-    return { buffer: file.buffer, mimeType: file.mimetype, size: file.size }
+    const mimeType = detectImageMime(file.buffer)
+    if (mimeType === null) {
+      throw AppError.badRequest(
+        'VALIDATION_ERROR',
+        'Unsupported image type (use PNG, JPEG, or WEBP)',
+      )
+    }
+    return { buffer: file.buffer, mimeType, size: file.size }
   }
 }

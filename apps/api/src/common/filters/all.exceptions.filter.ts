@@ -25,8 +25,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return
     }
 
-    // FileInterceptor turns an oversize upload into a 413; map it to the promised
-    // 400 validation envelope (checked before the generic HttpException branch).
     if (exception instanceof PayloadTooLargeException) {
       response.status(HttpStatus.BAD_REQUEST).json({
         error: { code: 'VALIDATION_ERROR', message: 'Uploaded file is too large.' },
