@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
-import { ApiRequestError, uploadAvatar, removeAvatar } from '@/api'
+import { uploadAvatar, removeAvatar } from '@/api'
 import { useAuth } from '@/features/auth/context/auth.context'
 import { updateUser } from '@/shared/auth/authStorage'
+import { toApiErrorMessages } from '@/shared/utils/apiErrorMessages'
 import {
   ALLOWED_AVATAR_TYPES,
   AVATAR_MAX_BYTES,
@@ -23,15 +24,14 @@ type UseAvatar = {
   onRemove: () => void
 }
 
-// Turns any thrown error into a specific, debuggable message.
-function describeError(error: unknown): string {
-  if (error instanceof ApiRequestError) {
-    return `${error.message} (${error.code}, HTTP ${error.status})`
+function validateAvatarFile(file: File): string | null {
+  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+    return AVATAR_TYPE_MESSAGE
   }
-  if (error instanceof Error) {
-    return error.message
+  if (file.size > AVATAR_MAX_BYTES) {
+    return AVATAR_TOO_LARGE_MESSAGE
   }
-  return String(error)
+  return null
 }
 
 export function useAvatar(): UseAvatar {
@@ -41,12 +41,9 @@ export function useAvatar(): UseAvatar {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function upload(file: File): Promise<void> {
-    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
-      setError(AVATAR_TYPE_MESSAGE)
-      return
-    }
-    if (file.size > AVATAR_MAX_BYTES) {
-      setError(AVATAR_TOO_LARGE_MESSAGE)
+    const validationError = validateAvatarFile(file)
+    if (validationError !== null) {
+      setError(validationError)
       return
     }
     setBusy(true)
@@ -55,7 +52,7 @@ export function useAvatar(): UseAvatar {
       const updated = await uploadAvatar(file)
       updateUser(updated)
     } catch (err) {
-      setError(`Could not upload your photo: ${describeError(err)}`)
+      setError(`Could not upload your photo. ${toApiErrorMessages(err).join(' ')}`)
     } finally {
       setBusy(false)
     }
@@ -68,7 +65,7 @@ export function useAvatar(): UseAvatar {
       const updated = await removeAvatar()
       updateUser(updated)
     } catch (err) {
-      setError(`Could not remove your photo: ${describeError(err)}`)
+      setError(`Could not remove your photo. ${toApiErrorMessages(err).join(' ')}`)
     } finally {
       setBusy(false)
     }
