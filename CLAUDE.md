@@ -88,7 +88,10 @@ architecture/data-model/API/auth/migration decision points. See
     batch/size/rate limits (batch, paginate, or throttle) — never send unbounded
     requests.
 27. Give mutually-exclusive outcomes separate code paths; never carry one path's
-    data onto another (e.g., a refusal must not include citations/sources).
+ data onto another (e.g., a refusal must not include citations/sources).
+28. Derive a type from its single source of truth (e.g. `ReturnType<typeof fn>`
+ or one shared type) instead of hand-writing two identical shapes that can drift
+ (a context value vs. its hook's return; a DTO vs. its mapper output).
 
 ## Naming and Commit Conventions
 
@@ -690,4 +693,10 @@ citations. `verify:precommit` green — **API 73 + Web 56 = 129 tests**
 
 - Weeks 2-4 completed. Week 5 (MongoDB persistence) implemented; all acceptance
   criteria and the Jun-16 bug/smell review items resolved (see Week 5 Status).
+- Post-Week-8: frontend restructured into feature slices and aligned to a mentor
+  review — thin containers (screen/form state in `useXForm` hooks provided via
+  per-screen context; views/atoms read context), prop types in `X.types.ts`, one
+  return per component, shared hooks for duplicated logic (`useComposer`), plus
+  Tailwind v4, the `@/` import alias, and named exports. Full frontend rulebook
+  in `docs/FRONTEND_CONVENTIONS.md`.
 - Add future weeks as new sections without removing shared principles.

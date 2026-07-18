@@ -57,6 +57,20 @@ After coding:
 
 ## Project Instructions Pointer
 
-`CLAUDE.md` is the execution source of truth for this repo. Before working,
-open and follow `./CLAUDE.md` (engineering principles, current-week scope, and
-acceptance criteria), then `./ARCHITECTURE.md` and `./API_CONTRACT.md`.
+The policy above governs **how** we work (ownership, decision points, quality
+gates). The **what/how of the code itself** — every engineering principle and
+coding convention — lives in the documents below. **Every agent MUST open and
+follow all of them before working**, in addition to the policy above:
+
+- [`CLAUDE.md`](./CLAUDE.md) — **execution source of truth**. Shared engineering
+  principles (all backend + general coding rules), naming/commit conventions,
+  current-week scope, and acceptance criteria. Start here.
+- [`docs/FRONTEND_CONVENTIONS.md`](./docs/FRONTEND_CONVENTIONS.md) — canonical
+  **frontend** rulebook (feature slices; component-as-folder; container +
+  hook + context; Tailwind styling; `@/` imports; named exports; props in
+  `.types.ts`). Follow it for all `apps/web` work.
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — system architecture.
+- [`API_CONTRACT.md`](./API_CONTRACT.md) — the HTTP endpoint contract.
+
+On conflict: follow `CLAUDE.md` acceptance criteria first, then `ARCHITECTURE.md`
+structure, and keep `API_CONTRACT.md` aligned.

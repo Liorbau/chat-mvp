@@ -19,16 +19,20 @@ to rewrite working components or logic. Specifically:
   CSS v4** utility classes, held as class-name string constants in
   `X.constants.ts` (faithful arbitrary values, e.g. `bg-[#2563eb]`, where our
   palette needs them).
-- Apply the presentational/container split and context where it removes real
-  prop-drilling — but **do not over-decompose** (e.g. no one-file-per-input
-  components) beyond what readability needs. Match the spirit, keep it ours.
+- Apply the presentational/container split and context to remove real
+  prop-drilling. Extract a sub-part into its own file when it is **stateful,
+  repeated, or a self-contained chunk** (a sub-view, a stateful control, an SVG
+  icon). But prefer **one reusable, parameterized leaf** (e.g. a single
+  `AuthField`) over many near-identical ones — don't over-decompose for its own
+  sake. Match the spirit, keep it ours.
 
 ## 1. Top-level layout (`apps/web/src`)
 
 ```
 src/
   api/                 # the ONLY network layer: fetch core + per-domain actions
-    apiClient.ts       # request() core, auth header, error mapping, SSE reader
+    apiClient.ts       # request() core: base URL, auth header, error mapping
+    sse.ts             # readSseStream(): reusable SSE frame reader
     types.ts           # ApiRequestError + shared request/response helper types
     auth.api.ts        # login, signup
     users.api.ts       # getUsers
@@ -89,25 +93,37 @@ components/MessageComposer/
 ```
 
 Rules:
-- **When a component grows a nested sub-part, extract that sub-part into its own
-  file.** Don't nest large JSX blocks or helper functions inline.
+- **When a component grows a nested sub-part, extract it into its own file.**
+  This includes a **stateful** sub-component (has its own `useState`/effects,
+  e.g. `ModeButton`), a **repeated** chunk, a **sub-view** when a view balloons
+  (e.g. `MessagesArea` pulled out of a panel), and inline **SVG icons**
+  (`PersonIcon`). Never nest large JSX blocks or helper functions inline.
 - **Simple/leaf sub-components go FLAT** directly inside the component's folder
   (as above) — do **not** create a nested `components/` folder for them (avoid the
   confusing `components/X/components/` nesting).
 - Only give a sub-component its *own folder* (with its own `.constants`/`.types`/
   sub-parts) when it is itself complex enough to need one.
+- **Soft cap of ~one responsibility per file.** When a file gets long it should be
+  either a *view* (markup) or *one cohesive hook/reducer* — never a mix of both.
 
 ## 4. Presentational vs. container (separate rendering from logic)
 
 - **`X.tsx` (presentational)** — owns the *browser*: JSX, HTML elements, event
   handlers wired to callbacks. It receives data + callbacks via props/context and
   renders. It does **not** fetch, hold business state, or make decisions.
-- **`XContainer.tsx` (container)** — owns the *logic*: reads hooks/context, calls
-  API actions, holds state, and hands plain values + callbacks down to `X.tsx`.
+- **`XContainer.tsx` (container)** — stays **thin**: call a hook, provide its
+  value via context, render the view. Screen/form **state lives in a `useXForm`
+  hook, not inline in the container** (a container with many `useState`s is the
+  smell). Shape: `const value = useXForm(); return (<XContext.Provider
+  value={value}><X /></XContext.Provider>)`.
 - **`utils/` functions** — the code that *does something* is a pure function that
   **takes a value and returns a value** (e.g. `toProfileErrors(error)`), kept out
   of the JSX. Event handlers in the presentational file should call these, not
   inline the logic.
+- **One return per component.** Branch *inside* the JSX — a ternary, `&&` when
+  there's no else, or a `Record<Key, ReactNode>` map for multi-way — rather than
+  multiple early `return`s. "Render nothing" becomes `cond ? <…/> : null`, not a
+  guard `return null`.
 
 Mnemonic: *HTML/events live where the element is rendered; the function that does
 work takes a value and lives in a container/hook/util.*
@@ -128,6 +144,14 @@ directory + display-name resolver (`user`), the selected conversation
 (`conversations`). Presentational components read context through the feature's
 `use<Domain>()` hook — never receive these as deep props.
 
+- **Type the context value once.** Derive it from the hook —
+  `type XContextValue = ReturnType<typeof useX>` — never hand-write two identical
+  shapes (a context type *and* a hook-return type).
+- **Screen/form state is per-screen context too.** A form's `useXForm` hook is
+  provided via an `X.context.ts`; the form and its inputs read it, so their props
+  collapse to ~0. Examples: `useLoginForm` + `LoginFormContext`, `useProfileForm`,
+  and `useComposer` (one hook shared by the assistant + tutor panels).
+
 ## 6. Hooks split by action; reducers for non-trivial state
 
 - One hook per action/responsibility: `useFetchMessages`, `useSendMessage`,
@@ -136,11 +160,19 @@ directory + display-name resolver (`user`), the selected conversation
   unit-tested in isolation.
 - Hooks call the **`api/` actions**; components call hooks. Components and
   presentational files never call `fetch` or the api layer directly.
+- **Duplicated behavior → one shared hook.** If two components hold identical
+  state/logic, extract a single hook (e.g. `useComposer` powers both the assistant
+  and tutor panels) instead of copy-pasting.
+- **Keep event/parse mapping pure and separate** from the hook wiring — e.g.
+  `handleAssistantEvent(dispatch, event)` maps SSE frames to reducer actions, so
+  the hook stays thin and the mapping is unit-testable on its own.
 
 ## 7. The API layer (`src/api`)
 
 - `apiClient.ts` is the single low-level seam (base URL, `Authorization` header,
-  error → `ApiRequestError`, the SSE stream reader). Nothing else calls `fetch`.
+  error → `ApiRequestError`). Nothing else calls `fetch`.
+- Reusable transport helpers live beside it (e.g. `sse.ts` → `readSseStream`);
+  streaming actions use it instead of re-implementing the reader.
 - Each domain gets a `<domain>.api.ts` with small, named action functions that
   use the core `request()`; these are what feature hooks import.
 - Keep transport concerns here only; never leak `Response`/`fetch` upward.
@@ -150,6 +182,8 @@ directory + display-name resolver (`user`), the selected conversation
 - Constants, types, and tests live **next to** the component/hook they belong to
   (`X.constants.ts`, `X.types.ts`, `X.test.tsx`); only truly shared ones go to a
   feature-level or `shared/` folder.
+- **Prop types always live in `X.types.ts`** — never inline in the function
+  signature, even for tiny leaf components.
 - Components/folders: `PascalCase`. Hooks: `useThing.ts`. Everything else:
   match the existing lowercase-dotted style (`x.context.ts`, `x.constants.ts`).
 - **Imports:** use the `@/` alias for cross-folder imports (`@/features/...`,
