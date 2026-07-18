@@ -82,7 +82,6 @@ describe('AvatarService', () => {
         srcUrl: expect.stringMatching(new RegExp(`^${BASE_URL}/${FIXED_KEY}\\?v=`)),
         storageKey: FIXED_KEY,
       })
-      // Overwrite in place => nothing to delete on replace => no orphans.
       expect(storage.delete).not.toHaveBeenCalled()
       expect(updated.avatarUrl).toBe('https://cdn/x?v=1')
     })

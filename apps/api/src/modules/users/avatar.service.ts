@@ -39,7 +39,6 @@ export class AvatarService {
       throw AppError.badRequest('VALIDATION_ERROR', 'Image is too large (max 5 MB)')
     }
 
-    // Fixed key, overwritten in place — a replace never leaves an orphan.
     const storageKey = buildAvatarKey(userId)
     await this.storage.put({
       key: storageKey,
@@ -48,8 +47,6 @@ export class AvatarService {
       cacheControl: AVATAR_CACHE_CONTROL,
     })
 
-    // Resolve the finished public URL once, here on the write path; the ?v= token
-    // busts the CDN cache on replace. Reads just return this stored value.
     const baseUrl = this.configService.getOrThrow<string>('STORAGE_PUBLIC_BASE_URL')
     const srcUrl = `${baseUrl}/${storageKey}?v=${randomUUID()}`
 
@@ -71,9 +68,7 @@ export class AvatarService {
       throw AppError.notFound('User not found')
     }
 
-    // Best-effort delete of the object we own (external URLs have no storageKey).
-    // If it fails, the single fixed object is overwritten by the next upload, so
-    // it self-heals — no accumulating orphans.
+    // Best-effort: a failed delete self-heals when the next upload overwrites it.
     const storageKey = stored.avatar?.storageKey ?? null
     if (storageKey !== null) {
       try {

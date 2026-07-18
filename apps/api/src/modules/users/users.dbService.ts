@@ -73,8 +73,6 @@ export class UsersDbService {
     return doc === null ? undefined : toPublicUser(toStoredUser(doc))
   }
 
-  // Sets the resolved avatar (present) or null (removed). Returns the updated
-  // public user, or undefined if the user no longer exists.
   async setAvatar(userId: string, avatar: StoredAvatar | null): Promise<User | undefined> {
     const doc = await this.userModel
       .findByIdAndUpdate(userId, { $set: { avatar } }, { returnDocument: 'after' })
