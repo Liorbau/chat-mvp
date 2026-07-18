@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
-import { ASSISTANT_SENDER_ID } from '@chat/contract'
 import type { Message } from '@chat/contract'
 import { createConversation, getMessages, streamAssistant } from '@/api'
 import {
   assistantChatReducer,
   initialAssistantState,
 } from '@/features/ai/state/assistantChatReducer'
+import { handleAssistantEvent } from './handleAssistantEvent'
 
 type AssistantChat = {
   messages: Message[]
@@ -83,26 +83,7 @@ export function useAssistantChat(
         conversationId,
         content,
         (event) => {
-          if (event.type === 'user_message') {
-            dispatch({ type: 'USER_MESSAGE', payload: { tempId, message: event.message } })
-          } else if (event.type === 'tool_call') {
-            // tool_result needs no UI change; the label persists until tokens start.
-            dispatch({ type: 'TOOL_CALL', payload: { label: event.label } })
-          } else if (event.type === 'token') {
-            dispatch({ type: 'TOKEN', payload: { value: event.value } })
-          } else if (event.type === 'done') {
-            dispatch({
-              type: 'DONE',
-              payload: {
-                messageId: event.messageId,
-                senderId: ASSISTANT_SENDER_ID,
-                createdAt: new Date().toISOString(),
-                citations: event.citations,
-              },
-            })
-          } else if (event.type === 'error') {
-            dispatch({ type: 'STREAM_ERROR', payload: { error: event.message, tempId } })
-          }
+          handleAssistantEvent(dispatch, event, tempId)
         },
         controller.signal,
       )

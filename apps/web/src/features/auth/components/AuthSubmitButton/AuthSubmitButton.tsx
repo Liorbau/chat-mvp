@@ -1,10 +1,5 @@
 import { submitButtonStyle } from '@/features/auth/constants/authForm.constants'
-
-type AuthSubmitButtonProps = {
-  submitting: boolean
-  idleLabel: string
-  busyLabel: string
-}
+import type { AuthSubmitButtonProps } from './AuthSubmitButton.types'
 
 export function AuthSubmitButton({ submitting, idleLabel, busyLabel }: AuthSubmitButtonProps) {
   return (

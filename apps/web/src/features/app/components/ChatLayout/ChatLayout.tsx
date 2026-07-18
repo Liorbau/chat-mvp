@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { AssistantPanelContainer } from '@/features/ai/components/AssistantPanel/AssistantPanelContainer'
 import { TutorPanelContainer } from '@/features/ai/components/TutorPanel/TutorPanelContainer'
 import { ProfilePanelContainer } from '@/features/profile/components/ProfilePanel/ProfilePanelContainer'
@@ -5,6 +6,7 @@ import { BackButton } from './BackButton'
 import { ChatsView } from './ChatsView'
 import { PersistentTopBar } from './PersistentTopBar'
 import type { ChatLayoutViewProps } from './ChatLayout.types'
+import type { ChatMode } from '@/features/app/components/ModeSwitcher/ModeSwitcher.types'
 
 export function ChatLayout({
   mode,
@@ -20,36 +22,11 @@ export function ChatLayout({
   onConversationCreated,
   onConversationActivity,
 }: ChatLayoutViewProps) {
-  if (mode === 'assistant') {
-    return (
-      <>
-        <PersistentTopBar mode={mode} onSelectMode={onSelectMode} onLogout={onLogout} />
-        <AssistantPanelContainer currentUserId={currentUserId} />
-      </>
-    )
-  }
-
-  if (mode === 'tutor') {
-    return (
-      <>
-        <PersistentTopBar mode={mode} onSelectMode={onSelectMode} onLogout={onLogout} />
-        <TutorPanelContainer currentUserId={currentUserId} />
-      </>
-    )
-  }
-
-  if (mode === 'profile') {
-    return (
-      <>
-        <BackButton onClick={onBack} />
-        <ProfilePanelContainer />
-      </>
-    )
-  }
-
-  return (
-    <>
-      <PersistentTopBar mode={mode} onSelectMode={onSelectMode} onLogout={onLogout} />
+  const bodyByMode: Record<ChatMode, ReactNode> = {
+    assistant: <AssistantPanelContainer currentUserId={currentUserId} />,
+    tutor: <TutorPanelContainer currentUserId={currentUserId} />,
+    profile: <ProfilePanelContainer />,
+    chats: (
       <ChatsView
         currentUserId={currentUserId}
         status={status}
@@ -60,6 +37,17 @@ export function ChatLayout({
         onConversationCreated={onConversationCreated}
         onConversationActivity={onConversationActivity}
       />
+    ),
+  }
+
+  return (
+    <>
+      {mode === 'profile' ? (
+        <BackButton onClick={onBack} />
+      ) : (
+        <PersistentTopBar mode={mode} onSelectMode={onSelectMode} onLogout={onLogout} />
+      )}
+      {bodyByMode[mode]}
     </>
   )
 }

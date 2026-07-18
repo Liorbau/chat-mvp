@@ -5,28 +5,30 @@ import {
   SECTION_STYLE,
   submitButtonStyle,
 } from './ProfilePanel.constants'
-import type { NameFormProps } from './ProfilePanel.types'
+import { useProfileContext } from './ProfilePanel.context'
 import { ErrorList } from './ErrorList'
 import { SavedNote } from './SavedNote'
 
-export function NameForm({
-  firstName,
-  lastName,
-  onFirstNameChange,
-  onLastNameChange,
-  submitting,
-  errors,
-  saved,
-  changed,
-  onSubmit,
-}: NameFormProps) {
+export function NameForm() {
+  const {
+    firstName,
+    lastName,
+    onFirstNameChange,
+    onLastNameChange,
+    submitting,
+    errors,
+    saved,
+    changed,
+    submit,
+  } = useProfileContext().name
   const disabled = submitting || !changed
+
   return (
     <form
       className={SECTION_STYLE}
       onSubmit={(event) => {
         event.preventDefault()
-        onSubmit()
+        submit()
       }}
     >
       <h2 className={SECTION_HEADING_STYLE}>Name</h2>

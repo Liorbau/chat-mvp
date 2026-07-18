@@ -1,10 +1,8 @@
 import { createContext, useContext } from 'react'
-import type { User } from '@chat/contract'
+import { useUserDirectory } from '@/features/user/hooks/useUserDirectory'
 
-export type UserContextValue = {
-  users: User[]
-  getUserDisplayName: (userId: string) => string
-}
+// Single source of truth for the shape: the provider fills this from the hook.
+export type UserContextValue = ReturnType<typeof useUserDirectory>
 
 export const UserContext = createContext<UserContextValue | null>(null)
 

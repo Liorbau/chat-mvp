@@ -5,16 +5,14 @@ export type NewConversationProps = {
   onCreated: (conversationId: string) => void
 }
 
-export type NewConversationViewProps = {
+export type NewConversationValue = {
   isOpen: boolean
   others: User[]
   selectedUserId: string
   errorMessage: string | null
   isBusy: boolean
-  onOpen: () => void
+  open: () => void
   onSelect: (userId: string) => void
-  onCreate: () => void
-  onCancel: () => void
+  create: () => void
+  cancel: () => void
 }
-
-export type NewConversationFormProps = Omit<NewConversationViewProps, 'isOpen' | 'onOpen'>

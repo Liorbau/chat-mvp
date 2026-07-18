@@ -42,3 +42,19 @@ export type PersistentTopBarProps = {
 export type BackButtonProps = {
   onClick: () => void
 }
+
+export type ConversationsSidebarProps = {
+  currentUserId: string
+  status: LoadStatus
+  conversations: Conversation[]
+  error: string | null
+  selectedConversationId: string | null
+  onSelectConversation: (id: string) => void
+  onConversationCreated: (conversationId: string) => void
+}
+
+export type MessagesPaneProps = {
+  currentUserId: string
+  selectedConversationId: string | null
+  onConversationActivity: (conversationId: string, lastMessagePreview: string) => void
+}

@@ -1,16 +1,10 @@
-import type { ReactNode } from 'react'
 import {
   CARD_STYLE,
   SCREEN_STYLE,
   SUBTITLE_STYLE,
   TITLE_STYLE,
 } from '@/features/auth/constants/authForm.constants'
-
-type AuthCardProps = {
-  title: string
-  subtitle: string
-  children: ReactNode
-}
+import type { AuthCardProps } from './AuthCard.types'
 
 export function AuthCard({ title, subtitle, children }: AuthCardProps) {
   return (

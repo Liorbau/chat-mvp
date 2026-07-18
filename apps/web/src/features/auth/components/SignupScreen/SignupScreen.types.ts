@@ -1,4 +1,4 @@
-export type SignupScreenProps = {
+export type SignupFormValue = {
   firstName: string
   lastName: string
   email: string
@@ -9,6 +9,9 @@ export type SignupScreenProps = {
   onPasswordChange: (value: string) => void
   submitting: boolean
   errors: string[]
-  onSubmit: () => void
+  submit: () => void
+}
+
+export type SignupScreenProps = {
   onSwitchToLogin: () => void
 }

@@ -1,9 +1,5 @@
 import { SWITCH_BUTTON_STYLE } from '@/features/auth/constants/authForm.constants'
-
-type AuthSwitchButtonProps = {
-  label: string
-  onClick: () => void
-}
+import type { AuthSwitchButtonProps } from './AuthSwitchButton.types'
 
 export function AuthSwitchButton({ label, onClick }: AuthSwitchButtonProps) {
   return (

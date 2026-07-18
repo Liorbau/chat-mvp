@@ -1,31 +1,18 @@
 import { KnowledgeDocumentsContainer } from '@/features/knowledge/components/KnowledgeDocuments/KnowledgeDocumentsContainer'
+import { useComposerContext } from '@/features/ai/context/composer.context'
 import {
   AVATAR_STYLE,
-  EMPTY_STYLE,
   ERROR_STYLE,
   HEADER_STYLE,
   HEADER_TITLE_STYLE,
-  MESSAGES_STYLE,
   PANEL_STYLE,
 } from './TutorPanel.constants'
 import { TutorComposer } from './TutorComposer'
-import { TutorMessage } from './TutorMessage'
-import { TutorStreamingBubble } from './TutorStreamingBubble'
-import type { TutorPanelViewProps } from './TutorPanel.types'
+import { TutorMessagesArea } from './TutorMessagesArea'
 
-export function TutorPanel({
-  messages,
-  streamingText,
-  toolLabel,
-  isStreaming,
-  error,
-  input,
-  canSend,
-  currentUserId,
-  endRef,
-  onInputChange,
-  onSubmit,
-}: TutorPanelViewProps) {
+export function TutorPanel() {
+  const { error, input, isStreaming, canSend, onInputChange, submit } = useComposerContext()
+
   return (
     <section className={PANEL_STYLE}>
       <header className={HEADER_STYLE}>
@@ -41,28 +28,14 @@ export function TutorPanel({
         </div>
       ) : null}
 
-      <div className={MESSAGES_STYLE}>
-        {messages.length === 0 && streamingText === null && !isStreaming ? (
-          <p className={EMPTY_STYLE}>Ask a question about your uploaded notes.</p>
-        ) : null}
-
-        {messages.map((message) => (
-          <TutorMessage key={message.id} message={message} currentUserId={currentUserId} />
-        ))}
-
-        {isStreaming ? (
-          <TutorStreamingBubble streamingText={streamingText} toolLabel={toolLabel} />
-        ) : null}
-
-        <div ref={endRef} />
-      </div>
+      <TutorMessagesArea />
 
       <TutorComposer
         input={input}
         isStreaming={isStreaming}
         canSend={canSend}
         onInputChange={onInputChange}
-        onSubmit={onSubmit}
+        onSubmit={submit}
       />
     </section>
   )

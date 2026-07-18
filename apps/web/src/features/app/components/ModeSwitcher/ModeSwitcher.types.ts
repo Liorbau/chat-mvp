@@ -10,3 +10,13 @@ export type ModeDef = {
   icon: ReactNode
   plain?: boolean
 }
+
+export type ModeButtonProps = {
+  def: ModeDef
+  onSelect: (mode: ChatMode) => void
+}
+
+export type ModeSwitcherProps = {
+  mode: ChatMode
+  onSelect: (mode: ChatMode) => void
+}

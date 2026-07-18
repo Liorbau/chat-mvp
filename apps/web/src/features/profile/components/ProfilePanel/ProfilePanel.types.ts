@@ -1,4 +1,4 @@
-export type NameFormProps = {
+export type NameFormValue = {
   firstName: string
   lastName: string
   onFirstNameChange: (value: string) => void
@@ -7,21 +7,29 @@ export type NameFormProps = {
   errors: string[]
   saved: boolean
   changed: boolean
-  onSubmit: () => void
+  submit: () => void
 }
 
-export type EmailFormProps = {
+export type EmailFormValue = {
   email: string
   onEmailChange: (value: string) => void
   submitting: boolean
   errors: string[]
   saved: boolean
   changed: boolean
-  onSubmit: () => void
+  submit: () => void
 }
 
-export type ProfilePanelProps = {
+export type ProfileFormValue = {
   userName: string
-  name: NameFormProps
-  email: EmailFormProps
+  name: NameFormValue
+  email: EmailFormValue
+}
+
+export type ErrorListProps = {
+  messages: string[]
+}
+
+export type SavedNoteProps = {
+  show: boolean
 }

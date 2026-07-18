@@ -2,39 +2,28 @@ import { AuthErrorList } from '@/features/auth/components/AuthErrorList/AuthErro
 import { AuthField } from '@/features/auth/components/AuthField/AuthField'
 import { AuthHint } from '@/features/auth/components/AuthHint/AuthHint'
 import { AuthSubmitButton } from '@/features/auth/components/AuthSubmitButton/AuthSubmitButton'
+import { useSignupContext } from './SignupScreen.context'
 
-type SignupFormProps = {
-  firstName: string
-  lastName: string
-  email: string
-  password: string
-  onFirstNameChange: (value: string) => void
-  onLastNameChange: (value: string) => void
-  onEmailChange: (value: string) => void
-  onPasswordChange: (value: string) => void
-  submitting: boolean
-  errors: string[]
-  onSubmit: () => void
-}
+export function SignupForm() {
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    onFirstNameChange,
+    onLastNameChange,
+    onEmailChange,
+    onPasswordChange,
+    submitting,
+    errors,
+    submit,
+  } = useSignupContext()
 
-export function SignupForm({
-  firstName,
-  lastName,
-  email,
-  password,
-  onFirstNameChange,
-  onLastNameChange,
-  onEmailChange,
-  onPasswordChange,
-  submitting,
-  errors,
-  onSubmit,
-}: SignupFormProps) {
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault()
-        onSubmit()
+        submit()
       }}
     >
       <AuthField

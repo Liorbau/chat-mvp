@@ -6,17 +6,12 @@ import {
   PRIMARY_BUTTON_STYLE,
   SELECT_STYLE,
 } from './NewConversation.constants'
-import type { NewConversationFormProps } from './NewConversation.types'
+import { useNewConversationContext } from './NewConversation.context'
 
-export function NewConversationForm({
-  others,
-  selectedUserId,
-  errorMessage,
-  isBusy,
-  onSelect,
-  onCreate,
-  onCancel,
-}: NewConversationFormProps) {
+export function NewConversationForm() {
+  const { others, selectedUserId, errorMessage, isBusy, onSelect, create, cancel } =
+    useNewConversationContext()
+
   return (
     <div className={FORM_STYLE}>
       <select
@@ -44,11 +39,11 @@ export function NewConversationForm({
           type="button"
           className={PRIMARY_BUTTON_STYLE}
           disabled={isBusy || selectedUserId === ''}
-          onClick={onCreate}
+          onClick={create}
         >
           {isBusy ? 'Creating...' : 'Create'}
         </button>
-        <button type="button" className={ACTION_BUTTON_STYLE} onClick={onCancel}>
+        <button type="button" className={ACTION_BUTTON_STYLE} onClick={cancel}>
           Cancel
         </button>
       </div>
