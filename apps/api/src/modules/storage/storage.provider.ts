@@ -1,4 +1,4 @@
-export const OBJECT_STORAGE = Symbol('OBJECT_STORAGE')
+export const STORAGE_PROVIDER = Symbol('STORAGE_PROVIDER')
 
 export type PutObjectInput = {
   key: string
@@ -7,7 +7,8 @@ export type PutObjectInput = {
   cacheControl: string
 }
 
-export interface ObjectStorage {
+// The swappable storage seam
+export interface StorageProvider {
   put(input: PutObjectInput): Promise<void>
   delete(key: string): Promise<void>
 }

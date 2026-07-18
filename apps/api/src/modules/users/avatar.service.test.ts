@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
-import type { ObjectStorage } from '../storage/object.storage'
+import type { StorageProvider } from '../storage/storage.provider'
 import { AvatarService, type AvatarUpload } from './avatar.service'
 import type { UsersDbService } from './users.dbService'
 
@@ -23,7 +23,7 @@ function pngUpload(size = 1024): AvatarUpload {
   return { buffer: Buffer.from('fake'), mimeType: 'image/png', size }
 }
 
-function makeStorage(overrides: Partial<ObjectStorage> = {}): ObjectStorage {
+function makeStorage(overrides: Partial<StorageProvider> = {}): StorageProvider {
   return {
     put: vi.fn().mockResolvedValue(undefined),
     delete: vi.fn().mockResolvedValue(undefined),
@@ -39,7 +39,7 @@ function makeDb(overrides: Partial<UsersDbService> = {}): UsersDbService {
 }
 
 describe('AvatarService', () => {
-  let storage: ObjectStorage
+  let storage: StorageProvider
   let db: UsersDbService
   let service: AvatarService
 

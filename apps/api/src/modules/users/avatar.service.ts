@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import type { User } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
-import { OBJECT_STORAGE, type ObjectStorage } from '../storage/object.storage'
+import { STORAGE_PROVIDER, type StorageProvider } from '../storage/storage.provider'
 import {
   ALLOWED_AVATAR_CONTENT_TYPES,
   AVATAR_CACHE_CONTROL,
@@ -22,7 +22,7 @@ export class AvatarService {
   private readonly logger = new Logger(AvatarService.name)
 
   constructor(
-    @Inject(OBJECT_STORAGE) private readonly storage: ObjectStorage,
+    @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider,
     private readonly usersDbService: UsersDbService,
   ) {}
 

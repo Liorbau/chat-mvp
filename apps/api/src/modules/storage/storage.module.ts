@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common'
-import { OBJECT_STORAGE } from './object.storage'
-import { S3ObjectStorage } from './s3.storage'
+import { STORAGE_PROVIDER } from './storage.provider'
+import { S3Storage } from './s3.storage'
 
-// To swap providers, implement ObjectStorage in a new class and change `useClass`
-// here — nothing else in the app changes.
+// To swap providers, implement StorageProvider in a new class and change
+// `useClass` here — nothing else in the app changes.
 @Module({
-  providers: [{ provide: OBJECT_STORAGE, useClass: S3ObjectStorage }],
-  exports: [OBJECT_STORAGE],
+  providers: [{ provide: STORAGE_PROVIDER, useClass: S3Storage }],
+  exports: [STORAGE_PROVIDER],
 })
 export class StorageModule {}

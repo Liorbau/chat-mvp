@@ -1,13 +1,11 @@
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import type { ObjectStorage, PutObjectInput } from './object.storage'
+import type { PutObjectInput, StorageProvider } from './storage.provider'
 
-// Works with any S3-compatible store (AWS S3, Cloudflare R2, Supabase, Backblaze
-// B2, MinIO, ...). Server-side only (the API proxies the bytes), so there are no
-// browser-CORS concerns. Set STORAGE_S3_ENDPOINT for a non-AWS store.
+// Works with any S3-compatible store. Set STORAGE_S3_ENDPOINT for a non-AWS store.
 @Injectable()
-export class S3ObjectStorage implements ObjectStorage {
+export class S3Storage implements StorageProvider {
   private readonly client: S3Client
   private readonly bucket: string
 
