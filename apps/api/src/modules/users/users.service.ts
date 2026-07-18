@@ -50,7 +50,7 @@ export class UsersService {
       return undefined
     }
 
-    return toPublicUser(stored, this.configService.get<string>('STORAGE_PUBLIC_BASE_URL'))
+    return toPublicUser(stored)
   }
 
   async create(input: CreateUserInput): Promise<User> {
@@ -66,9 +66,9 @@ export class UsersService {
       lastName: input.lastName,
       email: input.email,
       passwordHash,
-      avatarVersion: null,
+      avatar: null,
     })
-    return toPublicUser(stored, this.configService.get<string>('STORAGE_PUBLIC_BASE_URL'))
+    return toPublicUser(stored)
   }
 
   async updateProfile(userId: string, changes: UpdateProfileRequest): Promise<User> {

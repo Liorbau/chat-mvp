@@ -30,7 +30,7 @@ export function buildSeedUsers(bcryptRounds: number): StoredUser[] {
     ...seed,
     name: `${seed.firstName} ${seed.lastName}`,
     passwordHash: seedPasswordHash,
-    avatarVersion: null,
+    avatar: null,
   }))
 }
 

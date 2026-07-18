@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Inject, Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import type { User } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
 import { STORAGE_PROVIDER, type StorageProvider } from '../storage/storage.provider'
@@ -24,6 +25,7 @@ export class AvatarService {
   constructor(
     @Inject(STORAGE_PROVIDER) private readonly storage: StorageProvider,
     private readonly usersDbService: UsersDbService,
+    private readonly configService: ConfigService,
   ) {}
 
   async uploadAvatar(userId: string, file: AvatarUpload): Promise<User> {
@@ -38,14 +40,20 @@ export class AvatarService {
     }
 
     // Fixed key, overwritten in place — a replace never leaves an orphan.
+    const storageKey = buildAvatarKey(userId)
     await this.storage.put({
-      key: buildAvatarKey(userId),
+      key: storageKey,
       body: file.buffer,
       contentType: file.mimeType,
       cacheControl: AVATAR_CACHE_CONTROL,
     })
 
-    const updated = await this.usersDbService.setAvatarVersion(userId, randomUUID())
+    // Resolve the finished public URL once, here on the write path; the ?v= token
+    // busts the CDN cache on replace. Reads just return this stored value.
+    const baseUrl = this.configService.getOrThrow<string>('STORAGE_PUBLIC_BASE_URL')
+    const srcUrl = `${baseUrl}/${storageKey}?v=${randomUUID()}`
+
+    const updated = await this.usersDbService.setAvatar(userId, { srcUrl, storageKey })
     if (updated === undefined) {
       throw AppError.notFound('User not found')
     }
@@ -53,17 +61,26 @@ export class AvatarService {
   }
 
   async removeAvatar(userId: string): Promise<User> {
-    const updated = await this.usersDbService.setAvatarVersion(userId, null)
+    const stored = await this.usersDbService.findStoredById(userId)
+    if (stored === undefined) {
+      throw AppError.notFound('User not found')
+    }
+
+    const updated = await this.usersDbService.setAvatar(userId, null)
     if (updated === undefined) {
       throw AppError.notFound('User not found')
     }
 
-    // Best-effort: if this fails, the single fixed object is overwritten by the
-    // next upload, so it self-heals — no accumulating orphans.
-    try {
-      await this.storage.delete(buildAvatarKey(userId))
-    } catch (error) {
-      this.logger.warn(`Failed to delete avatar for ${userId}: ${String(error)}`)
+    // Best-effort delete of the object we own (external URLs have no storageKey).
+    // If it fails, the single fixed object is overwritten by the next upload, so
+    // it self-heals — no accumulating orphans.
+    const storageKey = stored.avatar?.storageKey ?? null
+    if (storageKey !== null) {
+      try {
+        await this.storage.delete(storageKey)
+      } catch (error) {
+        this.logger.warn(`Failed to delete avatar for ${userId}: ${String(error)}`)
+      }
     }
     return updated
   }
