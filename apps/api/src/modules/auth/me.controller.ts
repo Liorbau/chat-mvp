@@ -13,8 +13,8 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import type { User } from '@chat/contract'
 import { memoryStorage } from 'multer'
 import { CurrentUser } from '../../common/decorators/current.user.decorator'
-import { AppError } from '../../errors/AppError'
-import { AvatarService } from '../users/avatar.service'
+import { AvatarService, type AvatarUpload } from '../users/avatar.service'
+import { AvatarFilePipe } from '../users/avatar.file.pipe'
 import { UpdateProfileDto } from '../users/dto/update.profile.dto'
 import { UsersService } from '../users/users.service'
 import { AVATAR_MAX_BYTES } from '../storage/storage.constants'
@@ -44,16 +44,9 @@ export class MeController {
   )
   async uploadAvatar(
     @CurrentUser() user: User,
-    @UploadedFile() file: Express.Multer.File | undefined,
+    @UploadedFile(AvatarFilePipe) upload: AvatarUpload,
   ): Promise<User> {
-    if (file === undefined) {
-      throw AppError.badRequest('VALIDATION_ERROR', 'No file uploaded (form field "file").')
-    }
-    return this.avatarService.uploadAvatar(user.id, {
-      buffer: file.buffer,
-      mimeType: file.mimetype,
-      size: file.size,
-    })
+    return this.avatarService.uploadAvatar(user.id, upload)
   }
 
   @Delete('me/avatar')
