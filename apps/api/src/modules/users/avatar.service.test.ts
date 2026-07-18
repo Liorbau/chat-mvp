@@ -4,7 +4,8 @@ import type { User } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
 import type { StorageProvider } from '../storage/storage.provider'
 import { AvatarService, type AvatarUpload } from './avatar.service'
-import type { StoredAvatar, StoredUser, UsersDbService } from './users.dbService'
+import type { UsersDbService } from './users.dbService'
+import type { StoredAvatar, StoredUser } from './user.mapper'
 
 const USER_ID = 'user-1'
 const FIXED_KEY = `avatars/${USER_ID}`

@@ -3,8 +3,6 @@ import type { HydratedDocument } from 'mongoose'
 
 export type UserDocument = HydratedDocument<User>
 
-// The resolved avatar: the public CDN URL is stored as-is (baked at upload), so
-// reads never rebuild it. storageKey is the object we own (null = external URL).
 @Schema({ _id: false })
 export class Avatar {
   @Prop({ required: true })

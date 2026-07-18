@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config'
 import type { UpdateProfileRequest, User } from '@chat/contract'
 import bcrypt from 'bcrypt'
 import { AppError } from '../../errors/AppError'
-import { toPublicUser, type UserUpdate, UsersDbService } from './users.dbService'
+import { UsersDbService } from './users.dbService'
+import { toPublicUser, type UserUpdate } from './user.mapper'
 
 export type CreateUserInput = {
   email: string
