@@ -9,6 +9,7 @@ import { checkpointerProvider } from './agent/checkpointer.provider'
 import { AgentToolsService } from './agent/tools/agent-tools.service'
 import { AiController } from './ai.controller'
 import { ConversationMemoryService } from './conversation.memory.service'
+import { StreamAgentReplyOrchestrator } from './stream-agent-reply.orchestrator'
 import { SummarizeRecentMessagesTool } from './tools/summarize.recent.messages.tool'
 
 @Module({
@@ -19,6 +20,7 @@ import { SummarizeRecentMessagesTool } from './tools/summarize.recent.messages.t
     AgentToolsService,
     checkpointerProvider,
     ConversationMemoryService,
+    StreamAgentReplyOrchestrator,
     SummarizeRecentMessagesTool,
   ],
   exports: [ConversationMemoryService],

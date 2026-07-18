@@ -4,12 +4,16 @@ import { CurrentUser } from '../../common/decorators/current.user.decorator'
 import { JwtAuthGuard } from '../auth/jwt.auth.guard'
 import { CreateMessageDto } from './dto/create.message.dto'
 import { ConversationParamsDto, ListMessagesQueryDto } from './dto/list.messages.dto'
-import { MessagesService } from './messages.service'
+import { GetMessagesOrchestrator } from './get-messages.orchestrator'
+import { CreateMessageOrchestrator } from './create-message.orchestrator'
 
 @Controller('conversations/:id/messages')
 @UseGuards(JwtAuthGuard)
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesService) {}
+  constructor(
+    private readonly getMessagesOrchestrator: GetMessagesOrchestrator,
+    private readonly createMessageOrchestrator: CreateMessageOrchestrator,
+  ) {}
 
   @Get()
   async list(
@@ -17,12 +21,7 @@ export class MessagesController {
     @Query() query: ListMessagesQueryDto,
     @CurrentUser() user: User,
   ): Promise<GetMessagesResponse> {
-    return this.messagesService.listMessages({
-      conversationId: params.id,
-      requesterId: user.id,
-      cursor: query.cursor,
-      limit: query.limit,
-    })
+    return this.getMessagesOrchestrator.execute(params.id, user.id, query.cursor, query.limit)
   }
 
   @Post()
@@ -31,10 +30,6 @@ export class MessagesController {
     @Body() body: CreateMessageDto,
     @CurrentUser() user: User,
   ): Promise<SendMessageResponse> {
-    return this.messagesService.createMessage({
-      conversationId: params.id,
-      requesterId: user.id,
-      content: body.content,
-    })
+    return this.createMessageOrchestrator.execute(params.id, user.id, body.content)
   }
 }

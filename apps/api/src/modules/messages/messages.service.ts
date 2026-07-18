@@ -5,23 +5,15 @@ import {
   type Citation,
   type GetMessagesResponse,
   type Message,
-  type SendMessageResponse,
 } from '@chat/contract'
 import type { Connection } from 'mongoose'
 import { AppError } from '../../errors/AppError'
 import { ConversationsService } from '../conversations/conversations.service'
 import { MessagesDbService, type MessagePageCursor } from './messages.dbService'
 
-type ListMessagesInput = {
+type SendMessageInput = {
   conversationId: string
-  requesterId: string
-  cursor: string | undefined
-  limit: number
-}
-
-type CreateMessageInput = {
-  conversationId: string
-  requesterId: string
+  senderId: string
   content: string
 }
 
@@ -67,13 +59,16 @@ export class MessagesService {
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
-  async listMessages(input: ListMessagesInput): Promise<GetMessagesResponse> {
-    await this.conversationsService.assertParticipant(input.conversationId, input.requesterId)
-
-    const limit = input.limit
-    const cursor = decodeCursor(input.cursor)
-
-    const page = await this.messagesDbService.getMessagePage(input.conversationId, limit, cursor)
+  async getPage(
+    conversationId: string,
+    cursor: string | undefined,
+    limit: number,
+  ): Promise<GetMessagesResponse> {
+    const page = await this.messagesDbService.getMessagePage(
+      conversationId,
+      limit,
+      decodeCursor(cursor),
+    )
 
     return {
       messages: page.messages,
@@ -81,25 +76,16 @@ export class MessagesService {
     }
   }
 
-  async createMessage(input: CreateMessageInput): Promise<SendMessageResponse> {
-    const conversation = await this.conversationsService.assertParticipant(
-      input.conversationId,
-      input.requesterId,
-    )
-    if (conversation.type === 'assistant') {
-      throw AppError.badRequest(
-        'VALIDATION_ERROR',
-        'Use the assistant endpoint to message an assistant conversation',
-      )
-    }
-
+  // Atomic send: insert the message and update the conversation's last-message
+  // snapshot in one transaction. Authorization is the caller's responsibility.
+  async sendMessage(input: SendMessageInput): Promise<Message> {
     const occurredAt = new Date()
     const createdAt = occurredAt.toISOString()
-    const message = await this.connection.transaction(async (session) => {
+    return this.connection.transaction(async (session) => {
       const created = await this.messagesDbService.create(
         {
           conversationId: input.conversationId,
-          senderId: input.requesterId,
+          senderId: input.senderId,
           content: input.content,
           createdAt,
         },
@@ -113,8 +99,6 @@ export class MessagesService {
       )
       return created
     })
-
-    return { message }
   }
 
   async appendAssistantMessage(

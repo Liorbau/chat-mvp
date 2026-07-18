@@ -54,7 +54,11 @@ export class AgentService {
         'This endpoint is only for assistant or tutor conversations',
       )
     }
-    const { message } = await this.messagesService.createMessage(input)
+    const message = await this.messagesService.sendMessage({
+      conversationId: input.conversationId,
+      senderId: input.requesterId,
+      content: input.content,
+    })
     return { message, conversationType: conversation.type }
   }
 
