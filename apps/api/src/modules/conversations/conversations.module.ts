@@ -6,6 +6,8 @@ import { Conversation, ConversationSchema } from './conversation.schema'
 import { ConversationsController } from './conversations.controller'
 import { ConversationsDbService } from './conversations.dbService'
 import { ConversationsService } from './conversations.service'
+import { ListConversationsOrchestrator } from './list-conversations.orchestrator'
+import { CreateConversationOrchestrator } from './create-conversation.orchestrator'
 
 @Module({
   imports: [
@@ -14,7 +16,12 @@ import { ConversationsService } from './conversations.service'
     MongooseModule.forFeature([{ name: Conversation.name, schema: ConversationSchema }]),
   ],
   controllers: [ConversationsController],
-  providers: [ConversationsService, ConversationsDbService],
+  providers: [
+    ConversationsService,
+    ConversationsDbService,
+    ListConversationsOrchestrator,
+    CreateConversationOrchestrator,
+  ],
   exports: [ConversationsService],
 })
 export class ConversationsModule {}
