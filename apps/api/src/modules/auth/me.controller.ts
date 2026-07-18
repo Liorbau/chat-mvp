@@ -17,8 +17,8 @@ import { AvatarFilePipe } from '../users/avatar.file.pipe'
 import type { AvatarUpload } from '../users/avatar.types'
 import { UploadAvatarOrchestrator } from '../users/upload-avatar.orchestrator'
 import { RemoveAvatarOrchestrator } from '../users/remove-avatar.orchestrator'
+import { UpdateProfileOrchestrator } from '../users/update-profile.orchestrator'
 import { UpdateProfileDto } from '../users/dto/update.profile.dto'
-import { UsersService } from '../users/users.service'
 import { AVATAR_MAX_BYTES } from '../storage/storage.constants'
 import { JwtAuthGuard } from './jwt.auth.guard'
 
@@ -26,7 +26,7 @@ import { JwtAuthGuard } from './jwt.auth.guard'
 @UseGuards(JwtAuthGuard)
 export class MeController {
   constructor(
-    private readonly usersService: UsersService,
+    private readonly updateProfileOrchestrator: UpdateProfileOrchestrator,
     private readonly uploadAvatarOrchestrator: UploadAvatarOrchestrator,
     private readonly removeAvatarOrchestrator: RemoveAvatarOrchestrator,
   ) {}
@@ -38,7 +38,7 @@ export class MeController {
 
   @Patch('me')
   async updateMe(@CurrentUser() user: User, @Body() dto: UpdateProfileDto): Promise<User> {
-    return this.usersService.updateProfile(user.id, dto)
+    return this.updateProfileOrchestrator.execute(user.id, dto)
   }
 
   @Post('me/avatar')
