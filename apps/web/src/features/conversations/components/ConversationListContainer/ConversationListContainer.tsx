@@ -9,19 +9,13 @@ export function ConversationListContainer({
   selectedConversationId,
   onSelectConversation,
 }: ConversationListContainerProps) {
-  if (status === 'idle' || status === 'loading') {
-    return <ConversationListSkeleton />
-  }
-
-  if (status === 'error') {
-    return <p>{error ?? 'Failed to load conversations'}</p>
-  }
-
-  if (status === 'empty') {
-    return <p>No conversations yet</p>
-  }
-
-  return (
+  return status === 'idle' || status === 'loading' ? (
+    <ConversationListSkeleton />
+  ) : status === 'error' ? (
+    <p>{error ?? 'Failed to load conversations'}</p>
+  ) : status === 'empty' ? (
+    <p>No conversations yet</p>
+  ) : (
     <ConversationList
       conversations={conversations}
       selectedConversationId={selectedConversationId}
