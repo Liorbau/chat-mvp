@@ -96,13 +96,6 @@ describe('AvatarService', () => {
       ).rejects.toBeInstanceOf(AppError)
       expect(storage.put).not.toHaveBeenCalled()
     })
-
-    it('rejects an oversize file without storing anything (400)', async () => {
-      await expect(
-        service.uploadAvatar(USER_ID, pngUpload(6 * 1024 * 1024)),
-      ).rejects.toBeInstanceOf(AppError)
-      expect(storage.put).not.toHaveBeenCalled()
-    })
   })
 
   describe('removeAvatar', () => {

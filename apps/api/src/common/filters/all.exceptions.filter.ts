@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  PayloadTooLargeException,
 } from '@nestjs/common'
 import type { Response } from 'express'
 import { AppError } from '../../errors/AppError'
@@ -24,14 +25,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return
     }
 
+    // FileInterceptor turns an oversize upload into a 413; map it to the promised
+    // 400 validation envelope (checked before the generic HttpException branch).
+    if (exception instanceof PayloadTooLargeException) {
+      response.status(HttpStatus.BAD_REQUEST).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Uploaded file is too large.' },
+      })
+      return
+    }
+
     if (exception instanceof HttpException) {
       const statusCode = exception.getStatus()
       response.status(statusCode).json(toApiErrorBody(statusCode, exception.getResponse()))
       return
     }
 
-    // Mongo duplicate-key (E11000). The only unique index is users.email, so map
-    // it to the same 409 the signup flow returns.
     if (isDuplicateKeyError(exception)) {
       response.status(HttpStatus.CONFLICT).json({
         error: {

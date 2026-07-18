@@ -7,7 +7,6 @@ import { STORAGE_PROVIDER, type StorageProvider } from '../storage/storage.provi
 import {
   ALLOWED_AVATAR_CONTENT_TYPES,
   AVATAR_CACHE_CONTROL,
-  AVATAR_MAX_BYTES,
   buildAvatarKey,
 } from '../storage/storage.constants'
 import { UsersDbService } from './users.dbService'
@@ -34,9 +33,6 @@ export class AvatarService {
         'VALIDATION_ERROR',
         'Unsupported image type (use PNG, JPEG, or WEBP)',
       )
-    }
-    if (file.size > AVATAR_MAX_BYTES) {
-      throw AppError.badRequest('VALIDATION_ERROR', 'Image is too large (max 5 MB)')
     }
 
     const storageKey = buildAvatarKey(userId)
