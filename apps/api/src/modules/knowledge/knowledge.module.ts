@@ -7,6 +7,9 @@ import { KnowledgeController } from './knowledge.controller'
 import { KnowledgeDbService } from './knowledge.dbService'
 import { KnowledgeRetrieverService } from './knowledge.retriever.service'
 import { KnowledgeService } from './knowledge.service'
+import { IngestDocumentOrchestrator } from './ingest-document.orchestrator'
+import { ListDocumentsOrchestrator } from './list-documents.orchestrator'
+import { RemoveDocumentOrchestrator } from './remove-document.orchestrator'
 import { VoyageEmbeddings } from './voyage.embeddings'
 
 @Module({
@@ -23,6 +26,9 @@ import { VoyageEmbeddings } from './voyage.embeddings'
     { provide: Embeddings, useClass: VoyageEmbeddings },
     KnowledgeService,
     KnowledgeRetrieverService,
+    IngestDocumentOrchestrator,
+    ListDocumentsOrchestrator,
+    RemoveDocumentOrchestrator,
   ],
   exports: [KnowledgeRetrieverService],
 })
