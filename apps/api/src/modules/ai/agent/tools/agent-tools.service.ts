@@ -2,7 +2,7 @@ import type { StructuredToolInterface } from '@langchain/core/tools'
 import { Injectable } from '@nestjs/common'
 import { KnowledgeRetrieverService } from '../../../knowledge/knowledge.retriever.service'
 import { UsersService } from '../../../users/users.service'
-import { SummarizeRecentMessagesTool } from '../../tools/summarize.recent.messages.tool'
+import { SummarizeService } from './summarize.service'
 import { buildGetMyNameTool } from './get-my-name.tool'
 import { buildRetrieveTool, RETRIEVE_TOOL_NAME } from './retrieve-knowledge.tool'
 import { buildSummarizeTool } from './summarize-my-recent-messages.tool'
@@ -14,7 +14,7 @@ export class AgentToolsService {
   constructor(
     retriever: KnowledgeRetrieverService,
     usersService: UsersService,
-    summarize: SummarizeRecentMessagesTool,
+    summarize: SummarizeService,
   ) {
     this.tools = [
       buildRetrieveTool(retriever),

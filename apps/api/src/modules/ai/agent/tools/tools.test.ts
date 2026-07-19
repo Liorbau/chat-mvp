@@ -1,10 +1,10 @@
 import type { RunnableConfig } from '@langchain/core/runnables'
 import { describe, expect, it, vi } from 'vitest'
-import { buildGetMyNameTool } from '../agent/tools/get-my-name.tool'
-import { SummarizeRecentMessagesTool } from './summarize.recent.messages.tool'
+import { buildGetMyNameTool } from './get-my-name.tool'
+import { SummarizeService } from './summarize.service'
 
 // generateStructured hits the LLM; stub it so we can assert the scoping logic.
-vi.mock('../chat-model', () => ({
+vi.mock('../../chat-model', () => ({
   generateStructured: vi.fn().mockResolvedValue({
     summaries: [{ conversationId: 'c-user', summary: 'chat with Dana' }],
   }),
@@ -31,7 +31,7 @@ describe('buildGetMyNameTool', () => {
   })
 })
 
-describe('SummarizeRecentMessagesTool', () => {
+describe('SummarizeService', () => {
   it('scopes reads to the JWT requesterId and skips assistant conversations', async () => {
     const conversationsService = {
       listConversations: vi.fn().mockResolvedValue([
@@ -49,7 +49,7 @@ describe('SummarizeRecentMessagesTool', () => {
     const usersService = {
       findByIds: vi.fn().mockResolvedValue([{ id: 'u-dana', name: 'Dana' }]),
     }
-    const tool = new SummarizeRecentMessagesTool(
+    const tool = new SummarizeService(
       conversationsService as never,
       messagesDbService as never,
       usersService as never,

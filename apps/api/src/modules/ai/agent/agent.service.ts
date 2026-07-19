@@ -3,7 +3,7 @@ import type { RunnableConfig } from '@langchain/core/runnables'
 import type { BaseCheckpointSaver, CompiledStateGraph } from '@langchain/langgraph'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ASSISTANT_SENDER_ID, type AssistantSseEvent } from '@chat/contract'
+import type { AssistantSseEvent } from '@chat/contract'
 import { MessagesService } from '../../messages/messages.service'
 import { ConversationMemoryService } from '../conversation.memory.service'
 import { buildAgentGraph } from './agent.graph'
@@ -59,25 +59,14 @@ export class AgentService {
     }
   }
 
-  // Warm thread: the checkpoint already holds prior turns, so feed only the new
-  // user message. Cold thread: seed the full history from Mongo once.
   private async turnMessages(
     conversationId: string,
     config: RunnableConfig,
   ): Promise<BaseMessage[]> {
     const snapshot = await this.graph.getState(config)
     const checkpointed = snapshot.values.messages as BaseMessage[] | undefined
-    const history = await this.memory.loadHistoryForConversation(
-      conversationId,
-      HISTORY_TOKEN_BUDGET,
-      {
-        assistantSenderId: ASSISTANT_SENDER_ID,
-      },
-    )
-    if (checkpointed !== undefined && checkpointed.length > 0) {
-      const latest = history.at(-1)
-      return latest !== undefined ? [coerceMessageLikeToMessage(latest)] : []
-    }
+    const isWarm = checkpointed !== undefined && checkpointed.length > 0
+    const history = await this.memory.historyForTurn(conversationId, HISTORY_TOKEN_BUDGET, isWarm)
     return history.map((message) => coerceMessageLikeToMessage(message))
   }
 

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import type { AssistantSseEvent, Message } from '@chat/contract'
-import { AppError } from '../../errors/AppError'
-import { ConversationsService } from '../conversations/conversations.service'
-import { MessagesService } from '../messages/messages.service'
-import { AgentService } from './agent/agent.service'
+import { AppError } from '../../../errors/AppError'
+import { ConversationsService } from '../../conversations/conversations.service'
+import { MessagesService } from '../../messages/messages.service'
+import { AgentService } from '../agent/agent.service'
 
 type StreamAgentReplyInput = {
   conversationId: string

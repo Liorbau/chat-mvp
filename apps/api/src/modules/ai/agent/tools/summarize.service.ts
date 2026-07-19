@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ConversationsService } from '../../conversations/conversations.service'
-import { MessagesDbService } from '../../messages/messages.dbService'
-import { UsersService } from '../../users/users.service'
-import { generateStructured } from '../chat-model'
-import { SUMMARIZE_SYSTEM_PROMPT } from '../prompts/summarize.prompt'
+import { ConversationsService } from '../../../conversations/conversations.service'
+import { MessagesDbService } from '../../../messages/messages.dbService'
+import { UsersService } from '../../../users/users.service'
+import { generateStructured } from '../../chat-model'
+import { SUMMARIZE_SYSTEM_PROMPT } from '../../prompts/summarize.prompt'
 import { OutputSchema, formatTranscript } from './summarize.shared'
 
 @Injectable()
-export class SummarizeRecentMessagesTool {
+export class SummarizeService {
   constructor(
     private readonly conversationsService: ConversationsService,
     private readonly messagesDbService: MessagesDbService,

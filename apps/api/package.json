@@ -10,8 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "eval": "tsx src/modules/ai/eval/run.ts",
-    "eval:rag": "tsx src/modules/ai/eval/rag/run.ts"
+    "eval": "tsx eval/run.ts",
+    "eval:rag": "tsx eval/rag/run.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1089.0",

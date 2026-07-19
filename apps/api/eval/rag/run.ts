@@ -8,7 +8,7 @@ import { average, isRefusal, keywordScore, round } from './rag-eval.scoring'
 const THROTTLE_MS = 21_000
 const INDEX_LAG_MS = 25_000
 
-const DIR = join(process.cwd(), 'src', 'modules', 'ai', 'eval', 'rag')
+const DIR = join(process.cwd(), 'eval', 'rag')
 
 type Fixture = {
   id: string

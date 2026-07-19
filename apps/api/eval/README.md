@@ -16,7 +16,7 @@ part of `npm test`. Exits non-zero if `avgScore < 0.7`.
 
 ## Layout
 
-- `run.ts` — shared engine: loads env, builds the configured `LlmProvider`, runs
+- `run.ts` — shared engine: loads env, builds the configured chat model, runs
   each tool's suite, aggregates `avgScore`, enforces the threshold.
 - `summarize.recent.messages/` — per-tool: `fixtures.json`, `scorer.ts`, `eval.ts`.
 

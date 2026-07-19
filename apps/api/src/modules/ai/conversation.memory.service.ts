@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common'
+import { ASSISTANT_SENDER_ID } from '@chat/contract'
 import { MessagesDbService } from '../messages/messages.dbService'
 
 export type Role = 'user' | 'assistant' | 'system'
@@ -53,5 +54,21 @@ export class ConversationMemoryService {
         ? history
         : [{ role: 'system' as const, content: options.systemPrompt }, ...history]
     return truncateIfNeeded(withSystem, maxTokensBudget)
+  }
+
+  // Warm thread: only the newest message (checkpoint holds the rest). Cold: full history.
+  async historyForTurn(
+    conversationId: string,
+    maxTokensBudget: number,
+    isWarm: boolean,
+  ): Promise<ChatMessage[]> {
+    const history = await this.loadHistoryForConversation(conversationId, maxTokensBudget, {
+      assistantSenderId: ASSISTANT_SENDER_ID,
+    })
+    if (!isWarm) {
+      return history
+    }
+    const latest = history.at(-1)
+    return latest !== undefined ? [latest] : []
   }
 }

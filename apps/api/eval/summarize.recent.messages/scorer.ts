@@ -1,6 +1,6 @@
 import type { ConfigService } from '@nestjs/config'
 import { z } from 'zod'
-import { generateStructured } from '../../chat-model'
+import { generateStructured } from '../../src/modules/ai/chat-model'
 
 const EMAIL = /\b[^\s@]+@[^\s@]+\.[^\s@]+\b/
 const PHONE = /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/

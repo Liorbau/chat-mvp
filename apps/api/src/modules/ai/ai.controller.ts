@@ -5,7 +5,7 @@ import { CurrentUser } from '../../common/decorators/current.user.decorator'
 import { JwtAuthGuard } from '../auth/jwt.auth.guard'
 import { CreateMessageDto } from '../messages/dto/create.message.dto'
 import { ConversationParamsDto } from '../messages/dto/list.messages.dto'
-import { StreamAgentReplyOrchestrator } from './stream-agent-reply.orchestrator'
+import { StreamAgentReplyOrchestrator } from './orchestrators/stream-agent-reply.orchestrator'
 
 @Controller('ai/conversations/:id/messages')
 @UseGuards(JwtAuthGuard)

@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ConfigService } from '@nestjs/config'
 import type { Message } from '@chat/contract'
-import { generateStructured } from '../../chat-model'
-import { SUMMARIZE_SYSTEM_PROMPT } from '../../prompts/summarize.prompt'
-import { formatTranscript, OutputSchema } from '../../tools/summarize.shared'
+import { generateStructured } from '../../src/modules/ai/chat-model'
+import { SUMMARIZE_SYSTEM_PROMPT } from '../../src/modules/ai/prompts/summarize.prompt'
+import { formatTranscript, OutputSchema } from '../../src/modules/ai/agent/tools/summarize.shared'
 import { scoreSummary } from './scorer'
 
 type Fixture = {
@@ -35,15 +35,7 @@ export async function run(): Promise<number[]> {
   const configService = new ConfigService()
   const fixtures: Fixture[] = JSON.parse(
     readFileSync(
-      join(
-        process.cwd(),
-        'src',
-        'modules',
-        'ai',
-        'eval',
-        'summarize.recent.messages',
-        'fixtures.json',
-      ),
+      join(process.cwd(), 'eval', 'summarize.recent.messages', 'fixtures.json'),
       'utf8',
     ),
   )
