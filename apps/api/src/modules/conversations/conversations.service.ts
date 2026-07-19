@@ -29,31 +29,46 @@ export class ConversationsService {
     creatorId: string,
   ): Promise<Conversation> {
     const type = input.type ?? 'user'
-
     if (type === 'assistant' || type === 'tutor') {
-      const existing = await this.conversationsDbService.findOwnedByType(creatorId, type)
-      if (existing !== undefined) {
-        return existing
-      }
-      try {
-        return await this.conversationsDbService.create({
-          type,
-          participantIds: [creatorId],
-          lastMessagePreview: '',
-          ...(input.title === undefined ? {} : { title: input.title }),
-        })
-      } catch (error) {
-        // A concurrent request won the unique-index race; return the one it made.
-        const raced = isDuplicateKeyError(error)
-          ? await this.conversationsDbService.findOwnedByType(creatorId, type)
-          : undefined
-        if (raced !== undefined) {
-          return raced
-        }
-        throw error
-      }
+      return this.getOrCreateAiConversation(creatorId, type, input.title)
     }
+    return this.createUserConversation(input, creatorId)
+  }
 
+  // Assistant/tutor conversations are singletons per user: reuse the existing one,
+  // tolerating a concurrent create that won the unique-index race.
+  private async getOrCreateAiConversation(
+    creatorId: string,
+    type: 'assistant' | 'tutor',
+    title: string | undefined,
+  ): Promise<Conversation> {
+    const existing = await this.conversationsDbService.findOwnedByType(creatorId, type)
+    if (existing !== undefined) {
+      return existing
+    }
+    try {
+      return await this.conversationsDbService.create({
+        type,
+        participantIds: [creatorId],
+        lastMessagePreview: '',
+        ...(title === undefined ? {} : { title }),
+      })
+    } catch (error) {
+      const raced = isDuplicateKeyError(error)
+        ? await this.conversationsDbService.findOwnedByType(creatorId, type)
+        : undefined
+      if (raced !== undefined) {
+        return raced
+      }
+      throw error
+    }
+  }
+
+  // Direct/group: every participant must exist, and a duplicate 1:1 is rejected.
+  private async createUserConversation(
+    input: CreateConversationInput,
+    creatorId: string,
+  ): Promise<Conversation> {
     const participantIds = [...new Set([...(input.participantIds ?? []), creatorId])]
     const existingIds = await this.usersService.findExistingIds(participantIds)
     const missingParticipantIds = participantIds.filter((id) => !existingIds.has(id))
@@ -74,7 +89,7 @@ export class ConversationsService {
     }
 
     return this.conversationsDbService.create({
-      type,
+      type: 'user',
       participantIds,
       lastMessagePreview: '',
       ...(input.title === undefined ? {} : { title: input.title }),

@@ -1,132 +1,20 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
-import type { AssistantSseEvent, Citation } from '@chat/contract'
+import { askTutor, createTutorConversation, signup, uploadDoc } from './rag-eval.client'
+import { average, isRefusal, keywordScore, round } from './rag-eval.scoring'
 
-// Drives the real API end-to-end: upload docs, ask each question, read recall
-// straight from the tutor's citations. Requires `npm run dev:api` running.
-const API = process.env.EVAL_API_BASE_URL ?? 'http://localhost:4000'
 // Voyage's card-free tier is 3 RPM; space every embedding-triggering call.
 const THROTTLE_MS = 21_000
 const INDEX_LAG_MS = 25_000
+
+const DIR = join(process.cwd(), 'src', 'modules', 'ai', 'eval', 'rag')
 
 type Fixture = {
   id: string
   question: string
   expectedDocument: string | null
   expectedKeywords: string[]
-}
-
-type TurnResult = { answer: string; citations: Citation[] }
-
-const DIR = join(process.cwd(), 'src', 'modules', 'ai', 'eval', 'rag')
-
-async function signup(): Promise<string> {
-  const email = `eval_${String(process.pid)}_${String(Math.floor(Date.now() / 1000))}@example.com`
-  const res = await fetch(`${API}/auth/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password: 'password123', firstName: 'Eval', lastName: 'Run' }),
-  })
-  if (!res.ok) {
-    throw new Error(`signup failed (${String(res.status)})`)
-  }
-  const body = (await res.json()) as { token: string }
-  return body.token
-}
-
-// Returns the document's chunk count (the "relevant chunks" total for recall).
-async function uploadDoc(token: string, name: string, content: string): Promise<number> {
-  const form = new FormData()
-  form.append('file', new Blob([content], { type: 'text/markdown' }), name)
-  const res = await fetch(`${API}/knowledge/documents`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: form,
-  })
-  if (!res.ok) {
-    throw new Error(`upload ${name} failed (${String(res.status)})`)
-  }
-  const body = (await res.json()) as { chunkCount: number }
-  return body.chunkCount
-}
-
-async function createTutorConversation(token: string): Promise<string> {
-  const res = await fetch(`${API}/conversations`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ type: 'tutor' }),
-  })
-  const body = (await res.json()) as { id: string }
-  return body.id
-}
-
-async function askTutor(
-  token: string,
-  conversationId: string,
-  content: string,
-): Promise<TurnResult> {
-  const res = await fetch(`${API}/ai/conversations/${conversationId}/messages`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ content }),
-  })
-  if (res.body === null) {
-    throw new Error('no SSE body')
-  }
-  const reader = res.body.getReader()
-  const decoder = new TextDecoder()
-  let buffer = ''
-  let answer = ''
-  let citations: Citation[] = []
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) {
-      break
-    }
-    buffer += decoder.decode(value, { stream: true })
-    let boundary = buffer.indexOf('\n\n')
-    while (boundary !== -1) {
-      const frame = buffer.slice(0, boundary).trim()
-      buffer = buffer.slice(boundary + 2)
-      if (frame.startsWith('data:')) {
-        const event = JSON.parse(frame.slice(5).trim()) as AssistantSseEvent
-        if (event.type === 'token') {
-          answer += event.value
-        } else if (event.type === 'done') {
-          citations = event.citations ?? []
-        }
-      }
-      boundary = buffer.indexOf('\n\n')
-    }
-  }
-  return { answer, citations }
-}
-
-// A grounded refusal — whether via the empty-retrieval short-circuit or the
-// LLM declining because the retrieved context doesn't answer the question.
-const REFUSAL = /don't have|couldn't find|not in your notes|no information|don't know/i
-
-function isRefusal(answer: string): boolean {
-  return REFUSAL.test(answer)
-}
-
-// Fraction of expected keywords present in the answer (0..1).
-function keywordScore(answer: string, keywords: string[]): number {
-  if (keywords.length === 0) {
-    return 1
-  }
-  const lower = answer.toLowerCase()
-  const matched = keywords.filter((keyword) => lower.includes(keyword.toLowerCase())).length
-  return matched / keywords.length
-}
-
-function average(values: number[]): number {
-  return values.length === 0 ? 0 : values.reduce((sum, value) => sum + value, 0) / values.length
-}
-
-function round(value: number): number {
-  return Math.round(value * 1000) / 1000
 }
 
 async function main(): Promise<void> {

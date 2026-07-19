@@ -3,9 +3,7 @@ import type { RunnableConfig } from '@langchain/core/runnables'
 import type { BaseCheckpointSaver, CompiledStateGraph } from '@langchain/langgraph'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ASSISTANT_SENDER_ID, type AssistantSseEvent, type Message } from '@chat/contract'
-import { AppError } from '../../../errors/AppError'
-import { ConversationsService } from '../../conversations/conversations.service'
+import { ASSISTANT_SENDER_ID, type AssistantSseEvent } from '@chat/contract'
 import { MessagesService } from '../../messages/messages.service'
 import { ConversationMemoryService } from '../conversation.memory.service'
 import { buildAgentGraph } from './agent.graph'
@@ -34,32 +32,8 @@ export class AgentService {
     @Inject(AGENT_CHECKPOINTER) checkpointer: BaseCheckpointSaver,
     private readonly memory: ConversationMemoryService,
     private readonly messagesService: MessagesService,
-    private readonly conversationsService: ConversationsService,
   ) {
     this.graph = buildAgentGraph({ chatModel: createChatModel(configService), tools, checkpointer })
-  }
-
-  async prepareTurn(input: {
-    conversationId: string
-    requesterId: string
-    content: string
-  }): Promise<{ message: Message; conversationType: AgentConversationType }> {
-    const conversation = await this.conversationsService.assertParticipant(
-      input.conversationId,
-      input.requesterId,
-    )
-    if (conversation.type !== 'assistant' && conversation.type !== 'tutor') {
-      throw AppError.badRequest(
-        'VALIDATION_ERROR',
-        'This endpoint is only for assistant or tutor conversations',
-      )
-    }
-    const message = await this.messagesService.sendMessage({
-      conversationId: input.conversationId,
-      senderId: input.requesterId,
-      content: input.content,
-    })
-    return { message, conversationType: conversation.type }
   }
 
   async *streamReply(input: StreamInput): AsyncGenerator<AssistantSseEvent> {

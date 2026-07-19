@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
 import { StorageModule } from '../storage/storage.module'
+import { AvatarService } from './avatar.service'
 import { ListUsersOrchestrator } from './list-users.orchestrator'
 import { RemoveAvatarOrchestrator } from './remove-avatar.orchestrator'
 import { UpdateProfileOrchestrator } from './update-profile.orchestrator'
@@ -21,6 +22,7 @@ import { UsersService } from './users.service'
   providers: [
     UsersService,
     UsersDbService,
+    AvatarService,
     ListUsersOrchestrator,
     UpdateProfileOrchestrator,
     UploadAvatarOrchestrator,

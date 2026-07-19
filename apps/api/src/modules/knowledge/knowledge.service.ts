@@ -1,62 +1,17 @@
 import { createHash } from 'node:crypto'
 import { Embeddings } from '@langchain/core/embeddings'
-import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters'
 import { Injectable, Logger } from '@nestjs/common'
 import type { KnowledgeDocument } from '@chat/contract'
 import { AppError } from '../../errors/AppError'
-import { type ChunkDraft, KnowledgeDbService } from './knowledge.dbService'
+import { KnowledgeDbService } from './knowledge.dbService'
+import {
+  chunkText,
+  documentToText,
+  toChunkDrafts,
+  type UploadedDocument,
+} from './knowledge.chunking'
 
-const CHUNK_SIZE = 500
-const CHUNK_OVERLAP = 75
-
-const SUPPORTED_TEXT_TYPES = ['text/plain', 'text/markdown', 'text/x-markdown']
-const SUPPORTED_EXTENSIONS = /\.(md|markdown|txt)$/i
-
-const splitter = new RecursiveCharacterTextSplitter({
-  chunkSize: CHUNK_SIZE,
-  chunkOverlap: CHUNK_OVERLAP,
-})
-
-export type UploadedDocument = {
-  name: string
-  mimeType: string
-  buffer: Buffer
-}
-
-function documentToText(file: UploadedDocument): string {
-  const supported =
-    SUPPORTED_TEXT_TYPES.includes(file.mimeType) || SUPPORTED_EXTENSIONS.test(file.name)
-  if (!supported) {
-    throw AppError.badRequest(
-      'VALIDATION_ERROR',
-      `Can't read "${file.name}". Upload a .md or .txt file.`,
-    )
-  }
-  const text = file.buffer.toString('utf-8').trim()
-  if (text === '') {
-    throw AppError.badRequest('VALIDATION_ERROR', 'That file is empty — nothing to ingest.')
-  }
-  return text
-}
-
-function toChunkDrafts(
-  documentId: string,
-  documentName: string,
-  userId: string,
-  chunks: string[],
-  vectors: number[][],
-): ChunkDraft[] {
-  const drafts: ChunkDraft[] = []
-  for (let index = 0; index < chunks.length; index += 1) {
-    const text = chunks[index]
-    const embedding = vectors[index]
-    if (text === undefined || embedding === undefined) {
-      throw new Error('Chunk/embedding count mismatch during ingestion')
-    }
-    drafts.push({ documentId, documentName, userId, text, embedding, chunkIndex: index })
-  }
-  return drafts
-}
+export type { UploadedDocument } from './knowledge.chunking'
 
 @Injectable()
 export class KnowledgeService {
@@ -91,7 +46,7 @@ export class KnowledgeService {
     })
 
     try {
-      const chunks = await splitter.splitText(text)
+      const chunks = await chunkText(text)
       const vectors = await this.embeddings.embedDocuments(chunks)
       const drafts = toChunkDrafts(doc.id, file.name, userId, chunks, vectors)
       await this.knowledgeDb.insertChunks(drafts)
