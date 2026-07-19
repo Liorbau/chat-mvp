@@ -1,6 +1,6 @@
 import { Injectable, type PipeTransform } from '@nestjs/common'
+import { AVATAR_MAX_BYTES, AVATAR_TOO_LARGE_MESSAGE, AVATAR_TYPE_MESSAGE } from '@chat/contract'
 import { AppError } from '../../../errors/AppError'
-import { AVATAR_MAX_BYTES } from '../../storage/storage.constants'
 import type { AvatarUpload } from '../lib/avatar.types'
 import { detectImageMime } from '../lib/image.signature'
 
@@ -14,14 +14,11 @@ export class AvatarFilePipe implements PipeTransform<
       throw AppError.badRequest('VALIDATION_ERROR', 'No file uploaded (form field "file").')
     }
     if (file.size > AVATAR_MAX_BYTES) {
-      throw AppError.badRequest('VALIDATION_ERROR', 'Image exceeds the 5 MB limit.')
+      throw AppError.badRequest('VALIDATION_ERROR', AVATAR_TOO_LARGE_MESSAGE)
     }
     const mimeType = detectImageMime(file.buffer)
     if (mimeType === null) {
-      throw AppError.badRequest(
-        'VALIDATION_ERROR',
-        'Unsupported image type (use PNG, JPEG, or WEBP)',
-      )
+      throw AppError.badRequest('VALIDATION_ERROR', AVATAR_TYPE_MESSAGE)
     }
     return { buffer: file.buffer, mimeType, size: file.size }
   }
