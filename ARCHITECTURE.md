@@ -4,6 +4,7 @@
 
 - Execution rules and acceptance criteria: [`CLAUDE.md`](./CLAUDE.md)
 - Endpoint contracts and payload shapes: [`API_CONTRACT.md`](./API_CONTRACT.md)
+- Frontend directory/file structure rules: [`docs/FRONTEND_CONVENTIONS.md`](./docs/FRONTEND_CONVENTIONS.md)
 
 ## Purpose
 
@@ -43,6 +44,13 @@ rather than deleting the history.
 - Main feature lives under `src/features/chat/`.
 
 ## Folder and File Structure (One File -> One Responsibility)
+
+> **Superseded (week 9+).** The frontend was later reorganized into feature
+> slices and `src/features/chat/` no longer exists (every part moved to a
+> resource-named `features/<domain>/` folder). The subsections below are kept as
+> the original **Week-2** layout for historical context; for the **current**
+> frontend structure see [`docs/FRONTEND_CONVENTIONS.md`](docs/FRONTEND_CONVENTIONS.md)
+> (the canonical rulebook).
 
 ### `src/features/chat/components/`
 

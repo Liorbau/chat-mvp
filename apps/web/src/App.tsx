@@ -1,56 +1,24 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useAuth } from './features/auth/auth.context'
-import { getUsers } from './features/chat/api/apiClient'
-import type { User } from '@chat/contract'
-import ChatLayout from './features/chat/components/ChatLayout'
-import LoginScreen from './features/chat/components/LoginScreen'
-import SignupScreen from './features/chat/components/SignupScreen'
+import { useState } from 'react'
+import { ChatLayoutContainer } from './features/app/components/ChatLayout/ChatLayoutContainer'
+import { LoginScreenContainer } from './features/auth/components/LoginScreen/LoginScreenContainer'
+import { SignupScreenContainer } from './features/auth/components/SignupScreen/SignupScreenContainer'
+import { useAuth } from './features/auth/context/auth.context'
 
 type AuthMode = 'login' | 'signup'
 
-function App() {
+export function App() {
   const { user, isAuthenticated, signOut } = useAuth()
   const [authMode, setAuthMode] = useState<AuthMode>('login')
-  const [users, setUsers] = useState<User[]>([])
-
-  const loadUsers = useCallback(() => {
-    void getUsers()
-      .then(setUsers)
-      .catch(() => {
-        // Non-fatal: names fall back to ids until the next successful load.
-      })
-  }, [])
-
-  // Load the user directory once authenticated, and refresh it when the tab
-  // regains focus so people who signed up later resolve to real names.
-  useEffect(() => {
-    if (!isAuthenticated) {
-      return
-    }
-
-    loadUsers()
-    window.addEventListener('focus', loadUsers)
-    return () => {
-      window.removeEventListener('focus', loadUsers)
-    }
-  }, [isAuthenticated, loadUsers])
-
-  function getUserDisplayName(userId: string): string {
-    if (user !== null && userId === user.id) {
-      return user.name
-    }
-    return users.find((directoryUser) => directoryUser.id === userId)?.name ?? userId
-  }
 
   if (!isAuthenticated || user === null) {
     return authMode === 'login' ? (
-      <LoginScreen
+      <LoginScreenContainer
         onSwitchToSignup={() => {
           setAuthMode('signup')
         }}
       />
     ) : (
-      <SignupScreen
+      <SignupScreenContainer
         onSwitchToLogin={() => {
           setAuthMode('login')
         }}
@@ -58,14 +26,5 @@ function App() {
     )
   }
 
-  return (
-    <ChatLayout
-      currentUserId={user.id}
-      users={users}
-      getUserDisplayName={getUserDisplayName}
-      onLogout={signOut}
-    />
-  )
+  return <ChatLayoutContainer currentUserId={user.id} onLogout={signOut} />
 }
-
-export default App
