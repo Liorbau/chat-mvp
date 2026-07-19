@@ -506,6 +506,8 @@ sources; RAG eval harness (`ai/eval/rag`).
 Doc debt carried forward: `ARCHITECTURE.md` / `API_CONTRACT.md` still end at
 Week 5 (Weeks 6-7 never backfilled there). Backfill Weeks 6-8 when the capstone
 lands so the architecture/contract docs match real code.
+**Resolved:** `ARCHITECTURE.md` is now backfilled through Weeks 6-8 and the
+post-Week-8 orchestrator-layer refactor, so it matches the real code.
 
 ### Week 8 (Current) — Capstone: LangGraph Agent (final shipping week)
 
@@ -628,7 +630,8 @@ extended with `tool_call`/`tool_result`; controller routes both AI types through
 the agent; dead Week-6/7 services removed; the `LLM_PROVIDER` stack fully retired
 (one chat-model factory + `generateStructured`). FE renders tool progress +
 citations. `verify:precommit` green — **API 73 + Web 56 = 129 tests**
-(29 new unit bricks). PR notes in `WEEK8_PR.local.md`. `ARCHITECTURE.md` /
+(29 new unit bricks). PR notes in `WEEK8_PR.local.md`. `ARCHITECTURE.md`
+backfilled for Weeks 6-8 and the post-Week-8 orchestrator-layer refactor;
 `API_CONTRACT.md` backfilled for Weeks 6-8.
 
 ## Backend Architecture and Clean Code
@@ -638,12 +641,45 @@ citations. `verify:precommit` green — **API 73 + Web 56 = 129 tests**
 - **Module** declares controllers/providers and wires `imports`/`exports`; a
   module consumes another's provider only when it is exported.
 - **Controller** is the only layer touching request/response: read the validated
-  DTO and `@CurrentUser()`, call a service, return a DTO. No business logic.
-- **Service** owns business logic/orchestration; framework- and DB-agnostic.
-- **DbService (DAO)** owns persistence (Mongoose models); services never touch
-  Mongoose directly.
+  DTO and `@CurrentUser()`, call an orchestrator, return a DTO. No business logic.
+- **Orchestrator** — one per endpoint (`<verb>-<noun>.orchestrator.ts` with an
+  `execute(...)`). Owns the endpoint flow: authorize → validate → compose
+  services/repositories (and transactions) → map to the response DTO. The only
+  layer that crosses domain boundaries.
+- **Service** owns single-domain business logic; framework- and DB-agnostic.
+  Services never call each other across domains — composition lives in orchestrators.
+- **DbService (DAO / repository)** owns persistence (Mongoose models); services
+  and orchestrators never touch Mongoose directly.
+- **Pipe** validates/extracts transport input at the edge (e.g. a multipart file
+  into a framework-agnostic DTO) so nothing downstream sees Express/multer types.
 - **Guard / Strategy / Decorator** own authentication and identity extraction.
 - Inject dependencies via constructors; never `new` providers manually.
+
+### Endpoint layering (orchestrator pattern)
+
+Derived from the Week-8 backend refactor; applies to every endpoint.
+
+- **`Controller → Orchestrator → Service → Repository`, one orchestrator per
+  endpoint.** Controllers only route and delegate; the authorize → validate → act
+  flow lives in the orchestrator. Keep each layer even when thin (for uniformity
+  across domains); the only sanctioned skip is a read that just returns the
+  guard-resolved principal (`GET /me`).
+- **Orchestrators compose; services don't.** Cross-domain coordination (and
+  transactions) happen in the orchestrator; a service stays within its own domain.
+- **Transport types stay at the edge** (controllers/guards/pipes). File uploads go
+  through a `*.pipe.ts` that validates and returns a framework-agnostic type;
+  services and orchestrators never import Express/multer.
+- **Enforce each input constraint once, at the edge, mapped to the error
+  envelope.** Size via the multer limit, with its `PayloadTooLargeException`
+  mapped to `400 VALIDATION_ERROR` in the exception filter; verify file *type by
+  magic bytes* (fail-closed), never the client-claimed `Content-Type`.
+- **One real job per file (~150-line soft cap).** Extract pure helpers to
+  siblings: DB mappers `*.mappers.ts`, cursor/paging `*.cursor.ts`, chunking /
+  extraction helpers, etc. Avoid hollow layers beyond the thin-but-uniform
+  orchestrators above.
+- **Name a swappable seam by its role, not its payload:** an `interface` + a
+  `Symbol` DI token (e.g. `StorageProvider` / `STORAGE_PROVIDER`); the vendor name
+  stays on the concrete class only (`S3Storage implements StorageProvider`).
 
 ### Auth and authorization
 
