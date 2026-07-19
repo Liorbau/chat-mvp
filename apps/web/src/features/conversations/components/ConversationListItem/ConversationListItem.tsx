@@ -1,4 +1,4 @@
-import { UserAvatar } from '@/features/user/components/UserAvatar/UserAvatar'
+import { UserAvatarContainer } from '@/features/user/components/UserAvatar/UserAvatarContainer'
 import {
   CONVERSATION_BUTTON_STYLE,
   CONVERSATION_ITEM_STYLE,
@@ -28,7 +28,11 @@ export function ConversationListItem({
         }}
       >
         <span className={CONVERSATION_ROW_STYLE}>
-          <UserAvatar name={conversation.avatarName} avatarUrl={conversation.avatarUrl} size="md" />
+          <UserAvatarContainer
+            name={conversation.avatarName}
+            avatarUrl={conversation.avatarUrl}
+            size="md"
+          />
           <span className={CONVERSATION_TITLE_STYLE}>{conversation.title}</span>
         </span>
       </button>

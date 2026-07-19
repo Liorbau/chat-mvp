@@ -1,7 +1,7 @@
 import { ModeSwitcher } from '@/features/app/components/ModeSwitcher/ModeSwitcher'
 import { SwitchUserButton } from '@/features/app/components/SwitchUserButton/SwitchUserButton'
 import { useAuth } from '@/features/auth/context/auth.context'
-import { UserAvatar } from '@/features/user/components/UserAvatar/UserAvatar'
+import { UserAvatarContainer } from '@/features/user/components/UserAvatar/UserAvatarContainer'
 import { PERSISTENT_BUTTONS_STYLE } from './ChatLayout.constants'
 import type { PersistentTopBarProps } from './ChatLayout.types'
 
@@ -10,7 +10,9 @@ export function PersistentTopBar({ mode, onSelectMode, onLogout }: PersistentTop
 
   return (
     <div className={PERSISTENT_BUTTONS_STYLE}>
-      {user !== null ? <UserAvatar name={user.name} avatarUrl={user.avatarUrl} size="md" /> : null}
+      {user !== null ? (
+        <UserAvatarContainer name={user.name} avatarUrl={user.avatarUrl} size="md" />
+      ) : null}
       <ModeSwitcher mode={mode} onSelect={onSelectMode} />
       <SwitchUserButton onClick={onLogout} />
     </div>
