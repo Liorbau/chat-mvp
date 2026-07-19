@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Matches,
   Min,
   MinLength,
   ValidateIf,
@@ -66,6 +67,33 @@ export class EnvironmentVariables {
   @IsString()
   @MinLength(1)
   VECTOR_INDEX_NAME: string = 'kb_chunks_vector'
+
+  // --- Avatar object storage (S3-compatible; set STORAGE_S3_ENDPOINT for non-AWS) ---
+  @IsString()
+  @Matches(/^https?:\/\//, { message: 'STORAGE_PUBLIC_BASE_URL must be an http(s) URL' })
+  STORAGE_PUBLIC_BASE_URL!: string
+
+  @IsString()
+  @MinLength(1)
+  STORAGE_S3_REGION!: string
+
+  @IsString()
+  @MinLength(1)
+  STORAGE_S3_ACCESS_KEY_ID!: string
+
+  @IsString()
+  @MinLength(1)
+  STORAGE_S3_SECRET_ACCESS_KEY!: string
+
+  @IsString()
+  @MinLength(1)
+  STORAGE_S3_BUCKET!: string
+
+  // Set for a non-AWS S3-compatible store (e.g. Cloudflare R2, Supabase); unset for AWS.
+  @IsOptional()
+  @IsString()
+  @Matches(/^https?:\/\//, { message: 'STORAGE_S3_ENDPOINT must be an http(s) URL' })
+  STORAGE_S3_ENDPOINT?: string
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {

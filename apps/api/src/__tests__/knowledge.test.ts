@@ -5,11 +5,11 @@ import type { KnowledgeDocument } from '@chat/contract'
 import type { Model } from 'mongoose'
 import request from 'supertest'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { Chunk, type ChunkDocument } from '../modules/knowledge/chunk.schema'
+import { Chunk, type ChunkDocument } from '../modules/knowledge/schemas/chunk.schema'
 import {
   KnowledgeDocument as KnowledgeDocumentModel,
   type MongooseKnowledgeDocument,
-} from '../modules/knowledge/document.schema'
+} from '../modules/knowledge/schemas/document.schema'
 import { createTestApp, login } from './test.app'
 
 // Deterministic, offline stand-in for VoyageEmbeddings so ingestion runs without

@@ -3,6 +3,17 @@ import type { HydratedDocument } from 'mongoose'
 
 export type UserDocument = HydratedDocument<User>
 
+@Schema({ _id: false })
+export class Avatar {
+  @Prop({ required: true })
+  srcUrl!: string
+
+  @Prop({ type: String, default: null })
+  storageKey!: string | null
+}
+
+const AvatarSchema = SchemaFactory.createForClass(Avatar)
+
 @Schema({ timestamps: { createdAt: true, updatedAt: false } })
 export class User {
   @Prop({ type: String, required: true })
@@ -22,6 +33,9 @@ export class User {
 
   @Prop({ required: true })
   passwordHash!: string
+
+  @Prop({ type: AvatarSchema, default: null })
+  avatar!: Avatar | null
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)

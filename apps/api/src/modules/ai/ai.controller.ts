@@ -5,12 +5,12 @@ import { CurrentUser } from '../../common/decorators/current.user.decorator'
 import { JwtAuthGuard } from '../auth/jwt.auth.guard'
 import { CreateMessageDto } from '../messages/dto/create.message.dto'
 import { ConversationParamsDto } from '../messages/dto/list.messages.dto'
-import { AgentService } from './agent/agent.service'
+import { StreamAgentReplyOrchestrator } from './orchestrators/stream-agent-reply.orchestrator'
 
 @Controller('ai/conversations/:id/messages')
 @UseGuards(JwtAuthGuard)
 export class AiController {
-  constructor(private readonly agentService: AgentService) {}
+  constructor(private readonly streamAgentReplyOrchestrator: StreamAgentReplyOrchestrator) {}
 
   @Post()
   async stream(
@@ -19,7 +19,7 @@ export class AiController {
     @CurrentUser() user: User,
     @Res() response: Response,
   ): Promise<void> {
-    const { message: userMessage, conversationType } = await this.agentService.prepareTurn({
+    const { userMessage, stream } = await this.streamAgentReplyOrchestrator.execute({
       conversationId: params.id,
       requesterId: user.id,
       content: body.content,
@@ -32,12 +32,7 @@ export class AiController {
 
     response.write(`data: ${JSON.stringify({ type: 'user_message', message: userMessage })}\n\n`)
 
-    const events = this.agentService.streamReply({
-      conversationId: params.id,
-      requesterId: user.id,
-      conversationType,
-    })
-    for await (const event of events) {
+    for await (const event of stream) {
       response.write(`data: ${JSON.stringify(event)}\n\n`)
     }
     response.end()

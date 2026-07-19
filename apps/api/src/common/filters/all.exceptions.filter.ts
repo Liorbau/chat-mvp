@@ -30,8 +30,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return
     }
 
-    // Mongo duplicate-key (E11000). The only unique index is users.email, so map
-    // it to the same 409 the signup flow returns.
     if (isDuplicateKeyError(exception)) {
       response.status(HttpStatus.CONFLICT).json({
         error: {

@@ -12,39 +12,35 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import type { KnowledgeDocument, User } from '@chat/contract'
 import { memoryStorage } from 'multer'
 import { CurrentUser } from '../../common/decorators/current.user.decorator'
-import { AppError } from '../../errors/AppError'
 import { JwtAuthGuard } from '../auth/jwt.auth.guard'
 import { DocumentParamsDto } from './dto/document.params.dto'
-import { KnowledgeService } from './knowledge.service'
-
-const MAX_FILE_BYTES = 5 * 1024 * 1024
+import { DocumentFilePipe } from './pipes/document-file.pipe'
+import type { UploadedDocument } from './knowledge.service'
+import { IngestDocumentOrchestrator } from './orchestrators/ingest-document.orchestrator'
+import { ListDocumentsOrchestrator } from './orchestrators/list-documents.orchestrator'
+import { RemoveDocumentOrchestrator } from './orchestrators/remove-document.orchestrator'
 
 @Controller('knowledge/documents')
 @UseGuards(JwtAuthGuard)
 export class KnowledgeController {
-  constructor(private readonly knowledgeService: KnowledgeService) {}
+  constructor(
+    private readonly ingestDocumentOrchestrator: IngestDocumentOrchestrator,
+    private readonly listDocumentsOrchestrator: ListDocumentsOrchestrator,
+    private readonly removeDocumentOrchestrator: RemoveDocumentOrchestrator,
+  ) {}
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: MAX_FILE_BYTES } }),
-  )
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   async upload(
     @CurrentUser() user: User,
-    @UploadedFile() file: Express.Multer.File | undefined,
+    @UploadedFile(DocumentFilePipe) file: UploadedDocument,
   ): Promise<KnowledgeDocument> {
-    if (file === undefined) {
-      throw AppError.badRequest('VALIDATION_ERROR', 'No file uploaded (form field "file").')
-    }
-    return this.knowledgeService.ingest(user.id, {
-      name: file.originalname,
-      mimeType: file.mimetype,
-      buffer: file.buffer,
-    })
+    return this.ingestDocumentOrchestrator.execute(user.id, file)
   }
 
   @Get()
   async list(@CurrentUser() user: User): Promise<KnowledgeDocument[]> {
-    return this.knowledgeService.listDocuments(user.id)
+    return this.listDocumentsOrchestrator.execute(user.id)
   }
 
   @Delete(':id')
@@ -52,7 +48,6 @@ export class KnowledgeController {
     @CurrentUser() user: User,
     @Param() params: DocumentParamsDto,
   ): Promise<{ id: string }> {
-    const id = await this.knowledgeService.removeDocument(user.id, params.id)
-    return { id }
+    return this.removeDocumentOrchestrator.execute(user.id, params.id)
   }
 }

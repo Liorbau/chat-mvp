@@ -22,6 +22,7 @@ describe('MessageItem', () => {
         message={buildOptimisticMessage()}
         currentUserId="user-1"
         senderDisplayName="Sam"
+        senderAvatarUrl={null}
       />,
     )
 
@@ -35,6 +36,7 @@ describe('MessageItem', () => {
         message={buildOptimisticMessage({ deliveryStatus: 'pending' })}
         currentUserId="user-1"
         senderDisplayName="Sam"
+        senderAvatarUrl={null}
       />,
     )
     expect(screen.getByText('sending...')).toBeInTheDocument()
@@ -44,6 +46,7 @@ describe('MessageItem', () => {
         message={buildOptimisticMessage({ deliveryStatus: 'sent' })}
         currentUserId="user-1"
         senderDisplayName="Sam"
+        senderAvatarUrl={null}
       />,
     )
     expect(screen.queryByText('sending...')).not.toBeInTheDocument()
@@ -55,6 +58,7 @@ describe('MessageItem', () => {
         message={buildOptimisticMessage({ senderId: 'user-1' })}
         currentUserId="user-1"
         senderDisplayName="Alex"
+        senderAvatarUrl={null}
       />,
     )
     const ownRow = container.querySelector('li')
@@ -65,6 +69,7 @@ describe('MessageItem', () => {
         message={buildOptimisticMessage({ senderId: 'user-2' })}
         currentUserId="user-1"
         senderDisplayName="Sam"
+        senderAvatarUrl={null}
       />,
     )
     const otherRow = container.querySelector('li')

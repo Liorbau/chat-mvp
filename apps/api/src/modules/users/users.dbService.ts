@@ -4,35 +4,14 @@ import { InjectModel } from '@nestjs/mongoose'
 import type { User } from '@chat/contract'
 import type { Model } from 'mongoose'
 import { User as UserModel, type UserDocument } from './user.schema'
-
-// Server-only persisted shape: the public `User` plus the bcrypt password hash.
-export type StoredUser = User & { passwordHash: string }
-export type StoredUserDraft = Omit<StoredUser, 'id'>
-
-function toStoredUser(doc: UserDocument): StoredUser {
-  return {
-    id: doc._id,
-    name: doc.name,
-    firstName: doc.firstName,
-    lastName: doc.lastName,
-    email: doc.email,
-    passwordHash: doc.passwordHash,
-  }
-}
-
-export function toPublicUser(user: StoredUser): User {
-  return {
-    id: user.id,
-    name: user.name,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-  }
-}
-
-// Fields a profile update may change. `name` is derived by the service from
-// firstName/lastName, so the DAO stays a dumb persistence step.
-export type UserUpdate = Partial<Pick<StoredUser, 'firstName' | 'lastName' | 'name' | 'email'>>
+import {
+  toPublicUser,
+  toStoredUser,
+  type StoredAvatar,
+  type StoredUser,
+  type StoredUserDraft,
+  type UserUpdate,
+} from './lib/user.mapper'
 
 @Injectable()
 export class UsersDbService {
@@ -49,6 +28,11 @@ export class UsersDbService {
   async findById(userId: string): Promise<User | undefined> {
     const doc = await this.userModel.findById(userId).exec()
     return doc === null ? undefined : toPublicUser(toStoredUser(doc))
+  }
+
+  async findStoredById(userId: string): Promise<StoredUser | undefined> {
+    const doc = await this.userModel.findById(userId).exec()
+    return doc === null ? undefined : toStoredUser(doc)
   }
 
   async findByEmail(email: string): Promise<StoredUser | undefined> {
@@ -77,6 +61,7 @@ export class UsersDbService {
       lastName: draft.lastName,
       email: draft.email,
       passwordHash: draft.passwordHash,
+      avatar: draft.avatar,
     })
     return toStoredUser(doc)
   }
@@ -84,6 +69,13 @@ export class UsersDbService {
   async update(userId: string, changes: UserUpdate): Promise<User | undefined> {
     const doc = await this.userModel
       .findByIdAndUpdate(userId, { $set: changes }, { returnDocument: 'after' })
+      .exec()
+    return doc === null ? undefined : toPublicUser(toStoredUser(doc))
+  }
+
+  async setAvatar(userId: string, avatar: StoredAvatar | null): Promise<User | undefined> {
+    const doc = await this.userModel
+      .findByIdAndUpdate(userId, { $set: { avatar } }, { returnDocument: 'after' })
       .exec()
     return doc === null ? undefined : toPublicUser(toStoredUser(doc))
   }
@@ -99,6 +91,7 @@ export class UsersDbService {
           lastName: user.lastName,
           email: user.email,
           passwordHash: user.passwordHash,
+          avatar: user.avatar,
         })),
       )
     }

@@ -10,6 +10,7 @@ const session: AuthResponse = {
     firstName: 'Alex',
     lastName: 'Rivera',
     email: 'alex@example.com',
+    avatarUrl: null,
   },
 }
 

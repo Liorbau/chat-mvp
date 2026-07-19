@@ -10,8 +10,8 @@ export function App() {
   const { user, isAuthenticated, signOut } = useAuth()
   const [authMode, setAuthMode] = useState<AuthMode>('login')
 
-  if (!isAuthenticated || user === null) {
-    return authMode === 'login' ? (
+  return !isAuthenticated || user === null ? (
+    authMode === 'login' ? (
       <LoginScreenContainer
         onSwitchToSignup={() => {
           setAuthMode('signup')
@@ -24,7 +24,7 @@ export function App() {
         }}
       />
     )
-  }
-
-  return <ChatLayoutContainer currentUserId={user.id} onLogout={signOut} />
+  ) : (
+    <ChatLayoutContainer currentUserId={user.id} onLogout={signOut} />
+  )
 }

@@ -3,21 +3,20 @@ import { MessageItem } from '@/features/messages/components/MessageItem/MessageI
 import { LIST_END_MARKER_STYLE, MESSAGE_LIST_STYLE } from './MessageList.constants'
 import type { MessageListProps } from './MessageList.types'
 
-export function MessageList({ messages, currentUserId, getDisplayName }: MessageListProps) {
-  const listEndReference = useScrollToBottom<HTMLLIElement>(messages.length > 0, [messages])
+export function MessageList({ items, currentUserId }: MessageListProps) {
+  const listEndReference = useScrollToBottom<HTMLLIElement>(items.length > 0, [items])
 
   return (
     <ul className={MESSAGE_LIST_STYLE}>
-      {messages.map((message) => {
-        return (
-          <MessageItem
-            key={message.id}
-            message={message}
-            currentUserId={currentUserId}
-            senderDisplayName={getDisplayName(message.senderId)}
-          />
-        )
-      })}
+      {items.map(({ message, senderDisplayName, senderAvatarUrl }) => (
+        <MessageItem
+          key={message.id}
+          message={message}
+          currentUserId={currentUserId}
+          senderDisplayName={senderDisplayName}
+          senderAvatarUrl={senderAvatarUrl}
+        />
+      ))}
       <li ref={listEndReference} className={LIST_END_MARKER_STYLE} />
     </ul>
   )

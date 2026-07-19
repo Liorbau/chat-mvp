@@ -1,7 +1,12 @@
 import type { OptimisticMessage } from '@/features/messages/hooks/optimisticMessages.types'
 
+export type MessageListItem = {
+  message: OptimisticMessage
+  senderDisplayName: string
+  senderAvatarUrl: string | null
+}
+
 export type MessageListProps = {
-  messages: OptimisticMessage[]
+  items: MessageListItem[]
   currentUserId: string
-  getDisplayName: (userId: string) => string
 }

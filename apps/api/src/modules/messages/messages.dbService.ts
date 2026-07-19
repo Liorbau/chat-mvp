@@ -1,73 +1,22 @@
-import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import type { Message } from '@chat/contract'
 import type { ClientSession, Model } from 'mongoose'
 import { Message as MessageModel, type MessageDocument } from './message.schema'
+import {
+  buildPageFilter,
+  toMessage,
+  toMessageDocument,
+  toMessagePage,
+  type MessageDraft,
+  type MessagePage,
+  type MessagePageCursor,
+} from './lib/messages.mappers'
 
-export type MessageDraft = Omit<Message, 'id'>
+export type { MessageDraft, MessagePage, MessagePageCursor } from './lib/messages.mappers'
 
 // One $group bucket from listRecentForConversations' aggregation.
 type ConversationMessageGroup = { docs: MessageDocument[] }
-
-export type MessagePageCursor = {
-  createdAt: string
-  id: string
-}
-
-export type MessagePage = {
-  messages: Message[]
-  nextCursor: MessagePageCursor | null
-}
-
-function toMessage(doc: MessageDocument): Message {
-  const message: Message = {
-    id: doc._id,
-    conversationId: doc.conversationId,
-    senderId: doc.senderId,
-    content: doc.content,
-    createdAt: doc.createdAt.toISOString(),
-  }
-  return doc.citations === undefined ? message : { ...message, citations: doc.citations }
-}
-
-function toMessageDocument(draft: MessageDraft) {
-  return {
-    _id: randomUUID(),
-    conversationId: draft.conversationId,
-    senderId: draft.senderId,
-    content: draft.content,
-    createdAt: new Date(draft.createdAt),
-    ...(draft.citations === undefined ? {} : { citations: draft.citations }),
-  }
-}
-
-function buildPageFilter(conversationId: string, cursor?: MessagePageCursor) {
-  if (cursor === undefined) {
-    return { conversationId }
-  }
-
-  const cursorCreatedAt = new Date(cursor.createdAt)
-  return {
-    conversationId,
-    $or: [
-      { createdAt: { $lt: cursorCreatedAt } },
-      { createdAt: cursorCreatedAt, _id: { $lt: cursor.id } },
-    ],
-  }
-}
-
-function toMessagePage(docsDesc: MessageDocument[], limit: number): MessagePage {
-  const hasMore = docsDesc.length > limit
-  const pageDesc = hasMore ? docsDesc.slice(0, limit) : docsDesc
-  const oldestOnPage = pageDesc.at(-1)
-  const nextCursor =
-    hasMore && oldestOnPage !== undefined
-      ? { createdAt: oldestOnPage.createdAt.toISOString(), id: oldestOnPage._id }
-      : null
-
-  return { messages: pageDesc.reverse().map(toMessage), nextCursor }
-}
 
 @Injectable()
 export class MessagesDbService {

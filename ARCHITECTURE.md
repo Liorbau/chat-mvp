@@ -23,8 +23,13 @@ It is organized by phase:
   cursor pagination, and an atomic transactional send.
 - **Week 6 (Completed)** — AI assistant mode: `ai` module, swappable
   `LlmProvider`, SSE streaming, user-scoped tools.
-- **Week 7 (Current)** — AI tutor (RAG): per-user knowledge base on Atlas Vector
+- **Week 7 (Completed)** — AI tutor (RAG): per-user knowledge base on Atlas Vector
   Search, LangChain retrieval + grounded answers with citations.
+- **Week 8 (Completed)** — Capstone LangGraph agent: one `StateGraph` serves both
+  assistant and tutor, with MongoDB checkpointing and streamed tool progress.
+- **Backend Refactor (post-Week 8)** — endpoint layering standardized to
+  `Controller -> Orchestrator -> Service -> Repository` (one orchestrator per
+  endpoint) across every module. No wire-contract change.
 
 When a later week supersedes an earlier decision, note it in that week's section
 rather than deleting the history.
@@ -785,6 +790,10 @@ module; the connection (`MongooseModule.forRootAsync`, reads `MONGO_URI` from
 > Status: shipped. Adds an `ai` module alongside the existing chat. A new
 > conversation `type: 'assistant'` triggers an LLM turn that streams over SSE and
 > persists like any message. No existing endpoint changed shape.
+>
+> **Superseded in part** by the post-Week-8 Orchestrator Layering refactor (see
+> that section): `AiController`/`AiService` here are historical — the streaming
+> turn now runs Controller → `StreamAgentReplyOrchestrator` → `AgentService`.
 
 ## What's added
 
@@ -800,8 +809,8 @@ module; the connection (`MongooseModule.forRootAsync`, reads `MONGO_URI` from
 - **`AiService`** — `prepareTurn` (authz + persist the user message) and
   `streamReply` (the LLM + tool loop: stream tokens, run tool calls, persist the
   assistant message).
-- **`ConversationMemoryService`** — loads recent history within a token budget
-  for multi-turn context.
+- **`ConversationMemoryService`** — loads recent history within a token budget,
+  and selects warm/cold turn messages (`historyForTurn`) for the agent.
 - **`AiToolsService` + tools** — user-scoped, Zod-validated tools the model can
   call against the caller's own data (`requesterId` from the JWT, never the model).
 
@@ -831,11 +840,12 @@ for the tutor composer (one-way `ai -> knowledge`).
 
 | Collection | Schema | Key fields | Notes |
 | --- | --- | --- | --- |
-| `kb_documents` | `document.schema.ts` | `_id` (uuid), `userId`, `name`, `mimeType`, `contentHash`, `status`, `chunkCount`, `createdAt` | explicit collection name; indexes on `{userId, createdAt}` and `{userId, contentHash}` (dedup) |
-| `kb_chunks` | `chunk.schema.ts` | `_id` (uuid), `documentId`, `documentName`, `userId`, `text`, `embedding[1024]`, `chunkIndex` | `userId`/`documentName` denormalized; vector search served by the Atlas index, not Mongoose |
+| `kb_documents` | `schemas/document.schema.ts` | `_id` (uuid), `userId`, `name`, `mimeType`, `contentHash`, `status`, `chunkCount`, `createdAt` | explicit collection name; indexes on `{userId, createdAt}` and `{userId, contentHash}` (dedup) |
+| `kb_chunks` | `schemas/chunk.schema.ts` | `_id` (uuid), `documentId`, `documentName`, `userId`, `text`, `embedding[1024]`, `chunkIndex` | `userId`/`documentName` denormalized; vector search served by the Atlas index, not Mongoose |
 
-- **`KnowledgeDbService`** (DAO) — the only layer touching Mongoose; also exposes
-  the native `chunkCollection()` the vector store needs.
+- **`DocumentDbService`** / **`ChunkDbService`** (DAOs) — one per collection, the
+  only layers touching Mongoose; `ChunkDbService` also exposes the native
+  `chunkCollection()` the vector store needs.
 - **`KnowledgeService`** — `ingest` (extraction seam -> hash/dedup -> chunk ->
   embed -> store), `listDocuments`, `removeDocument`. Chunking is LangChain
   `RecursiveCharacterTextSplitter` (500 / 75). Dedup by content hash: an existing
@@ -875,7 +885,7 @@ a clickable Sources list under each tutor answer.
 
 ## Eval
 
-HTTP harness (`src/modules/ai/eval/rag/`, `npm run eval:rag`): uploads committed
+HTTP harness (`apps/api/eval/rag/`, `npm run eval:rag`): uploads committed
 docs, asks fixture questions through the real tutor, and reads recall straight
 from the answer's citations. Reports precision@k / recall@k / hit-rate@k and a
 keyword-based answer score (temperature 0). Self-throttles to Voyage's 3 RPM.
@@ -891,6 +901,12 @@ list.
 
 > Status: shipped. Refactors the tutor into an explicit LangGraph agent that also
 > serves assistant mode, with MongoDB checkpointing and streamed tool progress.
+>
+> **Superseded in part** by the post-Week-8 Orchestrator Layering refactor (see
+> that section): authorize + user-message persistence moved out of `AgentService`
+> into `StreamAgentReplyOrchestrator`, so `AgentService` is now the graph engine
+> only (stream + history + finish); the graph nodes/edges live in `agent/nodes/`
+> and `agent/edges/`, assembled by `agent.nodes.ts`.
 
 ## What supersedes earlier weeks
 
@@ -963,6 +979,75 @@ after a restart.
 tool label into reducer state; both AI panels show the BE-supplied progress line
 ("Searching your documents…"). Tokens and tutor citations render as before; all
 three conversation types coexist via the existing mode switcher (no panel merge).
+
+---
+
+# Backend Refactor (post-Week 8) — Orchestrator Layering
+
+> Status: shipped on `refactor/backend/orchestrator-layer`. A structural refactor
+> with **no wire-contract change**: every endpoint now flows
+> `Controller -> Orchestrator -> Service -> Repository`. The enforceable rulebook
+> lives in `CLAUDE.md` ("Endpoint layering (orchestrator pattern)"); this section
+> records the architecture and what it supersedes.
+
+## Layering
+
+- **Controller** — routes and delegates only: read the DTO + `@CurrentUser()`,
+  call `orchestrator.execute(...)`, return the DTO. No logic.
+- **Orchestrator** — one per endpoint (`<verb>-<noun>.orchestrator.ts`). Owns
+  authorize → validate → compose services/repositories (and transactions) → map.
+  The only layer that crosses domain boundaries; **services never call each other**.
+- **Service** — single-domain business logic, framework-agnostic.
+- **Repository (`*DbService`)** — Mongoose persistence only.
+- **Pipe** — edge validation/extraction of transport input (e.g. a multipart
+  upload → a framework-agnostic type) so nothing downstream imports Express/multer.
+
+Thin layers are kept for uniformity (e.g. `ListUsersOrchestrator` just forwards to
+the service); the only sanctioned skip is `GET /me` (returns the guard-resolved user).
+
+## Endpoints and their orchestrators
+
+| Module | Endpoint(s) | Orchestrator(s) |
+| --- | --- | --- |
+| auth | `POST /auth/signup`, `/auth/login` | Signup / Login |
+| users | `GET /users` | ListUsers |
+| auth (me) | `PATCH /me` | UpdateProfile |
+| users (avatar) | `POST` / `DELETE /me/avatar` | UploadAvatar / RemoveAvatar (+ `AvatarFilePipe`) |
+| conversations | `GET` / `POST /conversations` | ListConversations / CreateConversation |
+| messages | `GET` / `POST /conversations/:id/messages` | GetMessages / CreateMessage |
+| knowledge | `POST` / `GET` / `DELETE /knowledge/documents` | Ingest / List / RemoveDocument (+ `DocumentFilePipe`) |
+| ai | `POST /ai/conversations/:id/messages` | StreamAgentReply |
+
+## What this supersedes
+
+- **`ai` turn.** `StreamAgentReplyOrchestrator` owns prepareTurn (authorize +
+  persist the user message) and hands the controller the SSE stream; `AgentService`
+  is the graph engine only; `AiController` writes `@Res()` frames and nothing else.
+- **`messages`.** `createMessage`/`listMessages` became a guard-free `sendMessage`
+  + a pure `getPage`; authorization and the plain-endpoint guard moved into the
+  orchestrators. This fixed a latent bug where that guard, living in the shared
+  `createMessage`, rejected assistant sends from the agent path.
+- **Storage seam** renamed by role: `ObjectStorage`/`OBJECT_STORAGE` →
+  `StorageProvider`/`STORAGE_PROVIDER` (`S3Storage` is the concrete impl).
+- **Avatar model** stores a resolved `avatar { srcUrl, storageKey }`; the DB→DTO
+  mapper is pure (no config, no throw). The upload/remove flows are owned by their
+  orchestrators (composing `StorageProvider` + `UsersService`); `AvatarService` was
+  dissolved. Read URLs come from `StorageProvider.publicUrl(key)`, so URL knowledge
+  stays in the provider. Both endpoints return
+  `AvatarResponse { avatarUrl: string | null }` (URL after upload, `null` after
+  remove). The upload pipe validates size (→ `400`) and type by magic bytes; the
+  multer `fileSize` limit and the filter's `PayloadTooLargeException` case were
+  removed (the `knowledge` upload follows the same pipe pattern).
+
+## One-job-per-file extractions
+
+`user.mapper.ts` (incl. `buildUserUpdate`), `messages.mappers.ts`,
+`messages.cursor.ts`, `knowledge.chunking.ts`, `image.signature.ts`,
+`agent/nodes/*.node.ts` + `agent/edges/decide-next.ts` (graph nodes/edges, assembled
+by `agent.nodes.ts`), `document.dbService.ts` / `chunk.dbService.ts`
+(knowledge DAO split by collection), and the split RAG eval (`rag-eval.client.ts` /
+`rag-eval.scoring.ts`) keep services, DAOs, and the graph assembly under the
+~150-line soft cap.
 
 ---
 

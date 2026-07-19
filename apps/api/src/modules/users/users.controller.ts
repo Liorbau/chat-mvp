@@ -1,15 +1,15 @@
 import { Controller, Get, UseGuards } from '@nestjs/common'
 import type { User } from '@chat/contract'
 import { JwtAuthGuard } from '../auth/jwt.auth.guard'
-import { UsersService } from './users.service'
+import { ListUsersOrchestrator } from './orchestrators/list-users.orchestrator'
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly listUsersOrchestrator: ListUsersOrchestrator) {}
 
   @Get()
   async list(): Promise<User[]> {
-    return this.usersService.list()
+    return this.listUsersOrchestrator.execute()
   }
 }

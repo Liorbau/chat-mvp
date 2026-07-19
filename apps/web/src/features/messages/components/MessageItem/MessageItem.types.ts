@@ -4,4 +4,5 @@ export type MessageItemProps = {
   message: OptimisticMessage
   currentUserId: string
   senderDisplayName: string
+  senderAvatarUrl: string | null
 }

@@ -9,5 +9,5 @@ export {
   getKnowledgeDocuments,
   uploadKnowledgeDocument,
 } from './knowledge.api'
-export { updateProfile } from './profile.api'
+export { updateProfile, uploadAvatar, removeAvatar } from './profile.api'
 export type { CreateConversationInput } from './types'

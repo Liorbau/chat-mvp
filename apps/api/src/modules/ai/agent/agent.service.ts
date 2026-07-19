@@ -3,9 +3,7 @@ import type { RunnableConfig } from '@langchain/core/runnables'
 import type { BaseCheckpointSaver, CompiledStateGraph } from '@langchain/langgraph'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { ASSISTANT_SENDER_ID, type AssistantSseEvent, type Message } from '@chat/contract'
-import { AppError } from '../../../errors/AppError'
-import { ConversationsService } from '../../conversations/conversations.service'
+import type { AssistantSseEvent } from '@chat/contract'
 import { MessagesService } from '../../messages/messages.service'
 import { ConversationMemoryService } from '../conversation.memory.service'
 import { buildAgentGraph } from './agent.graph'
@@ -34,28 +32,8 @@ export class AgentService {
     @Inject(AGENT_CHECKPOINTER) checkpointer: BaseCheckpointSaver,
     private readonly memory: ConversationMemoryService,
     private readonly messagesService: MessagesService,
-    private readonly conversationsService: ConversationsService,
   ) {
     this.graph = buildAgentGraph({ chatModel: createChatModel(configService), tools, checkpointer })
-  }
-
-  async prepareTurn(input: {
-    conversationId: string
-    requesterId: string
-    content: string
-  }): Promise<{ message: Message; conversationType: AgentConversationType }> {
-    const conversation = await this.conversationsService.assertParticipant(
-      input.conversationId,
-      input.requesterId,
-    )
-    if (conversation.type !== 'assistant' && conversation.type !== 'tutor') {
-      throw AppError.badRequest(
-        'VALIDATION_ERROR',
-        'This endpoint is only for assistant or tutor conversations',
-      )
-    }
-    const { message } = await this.messagesService.createMessage(input)
-    return { message, conversationType: conversation.type }
   }
 
   async *streamReply(input: StreamInput): AsyncGenerator<AssistantSseEvent> {
@@ -81,25 +59,14 @@ export class AgentService {
     }
   }
 
-  // Warm thread: the checkpoint already holds prior turns, so feed only the new
-  // user message. Cold thread: seed the full history from Mongo once.
   private async turnMessages(
     conversationId: string,
     config: RunnableConfig,
   ): Promise<BaseMessage[]> {
     const snapshot = await this.graph.getState(config)
     const checkpointed = snapshot.values.messages as BaseMessage[] | undefined
-    const history = await this.memory.loadHistoryForConversation(
-      conversationId,
-      HISTORY_TOKEN_BUDGET,
-      {
-        assistantSenderId: ASSISTANT_SENDER_ID,
-      },
-    )
-    if (checkpointed !== undefined && checkpointed.length > 0) {
-      const latest = history.at(-1)
-      return latest !== undefined ? [coerceMessageLikeToMessage(latest)] : []
-    }
+    const isWarm = checkpointed !== undefined && checkpointed.length > 0
+    const history = await this.memory.historyForTurn(conversationId, HISTORY_TOKEN_BUDGET, isWarm)
     return history.map((message) => coerceMessageLikeToMessage(message))
   }
 

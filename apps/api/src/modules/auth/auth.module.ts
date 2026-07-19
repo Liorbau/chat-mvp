@@ -6,7 +6,9 @@ import { UsersModule } from '../users/users.module'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { JwtStrategy } from './jwt.strategy'
+import { LoginOrchestrator } from './orchestrators/login.orchestrator'
 import { MeController } from './me.controller'
+import { SignupOrchestrator } from './orchestrators/signup.orchestrator'
 
 @Module({
   imports: [
@@ -25,7 +27,7 @@ import { MeController } from './me.controller'
     }),
   ],
   controllers: [AuthController, MeController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, SignupOrchestrator, LoginOrchestrator],
   exports: [AuthService, PassportModule, JwtModule],
 })
 export class AuthModule {}

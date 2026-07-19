@@ -32,7 +32,14 @@ describe('Users API', () => {
     const users = response.body as Array<Record<string, unknown>>
     expect(users.length).toBeGreaterThanOrEqual(4)
     for (const user of users) {
-      expect(Object.keys(user).sort()).toEqual(['email', 'firstName', 'id', 'lastName', 'name'])
+      expect(Object.keys(user).sort()).toEqual([
+        'avatarUrl',
+        'email',
+        'firstName',
+        'id',
+        'lastName',
+        'name',
+      ])
       expect(user).not.toHaveProperty('passwordHash')
     }
     expect(users).toContainEqual({
@@ -41,6 +48,7 @@ describe('Users API', () => {
       firstName: 'Alex',
       lastName: 'Rivera',
       email: 'alex@example.com',
+      avatarUrl: null,
     })
   })
 })

@@ -3,7 +3,7 @@ import { Embeddings } from '@langchain/core/embeddings'
 import { MongoDBAtlasVectorSearch } from '@langchain/mongodb'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { KnowledgeDbService } from './knowledge.dbService'
+import { ChunkDbService } from './repositories/chunk.dbService'
 
 export const TOP_K = 4
 
@@ -41,7 +41,7 @@ export class KnowledgeRetrieverService {
   private store?: MongoDBAtlasVectorSearch
 
   constructor(
-    private readonly knowledgeDb: KnowledgeDbService,
+    private readonly chunkDb: ChunkDbService,
     private readonly embeddings: Embeddings,
     private readonly configService: ConfigService,
   ) {}
@@ -51,7 +51,7 @@ export class KnowledgeRetrieverService {
   private vectorStore(): MongoDBAtlasVectorSearch {
     if (this.store === undefined) {
       this.store = new MongoDBAtlasVectorSearch(this.embeddings, {
-        collection: this.knowledgeDb.chunkCollection() as unknown as VectorStoreCollection,
+        collection: this.chunkDb.chunkCollection() as unknown as VectorStoreCollection,
         indexName: this.configService.getOrThrow<string>('VECTOR_INDEX_NAME'),
         textKey: 'text',
         embeddingKey: 'embedding',
