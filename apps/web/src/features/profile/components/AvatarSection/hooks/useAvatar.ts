@@ -41,6 +41,9 @@ export function useAvatar(): UseAvatar {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function upload(file: File): Promise<void> {
+    if (user === null) {
+      return
+    }
     const validationError = validateAvatarFile(file)
     if (validationError !== null) {
       setError(validationError)
@@ -49,8 +52,8 @@ export function useAvatar(): UseAvatar {
     setBusy(true)
     setError(null)
     try {
-      const updated = await uploadAvatar(file)
-      updateUser(updated)
+      const { avatarUrl } = await uploadAvatar(file)
+      updateUser({ ...user, avatarUrl })
     } catch (err) {
       setError(`Could not upload your photo. ${toApiErrorMessages(err).join(' ')}`)
     } finally {
@@ -59,11 +62,14 @@ export function useAvatar(): UseAvatar {
   }
 
   async function remove(): Promise<void> {
+    if (user === null) {
+      return
+    }
     setBusy(true)
     setError(null)
     try {
-      const updated = await removeAvatar()
-      updateUser(updated)
+      const { avatarUrl } = await removeAvatar()
+      updateUser({ ...user, avatarUrl })
     } catch (err) {
       setError(`Could not remove your photo. ${toApiErrorMessages(err).join(' ')}`)
     } finally {

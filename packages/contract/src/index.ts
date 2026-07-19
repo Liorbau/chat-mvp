@@ -20,6 +20,10 @@ export type UpdateProfileRequest = {
   email?: string
 }
 
+export type AvatarResponse = {
+  avatarUrl: string | null
+}
+
 export type LoginRequest = {
   email: string
   password: string
