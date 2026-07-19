@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useFileDropzone } from '@/shared/hooks/useFileDropzone'
 import {
   DRAGGING_STYLE,
   ERROR_STYLE,
@@ -18,25 +18,10 @@ export function KnowledgeDocuments({
   onUpload,
   onRemove,
 }: KnowledgeDocumentsViewProps) {
-  const [dragging, setDragging] = useState(false)
+  const { isDragging, dropzoneProps } = useFileDropzone(onUpload, busy)
 
   return (
-    <div
-      className={dragging ? `${WRAP_STYLE} ${DRAGGING_STYLE}` : WRAP_STYLE}
-      onDragOver={(event) => {
-        event.preventDefault()
-        setDragging(true)
-      }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={(event) => {
-        event.preventDefault()
-        setDragging(false)
-        const file = event.dataTransfer.files?.[0]
-        if (file !== undefined) {
-          onUpload(file)
-        }
-      }}
-    >
+    <div className={isDragging ? `${WRAP_STYLE} ${DRAGGING_STYLE}` : WRAP_STYLE} {...dropzoneProps}>
       <div className={HEADER_STYLE}>
         <span className={TITLE_STYLE}>My documents</span>
         <KnowledgeUpload busy={busy} onFile={onUpload} />
