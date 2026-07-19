@@ -2,11 +2,10 @@ import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 import { PassportModule } from '@nestjs/passport'
 import { StorageModule } from '../storage/storage.module'
-import { AvatarService } from './avatar.service'
-import { ListUsersOrchestrator } from './list-users.orchestrator'
-import { RemoveAvatarOrchestrator } from './remove-avatar.orchestrator'
-import { UpdateProfileOrchestrator } from './update-profile.orchestrator'
-import { UploadAvatarOrchestrator } from './upload-avatar.orchestrator'
+import { ListUsersOrchestrator } from './orchestrators/list-users.orchestrator'
+import { RemoveAvatarOrchestrator } from './orchestrators/remove-avatar.orchestrator'
+import { UpdateProfileOrchestrator } from './orchestrators/update-profile.orchestrator'
+import { UploadAvatarOrchestrator } from './orchestrators/upload-avatar.orchestrator'
 import { User, UserSchema } from './user.schema'
 import { UsersController } from './users.controller'
 import { UsersDbService } from './users.dbService'
@@ -22,7 +21,6 @@ import { UsersService } from './users.service'
   providers: [
     UsersService,
     UsersDbService,
-    AvatarService,
     ListUsersOrchestrator,
     UpdateProfileOrchestrator,
     UploadAvatarOrchestrator,

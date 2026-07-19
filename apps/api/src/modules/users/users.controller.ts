@@ -1,7 +1,7 @@
 import { Controller, Get, UseGuards } from '@nestjs/common'
 import type { User } from '@chat/contract'
 import { JwtAuthGuard } from '../auth/jwt.auth.guard'
-import { ListUsersOrchestrator } from './list-users.orchestrator'
+import { ListUsersOrchestrator } from './orchestrators/list-users.orchestrator'
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)

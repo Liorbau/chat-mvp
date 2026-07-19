@@ -16,7 +16,7 @@ describe('Avatar API', () => {
     await app.close()
   })
 
-  it('rejects an oversize upload with a 400 (multer error mapped to the envelope)', async () => {
+  it('rejects an oversize upload with a 400 (size validated in the pipe)', async () => {
     const response = await request(app.getHttpServer())
       .post('/me/avatar')
       .set('Authorization', `Bearer ${token}`)

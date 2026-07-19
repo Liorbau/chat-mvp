@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AppError } from '../../errors/AppError'
+import { AppError } from '../../../errors/AppError'
 import { AvatarFilePipe } from './avatar.file.pipe'
 
 const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
@@ -30,5 +30,11 @@ describe('AvatarFilePipe', () => {
 
   it('rejects a missing file with a 400 VALIDATION_ERROR', () => {
     expect(() => pipe.transform(undefined)).toThrow(AppError)
+  })
+
+  it('rejects a file over the size limit with a 400', () => {
+    const tooBig = multerFile({ size: 6 * 1024 * 1024 })
+
+    expect(() => pipe.transform(tooBig)).toThrow(AppError)
   })
 })

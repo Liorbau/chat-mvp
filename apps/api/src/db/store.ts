@@ -1,6 +1,6 @@
 import type { Message } from '@chat/contract'
 import bcrypt from 'bcrypt'
-import type { StoredUser } from '../modules/users/user.mapper'
+import type { StoredUser } from '../modules/users/lib/user.mapper'
 
 // Shared password for hard-coded seed users. Single source of truth: tests
 export const SEED_PASSWORD = 'password123'

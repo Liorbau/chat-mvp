@@ -5,7 +5,6 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-  PayloadTooLargeException,
 } from '@nestjs/common'
 import type { Response } from 'express'
 import { AppError } from '../../errors/AppError'
@@ -22,13 +21,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (exception instanceof AppError) {
       response.status(exception.statusCode).json(this.fromAppError(exception))
-      return
-    }
-
-    if (exception instanceof PayloadTooLargeException) {
-      response.status(HttpStatus.BAD_REQUEST).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Uploaded file is too large.' },
-      })
       return
     }
 

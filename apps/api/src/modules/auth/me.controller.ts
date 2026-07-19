@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Patch,
   Post,
   UploadedFile,
@@ -10,16 +11,15 @@ import {
   UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import type { User } from '@chat/contract'
+import type { AvatarResponse, User } from '@chat/contract'
 import { memoryStorage } from 'multer'
 import { CurrentUser } from '../../common/decorators/current.user.decorator'
-import { AvatarFilePipe } from '../users/avatar.file.pipe'
-import type { AvatarUpload } from '../users/avatar.types'
-import { UploadAvatarOrchestrator } from '../users/upload-avatar.orchestrator'
-import { RemoveAvatarOrchestrator } from '../users/remove-avatar.orchestrator'
-import { UpdateProfileOrchestrator } from '../users/update-profile.orchestrator'
+import { AvatarFilePipe } from '../users/pipes/avatar.file.pipe'
+import type { AvatarUpload } from '../users/lib/avatar.types'
+import { UploadAvatarOrchestrator } from '../users/orchestrators/upload-avatar.orchestrator'
+import { RemoveAvatarOrchestrator } from '../users/orchestrators/remove-avatar.orchestrator'
+import { UpdateProfileOrchestrator } from '../users/orchestrators/update-profile.orchestrator'
 import { UpdateProfileDto } from '../users/dto/update.profile.dto'
-import { AVATAR_MAX_BYTES } from '../storage/storage.constants'
 import { JwtAuthGuard } from './jwt.auth.guard'
 
 @Controller()
@@ -42,18 +42,17 @@ export class MeController {
   }
 
   @Post('me/avatar')
-  @UseInterceptors(
-    FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: AVATAR_MAX_BYTES } }),
-  )
+  @HttpCode(200)
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   async uploadAvatar(
     @CurrentUser() user: User,
     @UploadedFile(AvatarFilePipe) upload: AvatarUpload,
-  ): Promise<User> {
+  ): Promise<AvatarResponse> {
     return this.uploadAvatarOrchestrator.execute(user.id, upload)
   }
 
   @Delete('me/avatar')
-  async removeAvatar(@CurrentUser() user: User): Promise<User> {
+  async removeAvatar(@CurrentUser() user: User): Promise<AvatarResponse> {
     return this.removeAvatarOrchestrator.execute(user.id)
   }
 }

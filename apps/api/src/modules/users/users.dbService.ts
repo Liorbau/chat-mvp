@@ -11,7 +11,7 @@ import {
   type StoredUser,
   type StoredUserDraft,
   type UserUpdate,
-} from './user.mapper'
+} from './lib/user.mapper'
 
 @Injectable()
 export class UsersDbService {
