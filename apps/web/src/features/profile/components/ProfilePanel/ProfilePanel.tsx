@@ -1,4 +1,4 @@
-import { AvatarSectionContainer } from '@/features/profile/components/AvatarSection/AvatarSectionContainer'
+import { AvatarSectionContainer } from '@/features/profile/components/ProfilePanel/components/AvatarSection/AvatarSectionContainer'
 import { CARD_STYLE, SCREEN_STYLE, SUBTITLE_STYLE, TITLE_STYLE } from './ProfilePanel.constants'
 import { useProfileContext } from './ProfilePanel.context'
 import { EmailForm } from './EmailForm'

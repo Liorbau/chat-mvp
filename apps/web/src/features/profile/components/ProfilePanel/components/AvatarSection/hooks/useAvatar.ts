@@ -3,13 +3,14 @@ import type { ChangeEvent } from 'react'
 import { uploadAvatar, removeAvatar } from '@/api'
 import { useAuth } from '@/features/auth/context/auth.context'
 import { updateUser } from '@/shared/auth/authStorage'
+import { useImageFallback } from '@/shared/hooks/useImageFallback'
 import { toApiErrorMessages } from '@/shared/utils/apiErrorMessages'
 import {
-  ALLOWED_AVATAR_TYPES,
+  ALLOWED_AVATAR_MIME_TYPES,
   AVATAR_MAX_BYTES,
   AVATAR_TOO_LARGE_MESSAGE,
   AVATAR_TYPE_MESSAGE,
-} from '../AvatarSection.constants'
+} from '@chat/contract'
 
 type UseAvatar = {
   name: string
@@ -17,6 +18,8 @@ type UseAvatar = {
   hasAvatar: boolean
   busy: boolean
   error: string | null
+  previewFailed: boolean
+  onPreviewError: () => void
   fileInputRef: React.RefObject<HTMLInputElement | null>
   onPickFile: () => void
   onFileChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -25,7 +28,7 @@ type UseAvatar = {
 }
 
 function validateAvatarFile(file: File): string | null {
-  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+  if (!ALLOWED_AVATAR_MIME_TYPES.includes(file.type)) {
     return AVATAR_TYPE_MESSAGE
   }
   if (file.size > AVATAR_MAX_BYTES) {
@@ -39,6 +42,8 @@ export function useAvatar(): UseAvatar {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const avatarUrl = user?.avatarUrl ?? null
+  const preview = useImageFallback(avatarUrl)
 
   async function upload(file: File): Promise<void> {
     if (user === null) {
@@ -99,10 +104,12 @@ export function useAvatar(): UseAvatar {
 
   return {
     name: user?.name ?? '',
-    avatarUrl: user?.avatarUrl ?? null,
-    hasAvatar: (user?.avatarUrl ?? null) !== null,
+    avatarUrl,
+    hasAvatar: avatarUrl !== null,
     busy,
     error,
+    previewFailed: preview.failed,
+    onPreviewError: preview.onError,
     fileInputRef,
     onPickFile,
     onFileChange,
