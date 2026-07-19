@@ -330,7 +330,7 @@ then persists the assistant message; swappable `LlmProvider` abstract class
 (OpenAI active, Anthropic drop-in via `LLM_PROVIDER`); two user-scoped
 Zod-validated tools; one Zod structured-output call (`generateStructured`,
 fail-closed); multi-turn context within a token budget; eval harness
-(`apps/api/src/modules/ai/eval`). PR notes in `WEEK6_PR.local.md`.
+(`apps/api/eval`). PR notes in `WEEK6_PR.local.md`.
 
 ### Week 7 (Completed) — AI Tutor with Knowledge Base + Citations (RAG)
 
@@ -501,7 +501,7 @@ retriever + prompt) reached via the shared `POST /ai/conversations/:id/messages`
 path, branching on `conversation.type` in `ai.controller`; empty-retrieval
 short-circuit refusal (threshold 0.7, top-K 4); citations in the `done` SSE event
 + persisted on `Message`; FE `TutorPanel` + `KnowledgeDocuments` render clickable
-sources; RAG eval harness (`ai/eval/rag`).
+sources; RAG eval harness (`apps/api/eval/rag`).
 
 Doc debt carried forward: `ARCHITECTURE.md` / `API_CONTRACT.md` still end at
 Week 5 (Weeks 6-7 never backfilled there). Backfill Weeks 6-8 when the capstone
@@ -670,9 +670,10 @@ Derived from the Week-8 backend refactor; applies to every endpoint.
   through a `*.pipe.ts` that validates and returns a framework-agnostic type;
   services and orchestrators never import Express/multer.
 - **Enforce each input constraint once, at the edge, mapped to the error
-  envelope.** Size via the multer limit, with its `PayloadTooLargeException`
-  mapped to `400 VALIDATION_ERROR` in the exception filter; verify file *type by
-  magic bytes* (fail-closed), never the client-claimed `Content-Type`.
+  envelope.** The upload `*.pipe.ts` validates both size (→ `400 VALIDATION_ERROR`)
+  and *type by magic bytes* (fail-closed, never the client-claimed
+  `Content-Type`). No multer `fileSize` limit and no transport-specific
+  `PayloadTooLargeException` special-case in the global filter.
 - **One real job per file (~150-line soft cap).** Extract pure helpers to
   siblings: DB mappers `*.mappers.ts`, cursor/paging `*.cursor.ts`, chunking /
   extraction helpers, etc. Avoid hollow layers beyond the thin-but-uniform

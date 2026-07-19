@@ -809,8 +809,8 @@ module; the connection (`MongooseModule.forRootAsync`, reads `MONGO_URI` from
 - **`AiService`** — `prepareTurn` (authz + persist the user message) and
   `streamReply` (the LLM + tool loop: stream tokens, run tool calls, persist the
   assistant message).
-- **`ConversationMemoryService`** — loads recent history within a token budget
-  for multi-turn context.
+- **`ConversationMemoryService`** — loads recent history within a token budget,
+  and selects warm/cold turn messages (`historyForTurn`) for the agent.
 - **`AiToolsService` + tools** — user-scoped, Zod-validated tools the model can
   call against the caller's own data (`requesterId` from the JWT, never the model).
 
@@ -840,11 +840,12 @@ for the tutor composer (one-way `ai -> knowledge`).
 
 | Collection | Schema | Key fields | Notes |
 | --- | --- | --- | --- |
-| `kb_documents` | `document.schema.ts` | `_id` (uuid), `userId`, `name`, `mimeType`, `contentHash`, `status`, `chunkCount`, `createdAt` | explicit collection name; indexes on `{userId, createdAt}` and `{userId, contentHash}` (dedup) |
-| `kb_chunks` | `chunk.schema.ts` | `_id` (uuid), `documentId`, `documentName`, `userId`, `text`, `embedding[1024]`, `chunkIndex` | `userId`/`documentName` denormalized; vector search served by the Atlas index, not Mongoose |
+| `kb_documents` | `schemas/document.schema.ts` | `_id` (uuid), `userId`, `name`, `mimeType`, `contentHash`, `status`, `chunkCount`, `createdAt` | explicit collection name; indexes on `{userId, createdAt}` and `{userId, contentHash}` (dedup) |
+| `kb_chunks` | `schemas/chunk.schema.ts` | `_id` (uuid), `documentId`, `documentName`, `userId`, `text`, `embedding[1024]`, `chunkIndex` | `userId`/`documentName` denormalized; vector search served by the Atlas index, not Mongoose |
 
-- **`KnowledgeDbService`** (DAO) — the only layer touching Mongoose; also exposes
-  the native `chunkCollection()` the vector store needs.
+- **`DocumentDbService`** / **`ChunkDbService`** (DAOs) — one per collection, the
+  only layers touching Mongoose; `ChunkDbService` also exposes the native
+  `chunkCollection()` the vector store needs.
 - **`KnowledgeService`** — `ingest` (extraction seam -> hash/dedup -> chunk ->
   embed -> store), `listDocuments`, `removeDocument`. Chunking is LangChain
   `RecursiveCharacterTextSplitter` (500 / 75). Dedup by content hash: an existing
@@ -884,7 +885,7 @@ a clickable Sources list under each tutor answer.
 
 ## Eval
 
-HTTP harness (`src/modules/ai/eval/rag/`, `npm run eval:rag`): uploads committed
+HTTP harness (`apps/api/eval/rag/`, `npm run eval:rag`): uploads committed
 docs, asks fixture questions through the real tutor, and reads recall straight
 from the answer's citations. Reports precision@k / recall@k / hit-rate@k and a
 keyword-based answer score (temperature 0). Self-throttles to Voyage's 3 RPM.
@@ -904,7 +905,8 @@ list.
 > **Superseded in part** by the post-Week-8 Orchestrator Layering refactor (see
 > that section): authorize + user-message persistence moved out of `AgentService`
 > into `StreamAgentReplyOrchestrator`, so `AgentService` is now the graph engine
-> only (stream + history + finish), and the graph nodes live in `agent.nodes.ts`.
+> only (stream + history + finish); the graph nodes/edges live in `agent/nodes/`
+> and `agent/edges/`, assembled by `agent.nodes.ts`.
 
 ## What supersedes earlier weeks
 
@@ -1028,15 +1030,24 @@ the service); the only sanctioned skip is `GET /me` (returns the guard-resolved 
 - **Storage seam** renamed by role: `ObjectStorage`/`OBJECT_STORAGE` →
   `StorageProvider`/`STORAGE_PROVIDER` (`S3Storage` is the concrete impl).
 - **Avatar model** stores a resolved `avatar { srcUrl, storageKey }`; the DB→DTO
-  mapper is pure (no config, no throw). Upload size maps multer's
-  `PayloadTooLargeException` → `400`; file type is verified by magic bytes.
+  mapper is pure (no config, no throw). The upload/remove flows are owned by their
+  orchestrators (composing `StorageProvider` + `UsersService`); `AvatarService` was
+  dissolved. Read URLs come from `StorageProvider.publicUrl(key)`, so URL knowledge
+  stays in the provider. Both endpoints return
+  `AvatarResponse { avatarUrl: string | null }` (URL after upload, `null` after
+  remove). The upload pipe validates size (→ `400`) and type by magic bytes; the
+  multer `fileSize` limit and the filter's `PayloadTooLargeException` case were
+  removed (the `knowledge` upload follows the same pipe pattern).
 
 ## One-job-per-file extractions
 
-`user.mapper.ts`, `messages.mappers.ts`, `messages.cursor.ts`,
-`knowledge.chunking.ts`, `image.signature.ts`, `agent.nodes.ts` (graph nodes), and
-the split RAG eval (`rag-eval.client.ts` / `rag-eval.scoring.ts`) keep services,
-DAOs, and the graph assembly under the ~150-line soft cap.
+`user.mapper.ts` (incl. `buildUserUpdate`), `messages.mappers.ts`,
+`messages.cursor.ts`, `knowledge.chunking.ts`, `image.signature.ts`,
+`agent/nodes/*.node.ts` + `agent/edges/decide-next.ts` (graph nodes/edges, assembled
+by `agent.nodes.ts`), `document.dbService.ts` / `chunk.dbService.ts`
+(knowledge DAO split by collection), and the split RAG eval (`rag-eval.client.ts` /
+`rag-eval.scoring.ts`) keep services, DAOs, and the graph assembly under the
+~150-line soft cap.
 
 ---
 

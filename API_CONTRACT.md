@@ -182,13 +182,13 @@ Returns the currently authenticated user. Requires a valid bearer token.
   "firstName": "string",
   "lastName": "string",
   "email": "string",
-  "avatarUrl": "https://cdn.example/avatars/<id>/<uuid> | null"
+  "avatarUrl": "https://cdn.example/avatars/<id>?v=<uuid> | null"
 }
 ```
 
-`avatarUrl` is the public CloudFront URL of the user's avatar, or `null` when
-none is set. It is derived server-side from the stored object key; the raw key
-never leaves the API.
+`avatarUrl` is the public CDN URL of the user's avatar, or `null` when none is
+set. The `?v=<uuid>` cache-buster changes on every upload so replacements are
+served immediately; the raw storage key never leaves the API.
 
 **Error response (401)**
 
@@ -212,10 +212,17 @@ the `avatarUrl` on the `User`. Both routes require a bearer token.
 
 Upload/replace the avatar. `multipart/form-data` with a single `file` field
 (`image/png`, `image/jpeg`, or `image/webp`, ≤ 5 MB). The API validates type +
-size, stores the object under `avatars/<userId>/<uuid>`, points the profile at
-it, and best-effort deletes the previous object.
+size, stores the object at the fixed per-user key `avatars/<userId>` (a replace
+overwrites it in place, so there is no old object to clean up), and points the
+profile at the new `?v=<uuid>` URL.
 
-**Success response (200)** — the updated `User` (with the new `avatarUrl`).
+**Success response (200)**
+
+```json
+{
+  "avatarUrl": "https://cdn.example/avatars/<id>?v=<uuid>"
+}
+```
 
 **Error response (400)** — `VALIDATION_ERROR` for a missing file, unsupported
 type, or a file over 5 MB.
@@ -224,7 +231,13 @@ type, or a file over 5 MB.
 
 Clear the avatar from the profile and best-effort delete the stored object.
 
-**Success response (200)** — the updated `User` (`avatarUrl` is now `null`).
+**Success response (200)**
+
+```json
+{
+  "avatarUrl": null
+}
+```
 
 ### Logout (client-side)
 
