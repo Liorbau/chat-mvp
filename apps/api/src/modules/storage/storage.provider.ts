@@ -11,4 +11,6 @@ export type PutObjectInput = {
 export interface StorageProvider {
   put(input: PutObjectInput): Promise<void>
   delete(key: string): Promise<void>
+  // Provider-specific public CDN URL for reading the object at `key`.
+  publicUrl(key: string): string
 }

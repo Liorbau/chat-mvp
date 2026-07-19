@@ -8,6 +8,7 @@ import type { PutObjectInput, StorageProvider } from './storage.provider'
 export class S3Storage implements StorageProvider {
   private readonly client: S3Client
   private readonly bucket: string
+  private readonly publicBaseUrl: string
 
   constructor(configService: ConfigService) {
     const endpoint = configService.get<string>('STORAGE_S3_ENDPOINT')
@@ -20,6 +21,7 @@ export class S3Storage implements StorageProvider {
       },
     })
     this.bucket = configService.getOrThrow<string>('STORAGE_S3_BUCKET')
+    this.publicBaseUrl = configService.getOrThrow<string>('STORAGE_PUBLIC_BASE_URL')
   }
 
   async put(input: PutObjectInput): Promise<void> {
@@ -36,5 +38,9 @@ export class S3Storage implements StorageProvider {
 
   async delete(key: string): Promise<void> {
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }))
+  }
+
+  publicUrl(key: string): string {
+    return `${this.publicBaseUrl}/${key}`
   }
 }
