@@ -11,9 +11,9 @@ import {
   type MessageDraft,
   type MessagePage,
   type MessagePageCursor,
-} from './messages.mappers'
+} from './lib/messages.mappers'
 
-export type { MessageDraft, MessagePage, MessagePageCursor } from './messages.mappers'
+export type { MessageDraft, MessagePage, MessagePageCursor } from './lib/messages.mappers'
 
 // One $group bucket from listRecentForConversations' aggregation.
 type ConversationMessageGroup = { docs: MessageDocument[] }

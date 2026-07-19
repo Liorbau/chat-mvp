@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { Message } from '@chat/contract'
-import { type MessageDocument } from './message.schema'
+import { type MessageDocument } from '../message.schema'
 
 export type MessageDraft = Omit<Message, 'id'>
 

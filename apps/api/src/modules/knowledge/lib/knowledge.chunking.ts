@@ -1,6 +1,6 @@
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters'
-import { AppError } from '../../errors/AppError'
-import type { ChunkDraft } from './knowledge.dbService'
+import { AppError } from '../../../errors/AppError'
+import type { ChunkDraft } from '../repositories/chunk.dbService'
 
 const CHUNK_SIZE = 500
 const CHUNK_OVERLAP = 75

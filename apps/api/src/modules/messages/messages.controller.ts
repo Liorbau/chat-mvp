@@ -4,8 +4,8 @@ import { CurrentUser } from '../../common/decorators/current.user.decorator'
 import { JwtAuthGuard } from '../auth/jwt.auth.guard'
 import { CreateMessageDto } from './dto/create.message.dto'
 import { ConversationParamsDto, ListMessagesQueryDto } from './dto/list.messages.dto'
-import { GetMessagesOrchestrator } from './get-messages.orchestrator'
-import { CreateMessageOrchestrator } from './create-message.orchestrator'
+import { GetMessagesOrchestrator } from './orchestrators/get-messages.orchestrator'
+import { CreateMessageOrchestrator } from './orchestrators/create-message.orchestrator'
 
 @Controller('conversations/:id/messages')
 @UseGuards(JwtAuthGuard)

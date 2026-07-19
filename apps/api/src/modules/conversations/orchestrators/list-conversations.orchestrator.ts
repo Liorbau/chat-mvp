@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import type { Conversation } from '@chat/contract'
-import { ConversationsService } from './conversations.service'
+import { ConversationsService } from '../conversations.service'
 
 @Injectable()
 export class ListConversationsOrchestrator {

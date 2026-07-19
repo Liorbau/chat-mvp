@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { KnowledgeService } from './knowledge.service'
+import { KnowledgeService } from '../knowledge.service'
 
 @Injectable()
 export class RemoveDocumentOrchestrator {

@@ -1,5 +1,5 @@
-import { AppError } from '../../errors/AppError'
-import type { MessagePageCursor } from './messages.dbService'
+import { AppError } from '../../../errors/AppError'
+import type { MessagePageCursor } from '../messages.dbService'
 
 // The cursor id is a message's uuid `_id`.
 const CURSOR_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

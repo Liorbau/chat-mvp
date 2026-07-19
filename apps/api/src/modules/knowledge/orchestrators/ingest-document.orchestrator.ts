@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import type { KnowledgeDocument } from '@chat/contract'
-import { KnowledgeService, type UploadedDocument } from './knowledge.service'
+import { KnowledgeService, type UploadedDocument } from '../knowledge.service'
 
 @Injectable()
 export class IngestDocumentOrchestrator {

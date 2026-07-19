@@ -2,8 +2,8 @@ import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
 import type { AuthResponse } from '@chat/contract'
 import { LoginDto } from './dto/login.dto'
 import { SignupDto } from './dto/signup.dto'
-import { SignupOrchestrator } from './signup.orchestrator'
-import { LoginOrchestrator } from './login.orchestrator'
+import { SignupOrchestrator } from './orchestrators/signup.orchestrator'
+import { LoginOrchestrator } from './orchestrators/login.orchestrator'
 
 @Controller('auth')
 export class AuthController {

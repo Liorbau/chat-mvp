@@ -6,8 +6,8 @@ import { Conversation, ConversationSchema } from './conversation.schema'
 import { ConversationsController } from './conversations.controller'
 import { ConversationsDbService } from './conversations.dbService'
 import { ConversationsService } from './conversations.service'
-import { ListConversationsOrchestrator } from './list-conversations.orchestrator'
-import { CreateConversationOrchestrator } from './create-conversation.orchestrator'
+import { ListConversationsOrchestrator } from './orchestrators/list-conversations.orchestrator'
+import { CreateConversationOrchestrator } from './orchestrators/create-conversation.orchestrator'
 
 @Module({
   imports: [

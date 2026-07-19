@@ -3,8 +3,8 @@ import type { Conversation, User } from '@chat/contract'
 import { CurrentUser } from '../../common/decorators/current.user.decorator'
 import { JwtAuthGuard } from '../auth/jwt.auth.guard'
 import { CreateConversationDto } from './dto/create.conversation.dto'
-import { ListConversationsOrchestrator } from './list-conversations.orchestrator'
-import { CreateConversationOrchestrator } from './create-conversation.orchestrator'
+import { ListConversationsOrchestrator } from './orchestrators/list-conversations.orchestrator'
+import { CreateConversationOrchestrator } from './orchestrators/create-conversation.orchestrator'
 
 @Controller('conversations')
 @UseGuards(JwtAuthGuard)

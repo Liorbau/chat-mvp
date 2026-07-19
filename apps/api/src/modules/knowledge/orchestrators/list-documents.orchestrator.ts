@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import type { KnowledgeDocument } from '@chat/contract'
-import { KnowledgeService } from './knowledge.service'
+import { KnowledgeService } from '../knowledge.service'
 
 @Injectable()
 export class ListDocumentsOrchestrator {

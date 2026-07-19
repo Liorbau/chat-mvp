@@ -6,8 +6,8 @@ import { Message, MessageSchema } from './message.schema'
 import { MessagesController } from './messages.controller'
 import { MessagesDbService } from './messages.dbService'
 import { MessagesService } from './messages.service'
-import { GetMessagesOrchestrator } from './get-messages.orchestrator'
-import { CreateMessageOrchestrator } from './create-message.orchestrator'
+import { GetMessagesOrchestrator } from './orchestrators/get-messages.orchestrator'
+import { CreateMessageOrchestrator } from './orchestrators/create-message.orchestrator'
 
 @Module({
   imports: [

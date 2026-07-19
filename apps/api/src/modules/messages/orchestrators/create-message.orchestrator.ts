@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import type { SendMessageResponse } from '@chat/contract'
-import { AppError } from '../../errors/AppError'
-import { ConversationsService } from '../conversations/conversations.service'
-import { MessagesService } from './messages.service'
+import { AppError } from '../../../errors/AppError'
+import { ConversationsService } from '../../conversations/conversations.service'
+import { MessagesService } from '../messages.service'
 
 @Injectable()
 export class CreateMessageOrchestrator {

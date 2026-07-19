@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import type { AuthResponse } from '@chat/contract'
-import { AuthService } from './auth.service'
-import type { LoginDto } from './dto/login.dto'
+import { AuthService } from '../auth.service'
+import type { LoginDto } from '../dto/login.dto'
 
 @Injectable()
 export class LoginOrchestrator {

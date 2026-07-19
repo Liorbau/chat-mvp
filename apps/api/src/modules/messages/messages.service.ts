@@ -9,7 +9,7 @@ import {
 import type { Connection } from 'mongoose'
 import { ConversationsService } from '../conversations/conversations.service'
 import { MessagesDbService } from './messages.dbService'
-import { decodeCursor, encodeCursor } from './messages.cursor'
+import { decodeCursor, encodeCursor } from './lib/messages.cursor'
 
 type SendMessageInput = {
   conversationId: string

@@ -14,13 +14,11 @@ import { memoryStorage } from 'multer'
 import { CurrentUser } from '../../common/decorators/current.user.decorator'
 import { JwtAuthGuard } from '../auth/jwt.auth.guard'
 import { DocumentParamsDto } from './dto/document.params.dto'
-import { DocumentFilePipe } from './document-file.pipe'
+import { DocumentFilePipe } from './pipes/document-file.pipe'
 import type { UploadedDocument } from './knowledge.service'
-import { IngestDocumentOrchestrator } from './ingest-document.orchestrator'
-import { ListDocumentsOrchestrator } from './list-documents.orchestrator'
-import { RemoveDocumentOrchestrator } from './remove-document.orchestrator'
-
-const MAX_FILE_BYTES = 5 * 1024 * 1024
+import { IngestDocumentOrchestrator } from './orchestrators/ingest-document.orchestrator'
+import { ListDocumentsOrchestrator } from './orchestrators/list-documents.orchestrator'
+import { RemoveDocumentOrchestrator } from './orchestrators/remove-document.orchestrator'
 
 @Controller('knowledge/documents')
 @UseGuards(JwtAuthGuard)
@@ -32,9 +30,7 @@ export class KnowledgeController {
   ) {}
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: MAX_FILE_BYTES } }),
-  )
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   async upload(
     @CurrentUser() user: User,
     @UploadedFile(DocumentFilePipe) file: UploadedDocument,
