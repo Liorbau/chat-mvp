@@ -6,25 +6,29 @@ by developers or agents — must follow this.
 Related: [`ARCHITECTURE.md`](../ARCHITECTURE.md) (system architecture),
 [`CLAUDE.md`](../CLAUDE.md) (engineering principles).
 
+> **Reference implementation:** the **avatar feature** is the worked example of
+> every rule below — the edit UI at
+> `features/profile/components/ProfilePanel/components/AvatarSection/` and the
+> reusable display atom at `features/user/components/UserAvatar/`. When a rule is
+> ambiguous, copy those. See §9 for the migration status of older code.
+
 ---
 
 ## 0. Scope of these conventions
 
 These rules govern **directory/file structure** (where code lives and how it's
-split into files) — for scalability and readability. They are **not** a license
-to rewrite working components or logic. Specifically:
+split into files) — for scalability and readability. Specifically:
 
-- Keep our existing component markup and behavior — just relocate them into the
-  structure below and co-locate their constants/types. Styling uses **Tailwind
-  CSS v4** utility classes, held as class-name string constants in
-  `X.constants.ts` (faithful arbitrary values, e.g. `bg-[#2563eb]`, where our
-  palette needs them).
-- Apply the presentational/container split and context to remove real
-  prop-drilling. Extract a sub-part into its own file when it is **stateful,
-  repeated, or a self-contained chunk** (a sub-view, a stateful control, an SVG
-  icon). But prefer **one reusable, parameterized leaf** (e.g. a single
-  `AuthField`) over many near-identical ones — don't over-decompose for its own
-  sake. Match the spirit, keep it ours.
+- Keep component markup and behavior; relocate it into the structure below and
+  co-locate its files. Styling uses **Tailwind CSS v4** utility classes, held as
+  class-name string constants in **`X.styles.ts`** (faithful arbitrary values,
+  e.g. `bg-[#2563eb]`, where our palette needs them) — **never** mixed into
+  `X.constants.ts` (see §3, §8).
+- Apply the presentational/container split and context to remove prop-drilling.
+- **Decompose by concern.** A distinct concern, a condition, a stateful control,
+  a sub-view, or an SVG icon each becomes its own component (§3, §4). But prefer
+  **one reusable, parameterized leaf** over many near-identical ones — decompose
+  distinct concerns, don't clone the same leaf.
 
 ## 1. Top-level layout (`apps/web/src`)
 
@@ -34,32 +38,19 @@ src/
     apiClient.ts       # request() core: base URL, auth header, error mapping
     sse.ts             # readSseStream(): reusable SSE frame reader
     types.ts           # ApiRequestError + shared request/response helper types
-    auth.api.ts        # login, signup
-    users.api.ts       # getUsers
-    conversations.api.ts
-    messages.api.ts
-    ai.api.ts          # streamAssistant (SSE)
-    knowledge.api.ts
-    profile.api.ts     # updateProfile
+    auth.api.ts  users.api.ts  conversations.api.ts  messages.api.ts
+    ai.api.ts    knowledge.api.ts  profile.api.ts
   shared/              # cross-feature building blocks
     constants/
-    hooks/
-  features/            # one folder per UI domain (see the feature map below)
-    app/               # the shell: layout, mode switching, toasts, navigation
-    auth/
-    user/
-    conversations/
-    messages/
-    ai/                # assistant + tutor panels + streaming hook
-    knowledge/         # knowledge-base document management
-    profile/
+    hooks/             # generic reusable hooks (e.g. useFileDropzone, useImageFallback)
+  features/            # one folder per UI domain (see the feature map in §10)
+    app/ auth/ user/ conversations/ messages/ ai/ knowledge/ profile/
   App.tsx  main.tsx  index.css
 ```
 
 ## 2. Feature-slice anatomy
 
-Each `features/<domain>/` owns everything for that domain and is organized by
-*kind*:
+Each `features/<domain>/` owns everything for that domain, organized by *kind*:
 
 ```
 features/<domain>/
@@ -73,134 +64,198 @@ features/<domain>/
 
 Only add the subfolders a domain actually needs. A domain never imports another
 domain's *internals* — cross-domain sharing goes through `shared/`, `api/`, or a
-context that the owning feature exports.
+context the owning feature exports. Organize by **domain/screen, not by widget**:
+a reusable display atom lives in its domain (`UserAvatar` in `user`); an edit UI
+lives in the feature that owns the screen (`AvatarSection` under `profile`).
+There is no `features/<widget>` slice.
 
-## 3. A component is a folder
+## 3. A component is a folder, and the folder tree mirrors the UI tree
 
-Any non-trivial component is its own folder named after it (PascalCase):
+Any non-trivial component is its own folder (PascalCase). Its children live in a
+**nested `components/` folder**, and each child is itself a component-folder, so
+the directory tree reflects the on-screen hierarchy — **the tree is not flat**:
 
 ```
-components/MessageComposer/
-  MessageComposer.tsx            # presentational: JSX, DOM, events (see §4)
-  MessageComposerContainer.tsx   # container: state + wiring (see §4)
-  MessageComposer.constants.ts   # styles / magic values for this component
-  MessageComposer.types.ts       # props + local types
-  MessageComposer.test.tsx       # co-located test
-  ComposerButton.tsx             # simple sub-components: FLAT in the folder
-  ComposerTextarea.tsx
-  hooks/                         # hooks used only by this component
-  utils/                         # pure helpers used only by this component
+components/AvatarSection/
+  AvatarSectionContainer.tsx     # container: hook + provider (see §4)
+  AvatarSection.tsx              # presentational: composes children, no logic
+  AvatarSection.context.ts       # one context for this tree (see §5)
+  AvatarSection.types.ts         # context-value / prop types (derived — see §5)
+  AvatarSection.styles.ts        # class-name strings + class builders (styles only)
+  AvatarSection.constants.ts     # values / labels / messages (no styles)
+  AvatarSection.utils.ts         # pure logic (label selectors, derivations)
+  AvatarSection.test.tsx         # co-located test
+  hooks/useAvatar.ts             # state for this tree
+  components/                    # children — each its own folder, mirrors the UI
+    Dropzone/
+      Dropzone.tsx  Dropzone.styles.ts  Dropzone.types.ts
+      components/
+        AvatarPreview/AvatarPreview.tsx
+        DropzoneHint/DropzoneHint.tsx  DropzoneHint.styles.ts  DropzoneHint.utils.ts  DropzoneHint.constants.ts
+    AvatarActions/
+      AvatarActions.tsx  AvatarActions.styles.ts
+      components/
+        UploadButton/  RemoveButton/  AvatarError/  PreviewWarning/
+    FileInput/
+      FileInput.tsx  FileInput.styles.ts  FileInput.constants.ts
 ```
 
 Rules:
-- **When a component grows a nested sub-part, extract it into its own file.**
-  This includes a **stateful** sub-component (has its own `useState`/effects,
-  e.g. `ModeButton`), a **repeated** chunk, a **sub-view** when a view balloons
-  (e.g. `MessagesArea` pulled out of a panel), and inline **SVG icons**
-  (`PersonIcon`). Never nest large JSX blocks or helper functions inline.
-- **Simple/leaf sub-components go FLAT** directly inside the component's folder
-  (as above) — do **not** create a nested `components/` folder for them (avoid the
-  confusing `components/X/components/` nesting).
-- Only give a sub-component its *own folder* (with its own `.constants`/`.types`/
-  sub-parts) when it is itself complex enough to need one.
-- **Soft cap of ~one responsibility per file.** When a file gets long it should be
-  either a *view* (markup) or *one cohesive hook/reducer* — never a mix of both.
+- **Each on-screen part is its own named component in its own folder.** If a
+  component renders a distinct sub-part (a control, a message, a sub-view, an
+  icon), that sub-part is extracted — never nest large JSX blocks or helper
+  functions inline.
+- **Nest `components/` to match the UI.** A child that visually lives inside a
+  parent lives inside the parent's `components/` folder (`Dropzone/components/
+  DropzoneHint/`). Depth in the folder tree = depth in the UI.
+- **Split files by role, one role per file** (see §8): `.tsx` (component),
+  `.types.ts` (types), `.styles.ts` (class strings/builders), `.constants.ts`
+  (values), `.utils.ts` (pure logic), `hooks/` (state), `.context.ts` (context).
+  Create only the files a component needs.
+- **Soft cap of ~one responsibility per file.** A `.tsx` is either a *view*
+  (markup/composition) or a *container* (hook wiring) — never both.
 
-## 4. Presentational vs. container (separate rendering from logic)
+## 4. Container vs. presentational; state, abstraction, and conditions
 
-- **`X.tsx` (presentational)** — owns the *browser*: JSX, HTML elements, event
-  handlers wired to callbacks. It receives data + callbacks via props/context and
-  renders. It does **not** fetch, hold business state, or make decisions.
-- **`XContainer.tsx` (container)** — stays **thin**: call a hook, provide its
-  value via context, render the view. Screen/form **state lives in a `useXForm`
-  hook, not inline in the container** (a container with many `useState`s is the
-  smell). Shape: `const value = useXForm(); return (<XContext.Provider
-  value={value}><X /></XContext.Provider>)`.
-- **`utils/` functions** — the code that *does something* is a pure function that
-  **takes a value and returns a value** (e.g. `toProfileErrors(error)`), kept out
-  of the JSX. Event handlers in the presentational file should call these, not
-  inline the logic.
-- **One return per component.** Branch *inside* the JSX — a ternary, `&&` when
-  there's no else, or a `Record<Key, ReactNode>` map for multi-way — rather than
-  multiple early `return`s. "Render nothing" becomes `cond ? <…/> : null`, not a
-  guard `return null`.
+- **`X.tsx` (presentational)** — owns the *browser*: JSX, elements, and events
+  wired to callbacks. It reads data/callbacks from **context** (or props, for a
+  reusable atom) and renders. It holds **no state**, fetches nothing, makes no
+  business decisions.
+- **`XContainer.tsx` (container)** — the file that holds the **hook/state**. It
+  stays thin: call the hook, provide its value via context, render the view
+  (`const value = useX(); return <XContext.Provider value={value}><X /></…>`).
+  A container may also pass a hook's view-model to a presentational child as
+  props when there's no deeper tree (e.g. `UserAvatarContainer → UserAvatar`).
+- **State defines the container, not the `if`.** A component is *non*-
+  presentational because it holds state (a hook) — **not** because it contains a
+  condition. So the fix for "a presentational component holds state" is to move
+  the hook into an `XContainer`, leaving the view stateless.
+- **Single level of abstraction.** A view composes **named children only**.
+  Derivations/label choices go to `.utils.ts`; class assembly goes to
+  `.styles.ts`; state goes to a hook. A component that mixes composition with an
+  inline ad-hoc block is a smell — extract the block.
+- **No conditions inside JSX markup.** `{cond ? <A/> : <B/>}` and inline
+  branching are banned. Express a condition one of two ways:
+  1. **A guard clause** at the top of a **self-standing component** that owns the
+     condition — `if (!hasAvatar) return null` (`RemoveButton`), `if (error ===
+     null) return null` (`AvatarError`). The condition becomes the component's
+     single responsibility; the parent just renders `<AvatarError />` with no
+     `{error && …}` around it.
+  2. **A selector container/view** whose whole job is the choice — e.g.
+     `UserAvatar` returns `<AvatarFallback/>` or `<AvatarImage/>` via a guard.
 
-Mnemonic: *HTML/events live where the element is rendered; the function that does
-work takes a value and lives in a container/hook/util.*
+  Guards that early-return (`null` or a standalone component) are the sanctioned
+  form. Do **not** put the branch in the parent's JSX.
 
-## 5. Context over prop-drilling
+Mnemonic: *state lives in a hook (container); markup/events live in the view;
+the value-in/value-out function lives in `.utils.ts`; the class string lives in
+`.styles.ts`.*
 
-If a value or callback would be threaded through more than ~2 component layers,
-put it in a **feature context** instead:
+## 5. One context per component-tree; over prop-drilling
+
+A value/callback threaded through more than ~2 layers goes in a **context** —
+either a feature context or a per-component-tree context.
 
 ```
-features/<domain>/context/
-  <domain>.context.ts     # createContext + a typed use<Domain>() hook
-  <Domain>Provider.tsx    # the provider that supplies the value
+AvatarSection.context.ts   # createContext + a typed useAvatarContext() reader
 ```
 
-Examples in this app: the current authenticated user (`auth`), the user
-directory + display-name resolver (`user`), the selected conversation
-(`conversations`). Presentational components read context through the feature's
-`use<Domain>()` hook — never receive these as deep props.
-
-- **Type the context value once.** Derive it from the hook —
-  `type XContextValue = ReturnType<typeof useX>` — never hand-write two identical
-  shapes (a context type *and* a hook-return type).
-- **Screen/form state is per-screen context too.** A form's `useXForm` hook is
-  provided via an `X.context.ts`; the form and its inputs read it, so their props
-  collapse to ~0. Examples: `useLoginForm` + `LoginFormContext`, `useProfileForm`,
-  and `useComposer` (one hook shared by the assistant + tutor panels).
+- **One context per tree, not per leaf.** The container provides a single context
+  at the tree root; every descendant reads it via the tree's `useXContext()`
+  hook. Leaves inside a context tree carry **~zero props** — they read what they
+  need. (A reusable cross-feature atom like `UserAvatar` is the exception: it
+  takes props.)
+- **The reader throws outside its provider:** `useXContext()` reads the context
+  and throws a clear error if it's `null`.
+- **Type the context value from its source of truth.** Derive it —
+  `type XContextValue = ReturnType<typeof useX>` (and merge derived shapes with
+  `& ReturnType<typeof useHook>` when composing) — never hand-write two shapes
+  that can drift.
+- **No prop pass-through.** If a component only forwards props to a child,
+  extract a child that reads context directly (e.g. `AvatarPreview` reads
+  `name`/`avatarUrl`/`onPreviewError` from context) instead of threading them.
+- **Screen/form state is per-screen context too** (`useLoginForm` +
+  `LoginFormContext`, `useProfileForm`, `useComposer`).
 
 ## 6. Hooks split by action; reducers for non-trivial state
 
-- One hook per action/responsibility: `useFetchMessages`, `useSendMessage`,
-  `useConversations`, `useUpdateProfile` — not one mega-hook.
-- Non-trivial state uses a **pure reducer** (`reducer.ts`) with no React imports,
+- One hook per action/responsibility (`useFetchMessages`, `useSendMessage`,
+  `useUpdateProfile`) — not one mega-hook.
+- Non-trivial state uses a **pure reducer** (`reducer.ts`, no React imports),
   unit-tested in isolation.
-- Hooks call the **`api/` actions**; components call hooks. Components and
-  presentational files never call `fetch` or the api layer directly.
-- **Duplicated behavior → one shared hook.** If two components hold identical
-  state/logic, extract a single hook (e.g. `useComposer` powers both the assistant
-  and tutor panels) instead of copy-pasting.
-- **Keep event/parse mapping pure and separate** from the hook wiring — e.g.
-  `handleAssistantEvent(dispatch, event)` maps SSE frames to reducer actions, so
-  the hook stays thin and the mapping is unit-testable on its own.
+- Hooks call the **`api/` actions**; components call hooks. Presentational files
+  never call `fetch` or the api layer.
+- **Duplicated behavior → one shared hook.** Extract to `shared/hooks/` when
+  reused across features (e.g. `useFileDropzone`, `useImageFallback`, both born
+  from the avatar work and reused by `knowledge`); use a per-feature hook when
+  scoped to one domain (`useComposer`).
+- **Keep event/parse mapping pure and separate** from hook wiring
+  (`handleAssistantEvent(dispatch, event)`), so the mapping is unit-testable.
 
 ## 7. The API layer (`src/api`)
 
 - `apiClient.ts` is the single low-level seam (base URL, `Authorization` header,
   error → `ApiRequestError`). Nothing else calls `fetch`.
-- Reusable transport helpers live beside it (e.g. `sse.ts` → `readSseStream`);
-  streaming actions use it instead of re-implementing the reader.
-- Each domain gets a `<domain>.api.ts` with small, named action functions that
-  use the core `request()`; these are what feature hooks import.
+- Reusable transport helpers live beside it (`sse.ts` → `readSseStream`).
+- Each domain gets a `<domain>.api.ts` of small named actions using `request()`;
+  feature hooks import these.
 - Keep transport concerns here only; never leak `Response`/`fetch` upward.
 
-## 8. Co-location & naming
+## 8. Co-location, file roles & naming
 
-- Constants, types, and tests live **next to** the component/hook they belong to
-  (`X.constants.ts`, `X.types.ts`, `X.test.tsx`); only truly shared ones go to a
-  feature-level or `shared/` folder.
-- **Prop types always live in `X.types.ts`** — never inline in the function
-  signature, even for tiny leaf components.
+- Files live **next to** the component they belong to; only truly shared ones go
+  to a feature-level or `shared/` folder.
+- **Split by role — this is strict:**
+  - `X.styles.ts` → class-name strings **and** class-builder functions
+    (`dropzoneClass(isDragging)`). Styles never live in `.constants.ts`.
+  - `X.constants.ts` → fixed **values**: labels, messages, config
+    (`REMOVE_BUTTON_LABEL`, `AVATAR_PREVIEW_ERROR_MESSAGE`).
+  - `X.utils.ts` → pure **logic** functions that take input and return a value
+    (`uploadButtonLabel(hasAvatar)`, `initialsFromName(name)`).
+  - `X.types.ts` → prop/context types — **never inline** in the signature, even
+    for tiny leaves.
+  - A function that only assembles a `className` is styles; a function that picks
+    *content* is utils.
 - Components/folders: `PascalCase`. Hooks: `useThing.ts`. Everything else:
-  match the existing lowercase-dotted style (`x.context.ts`, `x.constants.ts`).
-- **Imports:** use the `@/` alias for cross-folder imports (`@/features/...`,
-  `@/shared/...`); keep `./` only for same-folder siblings.
-- **Exports:** prefer named exports (`export function X`) over default exports.
-- Order folders to mirror the UI (top-to-bottom / outer-to-inner) where a natural
-  order exists.
+  lowercase-dotted (`x.context.ts`, `x.styles.ts`, `x.constants.ts`, `x.utils.ts`).
+- **Imports:** `@/` alias across folders; `./` only for same-folder siblings.
+- **Exports:** named exports (`export function X`), never default.
+- **Container naming:** the file with the hook wears the `Container` suffix; the
+  presentational file keeps the base name. Consumers render the `Container`.
+- Order folders to mirror the UI (outer-to-inner) where a natural order exists.
 
-## 9. Feature map (this app)
+## 9. Testing
+
+- Test the **container entry** (the public component); name the test after it
+  (`UserAvatarContainer.test.tsx`).
+- Test a presentational tree by rendering it inside a **mocked context provider**
+  with a crafted value (see `AvatarSection.test.tsx`) — no need to mock the api
+  or auth. Assert the conditional rendering (guards), labels, and callbacks.
+
+## 10. Migration status (legacy vs. current)
+
+This rulebook was revised to the patterns proven on the avatar branch. Some
+older code predates the revision and still follows the previous rules (flat
+sub-components, ternary-in-JSX / single-return, class strings in `.constants.ts`).
+That code is **migration debt**, not a counter-example:
+
+- **Current (follow these):** `features/user/components/UserAvatar/**`,
+  `features/profile/components/ProfilePanel/components/AvatarSection/**`.
+- **Legacy (migrate opportunistically):** other components — e.g.
+  `messages/**` (`MessageItem`, `MessageComposer`), `conversations/**`,
+  `ai/**`, `auth/**`, and `profile/components/ProfilePanel`'s own `NameForm`/
+  `EmailForm` (still flat files). When you next touch one of these, bring it up
+  to the rules above.
+
+## 11. Feature map (this app)
 
 | Feature | Owns |
 | --- | --- |
-| `app` | shell/layout, mode switching (`ModeSwitcher`), back navigation, `ErrorToast` |
+| `app` | shell/layout, mode switching, back navigation, `ErrorToast` |
 | `auth` | login/signup screens, session context, `authStorage` |
-| `user` | user directory + display-name context (resolves names for message labels) |
+| `user` | user directory + display-name context; `UserAvatar` display atom |
 | `conversations` | sidebar list, search, new-conversation flow, selection context |
 | `messages` | thread panel, list, bubbles, composer, optimistic send |
 | `ai` | assistant + tutor panels, SSE streaming hook + reducer |
 | `knowledge` | knowledge-base document upload/list/delete |
-| `profile` | profile page (edit name / email) |
+| `profile` | profile page (edit name / email, avatar) |

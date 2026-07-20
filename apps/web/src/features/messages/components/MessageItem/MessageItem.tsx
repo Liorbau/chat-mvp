@@ -1,4 +1,4 @@
-import { UserAvatar } from '@/features/user/components/UserAvatar/UserAvatar'
+import { UserAvatarContainer } from '@/features/user/components/UserAvatar/UserAvatarContainer'
 import {
   BASE_BUBBLE_STYLE,
   MESSAGE_ROW_INNER_STYLE,
@@ -26,7 +26,7 @@ export function MessageItem({
   return (
     <li className={rowStyle}>
       <div className={innerStyle}>
-        <UserAvatar name={senderDisplayName} avatarUrl={senderAvatarUrl} size="sm" />
+        <UserAvatarContainer name={senderDisplayName} avatarUrl={senderAvatarUrl} size="sm" />
         <div className={bubbleStyle}>
           <span className={SENDER_STYLE}>{senderDisplayName}</span>
           <span>{message.content}</span>

@@ -1,3 +1,5 @@
+export * from './avatar'
+
 export type User = {
   id: string
   name: string
@@ -18,10 +20,6 @@ export type UpdateProfileRequest = {
   firstName?: string
   lastName?: string
   email?: string
-}
-
-export type AvatarResponse = {
-  avatarUrl: string | null
 }
 
 export type LoginRequest = {
