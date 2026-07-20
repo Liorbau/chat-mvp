@@ -33,9 +33,14 @@ type User = {
   id: string;
   name: string;
   email: string;
+  previousEmails: string[]; // read-only history, newest last, capped at 10 (FIFO)
 };
 // Note: the password is hashed server-side (bcrypt) and is never part of `User`
 // or any response body.
+
+type RequestEmailChangeRequest = { newEmail: string };
+type RequestEmailChangeResponse = { status: "confirmation_sent" };
+type ConfirmEmailChangeRequest = { token: string };
 
 type SignupRequest = {
   email: string;
@@ -238,6 +243,51 @@ Clear the avatar from the profile and best-effort delete the stored object.
   "avatarUrl": null
 }
 ```
+
+### Change email
+
+Email changes go through a confirmed two-step flow, never a plain profile update.
+The request is made by the logged-in user; the confirmation link is
+token-authenticated and works even when opened logged-out or long afterward.
+
+#### `POST /me/email`
+
+Requires a bearer token. Validates the new email (format, not the current one,
+not taken), signs a short-lived JWT `{ userId, newEmail }` (separate
+`EMAIL_CHANGE_TOKEN_SECRET`; no server-side token storage), and emails a
+confirmation link to the new address.
+
+**Request body**
+
+```json
+{ "newEmail": "string" }
+```
+
+**Success response (200)**
+
+```json
+{ "status": "confirmation_sent" }
+```
+
+**Errors** — `400 VALIDATION_ERROR` (bad format, or same as current);
+`409 EMAIL_ALREADY_EXISTS` (already taken by another user).
+
+#### `POST /auth/email/confirm`
+
+Public — the signed token is the credential, so no session is required. Verifies
+the token, re-checks the address is still free, atomically sets the new email and
+pushes the old one onto `previousEmails` (FIFO, max 10). `old === new` is a no-op.
+
+**Request body**
+
+```json
+{ "token": "string" }
+```
+
+**Success response (200)** — the updated `User`.
+
+**Errors** — `401 UNAUTHORIZED` (invalid or expired token);
+`409 EMAIL_ALREADY_EXISTS` (address taken between request and confirm).
 
 ### Logout (client-side)
 
@@ -588,3 +638,11 @@ Removes a document and its chunks. Scoped to the owner (another user's id -> `40
   through one LangGraph agent behind the same SSE endpoint. Agent state is
   checkpointed in MongoDB (`thread_id = conversationId`) so conversations resume
   after a restart.
+
+### Change email (post-Week 8)
+
+- `User` gains `previousEmails: string[]` (read-only history, FIFO, max 10).
+- Added `POST /me/email` (`{ newEmail }` -> `{ status: "confirmation_sent" }`)
+  and public `POST /auth/email/confirm` (`{ token }` -> updated `User`).
+- Email can no longer be changed via `PATCH /me`: `UpdateProfileRequest` drops
+  `email` (name-only), and email now moves solely through the confirmed flow.

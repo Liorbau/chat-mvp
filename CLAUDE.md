@@ -736,4 +736,9 @@ Derived from the Week-8 backend refactor; applies to every endpoint.
   return per component, shared hooks for duplicated logic (`useComposer`), plus
   Tailwind v4, the `@/` import alias, and named exports. Full frontend rulebook
   in `docs/FRONTEND_CONVENTIONS.md`.
+- Post-Week-8 (change-email feature): confirmed two-step email change — new
+  `email` provider seam (`LogEmailProvider` default / `SesEmailProvider`),
+  separate `EMAIL_CHANGE_TOKEN_SECRET`, atomic FIFO-10 `previousEmails`, JWT
+  files grouped under `auth/jwt/`; `PATCH /me` no longer accepts `email`. See
+  `ARCHITECTURE.md` "Change Email (post-Week 8)" and `API_CONTRACT.md`.
 - Add future weeks as new sections without removing shared principles.
