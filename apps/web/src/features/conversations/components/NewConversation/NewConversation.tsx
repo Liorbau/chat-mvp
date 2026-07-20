@@ -1,4 +1,4 @@
-import { NEW_BUTTON_STYLE } from './NewConversation.constants'
+import { NEW_BUTTON_STYLE } from './NewConversation.styles'
 import { useNewConversationContext } from './NewConversation.context'
 import { NewConversationForm } from './NewConversationForm'
 

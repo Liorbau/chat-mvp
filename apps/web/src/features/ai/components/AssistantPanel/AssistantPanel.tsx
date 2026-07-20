@@ -5,7 +5,7 @@ import {
   HEADER_STYLE,
   HEADER_TITLE_STYLE,
   PANEL_STYLE,
-} from './AssistantPanel.constants'
+} from './AssistantPanel.styles'
 import { AssistantComposer } from './AssistantComposer'
 import { AssistantMessagesArea } from './AssistantMessagesArea'
 
@@ -19,7 +19,7 @@ export function AssistantPanel() {
         <strong className={HEADER_TITLE_STYLE}>Assistant</strong>
       </header>
 
-      {error !== null ? (
+      {error != null ? (
         <div className={ERROR_STYLE} role="alert">
           {error}
         </div>

@@ -3,7 +3,7 @@ import { AvatarFallback } from './components/AvatarFallback/AvatarFallback'
 import type { UserAvatarView } from './UserAvatar.types'
 
 export function UserAvatar({ name, size, imageUrl, onImageError }: UserAvatarView) {
-  if (imageUrl === null) {
+  if (imageUrl == null) {
     return <AvatarFallback name={name} size={size} />
   }
 

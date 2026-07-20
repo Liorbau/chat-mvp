@@ -16,7 +16,7 @@ export async function streamAssistant(
     signal,
   })
 
-  if (!response.ok || response.body === null) {
+  if (!response.ok || response.body == null) {
     await throwApiError(response)
     return
   }

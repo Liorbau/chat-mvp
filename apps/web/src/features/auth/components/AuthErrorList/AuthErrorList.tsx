@@ -1,4 +1,4 @@
-import { ERROR_LIST_STYLE } from '@/features/auth/constants/authForm.constants'
+import { ERROR_LIST_STYLE } from '@/features/auth/authForm.styles'
 import type { AuthErrorListProps } from './AuthErrorList.types'
 
 export function AuthErrorList({ errors }: AuthErrorListProps) {

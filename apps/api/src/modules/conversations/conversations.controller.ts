@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common'
 import type { Conversation, User } from '@chat/contract'
 import { CurrentUser } from '../../common/decorators/current.user.decorator'
-import { JwtAuthGuard } from '../auth/jwt.auth.guard'
+import { JwtAuthGuard } from '../auth/jwt/jwt.auth.guard'
 import { CreateConversationDto } from './dto/create.conversation.dto'
 import { ListConversationsOrchestrator } from './orchestrators/list-conversations.orchestrator'
 import { CreateConversationOrchestrator } from './orchestrators/create-conversation.orchestrator'

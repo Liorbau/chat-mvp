@@ -39,7 +39,7 @@ export class MessagesService {
 
     return {
       messages: page.messages,
-      nextCursor: page.nextCursor === null ? null : encodeCursor(page.nextCursor),
+      nextCursor: page.nextCursor == null ? null : encodeCursor(page.nextCursor),
     }
   }
 

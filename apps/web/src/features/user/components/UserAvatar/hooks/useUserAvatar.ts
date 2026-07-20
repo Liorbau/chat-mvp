@@ -17,7 +17,7 @@ export function useUserAvatar({
   return {
     name,
     size,
-    imageUrl: avatarUrl !== null && !fallback.failed ? avatarUrl : null,
+    imageUrl: avatarUrl != null && !fallback.failed ? avatarUrl : null,
     onImageError,
   }
 }

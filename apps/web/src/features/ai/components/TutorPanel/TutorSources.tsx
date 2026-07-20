@@ -1,11 +1,11 @@
+import { SOURCE_SNIPPET_MAX } from './TutorPanel.constants'
 import {
   SOURCE_CARD_STYLE,
-  SOURCE_SNIPPET_MAX,
   SOURCE_SUMMARY_STYLE,
   SOURCE_TEXT_STYLE,
   SOURCES_LABEL_STYLE,
   SOURCES_STYLE,
-} from './TutorPanel.constants'
+} from './TutorPanel.styles'
 import type { TutorSourcesProps } from './TutorPanel.types'
 
 function snippet(text: string): string {

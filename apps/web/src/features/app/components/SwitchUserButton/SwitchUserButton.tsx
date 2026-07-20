@@ -1,4 +1,4 @@
-import { STYLE } from './SwitchUserButton.constants'
+import { STYLE } from './SwitchUserButton.styles'
 import type { SwitchUserButtonProps } from './SwitchUserButton.types'
 
 export function SwitchUserButton({ onClick }: SwitchUserButtonProps) {

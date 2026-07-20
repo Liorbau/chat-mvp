@@ -1,5 +1,5 @@
 import { useComposerContext } from '@/features/ai/context/composer.context'
-import { EMPTY_STYLE, MESSAGES_STYLE } from './AssistantPanel.constants'
+import { EMPTY_STYLE, MESSAGES_STYLE } from './AssistantPanel.styles'
 import { AssistantMessage } from './AssistantMessage'
 import { AssistantStreamingBubble } from './AssistantStreamingBubble'
 
@@ -9,7 +9,7 @@ export function AssistantMessagesArea() {
 
   return (
     <div className={MESSAGES_STYLE}>
-      {messages.length === 0 && streamingText === null && !isStreaming ? (
+      {messages.length === 0 && streamingText == null && !isStreaming ? (
         <p className={EMPTY_STYLE}>Ask me anything about your chats.</p>
       ) : null}
 

@@ -1,4 +1,4 @@
-import { ERROR_LIST_STYLE } from './ProfilePanel.constants'
+import { ERROR_LIST_STYLE } from './ProfilePanel.styles'
 import type { ErrorListProps } from './ProfilePanel.types'
 
 export function ErrorList({ messages }: ErrorListProps) {

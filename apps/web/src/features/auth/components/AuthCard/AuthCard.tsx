@@ -3,7 +3,7 @@ import {
   SCREEN_STYLE,
   SUBTITLE_STYLE,
   TITLE_STYLE,
-} from '@/features/auth/constants/authForm.constants'
+} from '@/features/auth/authForm.styles'
 import type { AuthCardProps } from './AuthCard.types'
 
 export function AuthCard({ title, subtitle, children }: AuthCardProps) {

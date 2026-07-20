@@ -6,7 +6,7 @@ import {
   PANEL_HEADING_STYLE,
   SIDEBAR_LIST_GAP_STYLE,
   SIDEBAR_STYLE,
-} from './ChatLayout.constants'
+} from './ChatLayout.styles'
 import type { ConversationsSidebarProps } from './ChatLayout.types'
 
 export function ConversationsSidebar({

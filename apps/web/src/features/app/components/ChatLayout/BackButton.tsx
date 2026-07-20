@@ -1,4 +1,4 @@
-import { BACK_BUTTON_STYLE } from './ChatLayout.constants'
+import { BACK_BUTTON_STYLE } from './ChatLayout.styles'
 import type { BackButtonProps } from './ChatLayout.types'
 
 // Thick blue left arrow that returns from the profile page to the prior mode.

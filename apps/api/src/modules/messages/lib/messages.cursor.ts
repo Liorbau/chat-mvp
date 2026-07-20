@@ -1,4 +1,4 @@
-import { AppError } from '../../../errors/AppError'
+import { HttpAppError } from '../../../errors/HttpAppError'
 import type { MessagePageCursor } from '../messages.dbService'
 
 // The cursor id is a message's uuid `_id`.
@@ -28,7 +28,7 @@ export function decodeCursor(cursor: string | undefined): MessagePageCursor | un
 
     return { createdAt, id }
   } catch {
-    throw AppError.badRequest('VALIDATION_ERROR', 'Invalid request', [
+    throw HttpAppError.badRequest('Invalid request', [
       { path: ['cursor'], message: 'cursor is invalid' },
     ])
   }

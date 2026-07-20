@@ -13,7 +13,7 @@ export function useComposer(
   const { messages, streamingText, toolLabel, isStreaming, isReady, error, send } =
     useAssistantChat(currentUserId, conversationType)
   const [input, setInput] = useState('')
-  const endRef = useScrollToBottom<HTMLDivElement>(messages.length > 0 || streamingText !== null, [
+  const endRef = useScrollToBottom<HTMLDivElement>(messages.length > 0 || streamingText != null, [
     messages,
     streamingText,
   ])

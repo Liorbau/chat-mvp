@@ -1,9 +1,9 @@
+import { SKELETON_MESSAGE_ROWS } from './MessageThreadSkeleton.constants'
 import {
   MESSAGE_BUBBLE_SKELETON_STYLE,
   MESSAGE_ROW_STYLE,
-  SKELETON_MESSAGE_ROWS,
   THREAD_SKELETON_STYLE,
-} from './MessageThreadSkeleton.constants'
+} from './MessageThreadSkeleton.styles'
 
 export function MessageThreadSkeleton() {
   return (

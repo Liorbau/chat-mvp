@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { HIDDEN_INPUT_STYLE, UPLOAD_LABEL_STYLE } from './KnowledgeDocuments.constants'
+import { HIDDEN_INPUT_STYLE, UPLOAD_LABEL_STYLE } from './KnowledgeDocuments.styles'
 import type { KnowledgeUploadProps } from './KnowledgeDocuments.types'
 
 export function KnowledgeUpload({ busy, onFile }: KnowledgeUploadProps) {
@@ -19,7 +19,7 @@ export function KnowledgeUpload({ busy, onFile }: KnowledgeUploadProps) {
           if (file !== undefined) {
             onFile(file)
           }
-          if (inputRef.current !== null) {
+          if (inputRef.current != null) {
             inputRef.current.value = ''
           }
         }}

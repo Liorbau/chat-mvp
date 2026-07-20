@@ -17,7 +17,7 @@ export function MessagePanelContainer({
 
   async function handleSendMessage(content: string): Promise<void> {
     await sendMessage(content)
-    if (selectedConversationId !== null) {
+    if (selectedConversationId != null) {
       onConversationActivity(selectedConversationId, content)
     }
   }

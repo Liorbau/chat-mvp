@@ -5,7 +5,7 @@ import {
   SEND_BUTTON_DISABLED_STYLE,
   SEND_BUTTON_STYLE,
   TEXTAREA_STYLE,
-} from './MessageComposer.constants'
+} from './MessageComposer.styles'
 import type { MessageComposerProps } from './MessageComposer.types'
 
 export function MessageComposer({ onSend, disabled = false }: MessageComposerProps) {

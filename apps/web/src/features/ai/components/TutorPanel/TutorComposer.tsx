@@ -3,7 +3,7 @@ import {
   SEND_DISABLED_STYLE,
   SEND_STYLE,
   TEXTAREA_STYLE,
-} from './TutorPanel.constants'
+} from './TutorPanel.styles'
 import type { TutorComposerProps } from './TutorPanel.types'
 
 export function TutorComposer({

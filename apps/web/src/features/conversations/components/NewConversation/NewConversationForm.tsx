@@ -5,7 +5,7 @@ import {
   FORM_STYLE,
   PRIMARY_BUTTON_STYLE,
   SELECT_STYLE,
-} from './NewConversation.constants'
+} from './NewConversation.styles'
 import { useNewConversationContext } from './NewConversation.context'
 
 export function NewConversationForm() {
@@ -28,7 +28,7 @@ export function NewConversationForm() {
         ))}
       </select>
 
-      {errorMessage !== null ? (
+      {errorMessage != null ? (
         <p role="alert" className={ERROR_TEXT_STYLE}>
           {errorMessage}
         </p>

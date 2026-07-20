@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import type { Conversation, ConversationType } from '@chat/contract'
 import type { ClientSession } from 'mongoose'
 import { isDuplicateKeyError } from '../../common/mongo/is.duplicate.key.error'
-import { AppError } from '../../errors/AppError'
+import { HttpAppError } from '../../errors/HttpAppError'
 import { UsersService } from '../users/users.service'
 import { ConversationsDbService } from './conversations.dbService'
 
@@ -73,7 +73,7 @@ export class ConversationsService {
     const existingIds = await this.usersService.findExistingIds(participantIds)
     const missingParticipantIds = participantIds.filter((id) => !existingIds.has(id))
     if (missingParticipantIds.length > 0) {
-      throw AppError.badRequest('VALIDATION_ERROR', 'One or more participants do not exist', {
+      throw HttpAppError.badRequest('One or more participants do not exist', {
         participantIds: missingParticipantIds,
       })
     }
@@ -81,7 +81,7 @@ export class ConversationsService {
     if (participantIds.length === 2) {
       const existing = await this.conversationsDbService.findDirectByParticipants(participantIds)
       if (existing !== undefined) {
-        throw AppError.conflict(
+        throw HttpAppError.conflict(
           'CONVERSATION_ALREADY_EXISTS',
           'A direct conversation for these participants already exists',
         )
@@ -99,10 +99,10 @@ export class ConversationsService {
   async assertParticipant(conversationId: string, requesterId: string): Promise<Conversation> {
     const conversation = await this.conversationsDbService.findById(conversationId)
     if (conversation === undefined) {
-      throw AppError.notFound('Conversation not found')
+      throw HttpAppError.notFound('Conversation not found')
     }
     if (!conversation.participantIds.includes(requesterId)) {
-      throw AppError.forbidden('You are not a participant in this conversation')
+      throw HttpAppError.forbidden('You are not a participant in this conversation')
     }
 
     return conversation
@@ -121,7 +121,7 @@ export class ConversationsService {
       session,
     )
     if (updated === undefined) {
-      throw AppError.notFound('Conversation not found')
+      throw HttpAppError.notFound('Conversation not found')
     }
 
     return updated

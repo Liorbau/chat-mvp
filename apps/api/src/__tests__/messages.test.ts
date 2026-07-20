@@ -173,7 +173,7 @@ describe('Messages API', () => {
     let cursor: string | null = null
     let pages = 0
     do {
-      const query = cursor === null ? '?limit=50' : `?limit=50&cursor=${encodeURIComponent(cursor)}`
+      const query = cursor == null ? '?limit=50' : `?limit=50&cursor=${encodeURIComponent(cursor)}`
       const response = await request(app.getHttpServer())
         .get(`/conversations/${SEED_CONVERSATION_IDS.onboarding}/messages${query}`)
         .set('Authorization', `Bearer ${token}`)
@@ -183,7 +183,7 @@ describe('Messages API', () => {
       collected.push(...body.messages.map((message) => message.content))
       cursor = body.nextCursor
       pages += 1
-    } while (cursor !== null && pages < 10)
+    } while (cursor != null && pages < 10)
 
     expect(cursor).toBeNull()
     expect(collected).toHaveLength(total)
@@ -206,7 +206,7 @@ describe('Messages API', () => {
     let cursor: string | null = null
     let pages = 0
     do {
-      const query = cursor === null ? '?limit=1' : `?limit=1&cursor=${encodeURIComponent(cursor)}`
+      const query = cursor == null ? '?limit=1' : `?limit=1&cursor=${encodeURIComponent(cursor)}`
       const response = await request(app.getHttpServer())
         .get(`/conversations/${SEED_CONVERSATION_IDS.onboarding}/messages${query}`)
         .set('Authorization', `Bearer ${token}`)
@@ -215,7 +215,7 @@ describe('Messages API', () => {
       collected.push(...body.messages.map((message) => message.content))
       cursor = body.nextCursor
       pages += 1
-    } while (cursor !== null && pages < 10)
+    } while (cursor != null && pages < 10)
 
     // All same-timestamp messages are visited exactly once, no dupes or skips.
     expect(cursor).toBeNull()

@@ -1,4 +1,4 @@
-import { TOAST_STYLE } from './ErrorToast.constants'
+import { TOAST_STYLE } from './ErrorToast.styles'
 import type { ErrorToastProps } from './ErrorToast.types'
 
 export function ErrorToast({ message }: ErrorToastProps) {

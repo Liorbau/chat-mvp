@@ -5,7 +5,7 @@ import {
   OTHER_BUBBLE_COLORS,
   ROW_STYLE,
   SENDER_LABEL_STYLE,
-} from './TutorPanel.constants'
+} from './TutorPanel.styles'
 import { TutorSources } from './TutorSources'
 import type { TutorMessageProps } from './TutorPanel.types'
 

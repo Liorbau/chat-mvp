@@ -35,12 +35,12 @@ export class DocumentDbService {
 
   async findByHash(userId: string, contentHash: string): Promise<KnowledgeDocument | undefined> {
     const doc = await this.documentModel.findOne({ userId, contentHash }).exec()
-    return doc === null ? undefined : toKnowledgeDocument(doc)
+    return doc == null ? undefined : toKnowledgeDocument(doc)
   }
 
   async findByIdAndUser(id: string, userId: string): Promise<KnowledgeDocument | undefined> {
     const doc = await this.documentModel.findOne({ _id: id, userId }).exec()
-    return doc === null ? undefined : toKnowledgeDocument(doc)
+    return doc == null ? undefined : toKnowledgeDocument(doc)
   }
 
   async listByUser(userId: string): Promise<KnowledgeDocument[]> {
@@ -69,7 +69,7 @@ export class DocumentDbService {
     const doc = await this.documentModel
       .findOneAndUpdate({ _id: id }, { $set: { status, chunkCount } }, { returnDocument: 'after' })
       .exec()
-    if (doc === null) {
+    if (doc == null) {
       throw new Error(`Document ${id} vanished while updating status`)
     }
     return toKnowledgeDocument(doc)

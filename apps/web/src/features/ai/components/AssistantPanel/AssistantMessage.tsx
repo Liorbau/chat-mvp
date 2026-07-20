@@ -5,7 +5,7 @@ import {
   OTHER_BUBBLE_COLORS,
   ROW_STYLE,
   SENDER_LABEL_STYLE,
-} from './AssistantPanel.constants'
+} from './AssistantPanel.styles'
 import type { AssistantMessageProps } from './AssistantPanel.types'
 
 export function AssistantMessage({ message, currentUserId }: AssistantMessageProps) {

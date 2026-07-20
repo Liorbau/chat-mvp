@@ -5,7 +5,7 @@ export const NewConversationContext = createContext<NewConversationValue | null>
 
 export function useNewConversationContext(): NewConversationValue {
   const context = useContext(NewConversationContext)
-  if (context === null) {
+  if (context == null) {
     throw new Error('useNewConversationContext must be used within a NewConversationContainer')
   }
 
