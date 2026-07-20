@@ -1,8 +1,6 @@
 import type { ApiError } from '@chat/contract'
 import { clearStoredAuth, getToken } from '@/shared/auth/authStorage'
 
-// The single low-level network seam: base URL, auth header, error mapping.
-// Domain actions live in the sibling `*.api.ts` files and call `request`.
 export const API_BASE_URL: string =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? 'http://localhost:4000'
 
@@ -23,15 +21,14 @@ export class ApiRequestError extends Error {
 function isApiError(value: unknown): value is ApiError {
   return (
     typeof value === 'object' &&
-    value !== null &&
+    value != null &&
     'error' in value &&
     typeof (value as ApiError).error === 'object'
   )
 }
 
-// Maps a non-OK response to an ApiRequestError (clearing auth on 401).
-export async function throwApiError(response: Response): Promise<never> {
-  if (response.status === 401) {
+export async function throwApiError(response: Response, clearAuthOn401 = true): Promise<never> {
+  if (response.status === 401 && clearAuthOn401) {
     clearStoredAuth()
   }
   const body: unknown = await response.json().catch(() => null)
@@ -57,7 +54,7 @@ export function buildHeaders(hasBody: boolean, init?: HeadersInit): Headers {
     headers.set('Content-Type', 'application/json')
   }
   const token = getToken()
-  if (token !== null) {
+  if (token != null) {
     headers.set('Authorization', `Bearer ${token}`)
   }
   return headers

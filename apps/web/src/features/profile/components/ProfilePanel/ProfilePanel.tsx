@@ -1,7 +1,7 @@
 import { AvatarSectionContainer } from '@/features/profile/components/ProfilePanel/components/AvatarSection/AvatarSectionContainer'
-import { CARD_STYLE, SCREEN_STYLE, SUBTITLE_STYLE, TITLE_STYLE } from './ProfilePanel.constants'
+import { EmailSectionContainer } from '@/features/profile/components/ProfilePanel/components/EmailSection/EmailSectionContainer'
+import { CARD_STYLE, SCREEN_STYLE, SUBTITLE_STYLE, TITLE_STYLE } from './ProfilePanel.styles'
 import { useProfileContext } from './ProfilePanel.context'
-import { EmailForm } from './EmailForm'
 import { NameForm } from './NameForm'
 
 export function ProfilePanel() {
@@ -14,7 +14,7 @@ export function ProfilePanel() {
         <p className={SUBTITLE_STYLE}>Signed in as {userName}.</p>
         <AvatarSectionContainer />
         <NameForm />
-        <EmailForm />
+        <EmailSectionContainer />
       </section>
     </main>
   )

@@ -11,7 +11,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import type { AvatarResponse, User } from '@chat/contract'
+import type { AvatarResponse, RequestEmailChangeResponse, User } from '@chat/contract'
 import { memoryStorage } from 'multer'
 import { CurrentUser } from '../../common/decorators/current.user.decorator'
 import { AvatarFilePipe } from '../users/pipes/avatar.file.pipe'
@@ -20,7 +20,9 @@ import { UploadAvatarOrchestrator } from '../users/orchestrators/upload-avatar.o
 import { RemoveAvatarOrchestrator } from '../users/orchestrators/remove-avatar.orchestrator'
 import { UpdateProfileOrchestrator } from '../users/orchestrators/update-profile.orchestrator'
 import { UpdateProfileDto } from '../users/dto/update.profile.dto'
-import { JwtAuthGuard } from './jwt.auth.guard'
+import { RequestEmailChangeOrchestrator } from './orchestrators/request-email-change.orchestrator'
+import { RequestEmailChangeDto } from './dto/request-email-change.dto'
+import { JwtAuthGuard } from './jwt/jwt.auth.guard'
 
 @Controller()
 @UseGuards(JwtAuthGuard)
@@ -29,6 +31,7 @@ export class MeController {
     private readonly updateProfileOrchestrator: UpdateProfileOrchestrator,
     private readonly uploadAvatarOrchestrator: UploadAvatarOrchestrator,
     private readonly removeAvatarOrchestrator: RemoveAvatarOrchestrator,
+    private readonly requestEmailChangeOrchestrator: RequestEmailChangeOrchestrator,
   ) {}
 
   @Get('me')
@@ -39,6 +42,15 @@ export class MeController {
   @Patch('me')
   async updateMe(@CurrentUser() user: User, @Body() dto: UpdateProfileDto): Promise<User> {
     return this.updateProfileOrchestrator.execute(user.id, dto)
+  }
+
+  @Post('me/email')
+  @HttpCode(200)
+  async requestEmailChange(
+    @CurrentUser() user: User,
+    @Body() dto: RequestEmailChangeDto,
+  ): Promise<RequestEmailChangeResponse> {
+    return this.requestEmailChangeOrchestrator.execute(user, dto)
   }
 
   @Post('me/avatar')

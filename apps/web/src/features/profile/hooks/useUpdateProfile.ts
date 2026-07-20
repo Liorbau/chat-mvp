@@ -13,12 +13,7 @@ export function useUpdateProfile(): (payload: UpdateProfileRequest) => Promise<S
       await updateProfile(payload)
       return { ok: true }
     } catch (error: unknown) {
-      return {
-        ok: false,
-        errors: toApiErrorMessages(error, {
-          409: 'An account with this email already exists.',
-        }),
-      }
+      return { ok: false, errors: toApiErrorMessages(error) }
     }
   }
 }

@@ -1,5 +1,6 @@
 import { plainToInstance } from 'class-transformer'
 import {
+  IsEmail,
   IsIn,
   IsInt,
   IsOptional,
@@ -12,6 +13,7 @@ import {
 } from 'class-validator'
 
 export type LlmProviderName = 'openai' | 'anthropic'
+export type EmailProviderName = 'log' | 'ses'
 
 export class EnvironmentVariables {
   @IsString()
@@ -94,6 +96,33 @@ export class EnvironmentVariables {
   @IsString()
   @Matches(/^https?:\/\//, { message: 'STORAGE_S3_ENDPOINT must be an http(s) URL' })
   STORAGE_S3_ENDPOINT?: string
+
+  // Separate secret so a confirm token can never be replayed as a session JWT.
+  @IsString()
+  @MinLength(32)
+  EMAIL_CHANGE_TOKEN_SECRET!: string
+
+  @IsString()
+  @MinLength(1)
+  EMAIL_CHANGE_TOKEN_TTL: string = '30m'
+
+  // Public web-app URL used to build the confirmation link in emails.
+  @IsString()
+  @Matches(/^https?:\/\//, { message: 'WEB_APP_URL must be an http(s) URL' })
+  WEB_APP_URL: string = 'http://localhost:5173'
+
+  // 'log' prints the confirmation link to the server console (dev); 'ses' sends via AWS SES.
+  @IsIn(['log', 'ses'])
+  EMAIL_PROVIDER: EmailProviderName = 'log'
+
+  @ValidateIf((env: EnvironmentVariables) => env.EMAIL_PROVIDER === 'ses')
+  @IsString()
+  @MinLength(1)
+  EMAIL_SES_REGION?: string
+
+  @ValidateIf((env: EnvironmentVariables) => env.EMAIL_PROVIDER === 'ses')
+  @IsEmail()
+  EMAIL_FROM?: string
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {

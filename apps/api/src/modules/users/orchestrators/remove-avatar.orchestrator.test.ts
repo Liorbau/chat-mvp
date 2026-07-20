@@ -15,6 +15,7 @@ function clearedUser(): User {
     lastName: 'Rivera',
     email: 'alex@example.com',
     avatarUrl: null,
+    previousEmails: [],
   }
 }
 

@@ -33,6 +33,7 @@ describe('Auth API', () => {
         lastName: 'User',
         email: 'new@example.com',
         avatarUrl: null,
+        previousEmails: [],
       },
     })
   })
@@ -98,6 +99,7 @@ describe('Auth API', () => {
       lastName: 'Myself',
       email: 'me@example.com',
       avatarUrl: null,
+      previousEmails: [],
     })
   })
 
@@ -119,6 +121,7 @@ describe('Auth API', () => {
       lastName: 'Rivera',
       email: 'alex@example.com',
       avatarUrl: null,
+      previousEmails: [],
     })
     expect(samMe.body).toEqual({
       id: SEED_USER_IDS.sam,
@@ -127,6 +130,7 @@ describe('Auth API', () => {
       lastName: 'Chen',
       email: 'sam@example.com',
       avatarUrl: null,
+      previousEmails: [],
     })
   })
 
@@ -159,6 +163,7 @@ describe('Auth API', () => {
         lastName: expect.any(String),
         email: 'alex@example.com',
         avatarUrl: null,
+        previousEmails: [],
       },
     })
   })
@@ -242,25 +247,7 @@ describe('Auth API', () => {
       lastName: 'Rivera',
       email: 'alex@example.com',
       avatarUrl: null,
-    })
-  })
-
-  it('updates only the email, leaving names untouched (PATCH /me)', async () => {
-    const token = await login(app, 'alex@example.com')
-
-    const response = await request(app.getHttpServer())
-      .patch('/me')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ email: 'alex.new@example.com' })
-
-    expect(response.status).toBe(200)
-    expect(response.body).toEqual({
-      id: SEED_USER_IDS.alex,
-      name: 'Alex Rivera',
-      firstName: 'Alex',
-      lastName: 'Rivera',
-      email: 'alex.new@example.com',
-      avatarUrl: null,
+      previousEmails: [],
     })
   })
 
@@ -278,18 +265,6 @@ describe('Auth API', () => {
       lastName: 'Chen',
       name: 'Samuel Chen',
     })
-  })
-
-  it('rejects changing to an email already taken by another user with 409 (PATCH /me)', async () => {
-    const token = await login(app, 'alex@example.com')
-
-    const response = await request(app.getHttpServer())
-      .patch('/me')
-      .set('Authorization', `Bearer ${token}`)
-      .send({ email: 'sam@example.com' })
-
-    expect(response.status).toBe(409)
-    expect(response.body.error.code).toBe('EMAIL_ALREADY_EXISTS')
   })
 
   it('rejects a PATCH /me with no updatable fields (400)', async () => {

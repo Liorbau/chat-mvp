@@ -14,11 +14,13 @@ export type StoredUser = {
   email: string
   passwordHash: string
   avatar: StoredAvatar | null
+  previousEmails: string[]
 }
 
-export type StoredUserDraft = Omit<StoredUser, 'id'>
+// New users start with no email history; the DB default supplies the empty list.
+export type StoredUserDraft = Omit<StoredUser, 'id' | 'previousEmails'>
 
-export type UserUpdate = Partial<Pick<StoredUser, 'firstName' | 'lastName' | 'name' | 'email'>>
+export type UserUpdate = Partial<Pick<StoredUser, 'firstName' | 'lastName' | 'name'>>
 
 export function toStoredUser(doc: UserDocument): StoredUser {
   return {
@@ -29,9 +31,10 @@ export function toStoredUser(doc: UserDocument): StoredUser {
     email: doc.email,
     passwordHash: doc.passwordHash,
     avatar:
-      doc.avatar === null
+      doc.avatar == null
         ? null
         : { srcUrl: doc.avatar.srcUrl, storageKey: doc.avatar.storageKey ?? null },
+    previousEmails: doc.previousEmails ?? [],
   }
 }
 
@@ -43,6 +46,7 @@ export function toPublicUser(user: StoredUser): User {
     lastName: user.lastName,
     email: user.email,
     avatarUrl: user.avatar?.srcUrl ?? null,
+    previousEmails: user.previousEmails,
   }
 }
 
@@ -50,7 +54,6 @@ export function deriveName(firstName: string, lastName: string): string {
   return `${firstName} ${lastName}`
 }
 
-// Pure request → DAO update (re-derives name); email uniqueness is guarded in the service.
 export function buildUserUpdate(current: User, changes: UpdateProfileRequest): UserUpdate {
   const update: UserUpdate = {}
 
@@ -60,10 +63,6 @@ export function buildUserUpdate(current: User, changes: UpdateProfileRequest): U
     update.firstName = firstName
     update.lastName = lastName
     update.name = deriveName(firstName, lastName)
-  }
-
-  if (changes.email !== undefined && changes.email !== current.email) {
-    update.email = changes.email
   }
 
   return update

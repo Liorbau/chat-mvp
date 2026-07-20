@@ -15,7 +15,7 @@ export class RemoveAvatarOrchestrator {
   async execute(userId: string): Promise<AvatarResponse> {
     const removedKey = await this.usersService.getAvatarKey(userId)
     const updated = await this.usersService.clearAvatar(userId)
-    if (removedKey !== null) {
+    if (removedKey != null) {
       // Best-effort: a failed delete self-heals when the next upload overwrites it.
       try {
         await this.storage.delete(removedKey)

@@ -27,17 +27,17 @@ export class UsersDbService {
 
   async findById(userId: string): Promise<User | undefined> {
     const doc = await this.userModel.findById(userId).exec()
-    return doc === null ? undefined : toPublicUser(toStoredUser(doc))
+    return doc == null ? undefined : toPublicUser(toStoredUser(doc))
   }
 
   async findStoredById(userId: string): Promise<StoredUser | undefined> {
     const doc = await this.userModel.findById(userId).exec()
-    return doc === null ? undefined : toStoredUser(doc)
+    return doc == null ? undefined : toStoredUser(doc)
   }
 
   async findByEmail(email: string): Promise<StoredUser | undefined> {
     const doc = await this.userModel.findOne({ email: email.trim().toLowerCase() }).exec()
-    return doc === null ? undefined : toStoredUser(doc)
+    return doc == null ? undefined : toStoredUser(doc)
   }
 
   async findExistingIds(userIds: string[]): Promise<Set<string>> {
@@ -70,30 +70,58 @@ export class UsersDbService {
     const doc = await this.userModel
       .findByIdAndUpdate(userId, { $set: changes }, { returnDocument: 'after' })
       .exec()
-    return doc === null ? undefined : toPublicUser(toStoredUser(doc))
+    return doc == null ? undefined : toPublicUser(toStoredUser(doc))
   }
 
   async setAvatar(userId: string, avatar: StoredAvatar | null): Promise<User | undefined> {
     const doc = await this.userModel
       .findByIdAndUpdate(userId, { $set: { avatar } }, { returnDocument: 'after' })
       .exec()
-    return doc === null ? undefined : toPublicUser(toStoredUser(doc))
+    return doc == null ? undefined : toPublicUser(toStoredUser(doc))
   }
 
-  async reset(users: StoredUser[]): Promise<void> {
-    await this.userModel.deleteMany({})
-    if (users.length > 0) {
-      await this.userModel.insertMany(
-        users.map((user) => ({
-          _id: user.id,
-          name: user.name,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          passwordHash: user.passwordHash,
-          avatar: user.avatar,
-        })),
+  async setEmailWithHistory(userId: string, newEmail: string): Promise<User | undefined> {
+    const email = newEmail.trim().toLowerCase()
+    const doc = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        [
+          {
+            $set: {
+              previousEmails: {
+                $cond: {
+                  if: { $eq: ['$email', email] },
+                  then: '$previousEmails',
+                  else: { $slice: [{ $concatArrays: ['$previousEmails', ['$email']] }, -10] },
+                },
+              },
+            },
+          },
+          { $set: { email } },
+        ],
+        { returnDocument: 'after', updatePipeline: true },
       )
+      .exec()
+    return doc == null ? undefined : toPublicUser(toStoredUser(doc))
+  }
+
+  async reset(users: StoredUser[]): Promise<number> {
+    await this.userModel.deleteMany({})
+    if (users.length === 0) {
+      return 0
     }
+    const inserted = await this.userModel.insertMany(
+      users.map((user) => ({
+        _id: user.id,
+        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        passwordHash: user.passwordHash,
+        avatar: user.avatar,
+        previousEmails: user.previousEmails,
+      })),
+    )
+    return inserted.length
   }
 }

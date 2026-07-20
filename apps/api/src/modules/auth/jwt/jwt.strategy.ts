@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
 import type { User } from '@chat/contract'
 import { ExtractJwt, Strategy } from 'passport-jwt'
-import { UsersService } from '../users/users.service'
+import { UsersService } from '../../users/users.service'
 
 type JwtPayload = {
   sub: string

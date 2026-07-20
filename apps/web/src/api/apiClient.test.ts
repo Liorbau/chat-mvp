@@ -10,6 +10,7 @@ const user: User = {
   lastName: 'Rivera',
   email: 'alex@example.com',
   avatarUrl: null,
+  previousEmails: [],
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
