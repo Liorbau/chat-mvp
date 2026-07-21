@@ -5,7 +5,7 @@ export type ConfirmResetContextValue = ReturnType<typeof useConfirmReset> & {
   onSuccess: () => void
 }
 
-export type ConfirmStepContainerProps = {
+export type ConfirmResetStepContainerProps = {
   email: string
   onBack: () => void
   onSuccess: () => void

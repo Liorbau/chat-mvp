@@ -1,5 +1,5 @@
 import { AuthSwitchButton } from '@/features/auth/components/AuthSwitchButton/AuthSwitchButton'
-import { useRequestResetContext } from '../../RequestStep.context'
+import { useRequestResetContext } from '../../RequestCodeStep.context'
 import { ALREADY_HAVE_CODE_LABEL } from './AlreadyHaveCodeButton.constants'
 
 export function AlreadyHaveCodeButton() {

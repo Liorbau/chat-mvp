@@ -5,7 +5,7 @@ export type RequestResetContextValue = ReturnType<typeof useRequestReset> & {
   onSwitchToLogin: () => void
 }
 
-export type RequestStepContainerProps = {
+export type RequestCodeStepContainerProps = {
   onSent: (email: string) => void
   onAlreadyHaveCode: () => void
   onSwitchToLogin: () => void

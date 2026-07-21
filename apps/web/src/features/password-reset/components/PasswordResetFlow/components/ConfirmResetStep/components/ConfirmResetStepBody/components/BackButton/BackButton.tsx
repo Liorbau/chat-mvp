@@ -1,5 +1,5 @@
 import { AuthSwitchButton } from '@/features/auth/components/AuthSwitchButton/AuthSwitchButton'
-import { useConfirmResetContext } from '../../../../ConfirmStep.context'
+import { useConfirmResetContext } from '../../../../ConfirmResetStep.context'
 import { BACK_LABEL } from './BackButton.constants'
 
 export function BackButton() {

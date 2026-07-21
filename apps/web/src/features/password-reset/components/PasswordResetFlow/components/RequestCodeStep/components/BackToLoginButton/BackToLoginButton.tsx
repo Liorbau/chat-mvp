@@ -1,5 +1,5 @@
 import { AuthSwitchButton } from '@/features/auth/components/AuthSwitchButton/AuthSwitchButton'
-import { useRequestResetContext } from '../../RequestStep.context'
+import { useRequestResetContext } from '../../RequestCodeStep.context'
 import { BACK_TO_LOGIN_LABEL } from './BackToLoginButton.constants'
 
 export function BackToLoginButton() {

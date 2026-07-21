@@ -1,7 +1,7 @@
 import { AuthErrorList } from '@/features/auth/components/AuthErrorList/AuthErrorList'
 import { AuthField } from '@/features/auth/components/AuthField/AuthField'
 import { AuthSubmitButton } from '@/features/auth/components/AuthSubmitButton/AuthSubmitButton'
-import { useRequestResetContext } from '../../RequestStep.context'
+import { useRequestResetContext } from '../../RequestCodeStep.context'
 import { EMAIL_LABEL, SUBMIT_BUSY_LABEL, SUBMIT_IDLE_LABEL } from './RequestForm.constants'
 
 export function RequestForm() {

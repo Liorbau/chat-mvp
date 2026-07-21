@@ -1,5 +1,5 @@
-import { ConfirmStepContainer } from './components/ConfirmStep/ConfirmStepContainer'
-import { RequestStepContainer } from './components/RequestStep/RequestStepContainer'
+import { ConfirmResetStepContainer } from './components/ConfirmResetStep/ConfirmResetStepContainer'
+import { RequestCodeStepContainer } from './components/RequestCodeStep/RequestCodeStepContainer'
 import type { PasswordResetFlowView } from './PasswordResetFlow.types'
 
 export function PasswordResetFlow({
@@ -12,7 +12,7 @@ export function PasswordResetFlow({
 }: PasswordResetFlowView) {
   if (step === 'request') {
     return (
-      <RequestStepContainer
+      <RequestCodeStepContainer
         onSent={onSent}
         onAlreadyHaveCode={onAlreadyHaveCode}
         onSwitchToLogin={onExit}
@@ -20,5 +20,5 @@ export function PasswordResetFlow({
     )
   }
 
-  return <ConfirmStepContainer email={email} onBack={onBackToRequest} onSuccess={onExit} />
+  return <ConfirmResetStepContainer email={email} onBack={onBackToRequest} onSuccess={onExit} />
 }

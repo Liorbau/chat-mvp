@@ -1,4 +1,4 @@
-import { useConfirmResetContext } from '../../ConfirmStep.context'
+import { useConfirmResetContext } from '../../ConfirmResetStep.context'
 import { CONTINUE_BUTTON_STYLE, SUCCESS_STYLE } from './SuccessState.styles'
 import { CONTINUE_LABEL, SUCCESS_MESSAGE } from './SuccessState.constants'
 

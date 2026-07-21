@@ -3,7 +3,7 @@ import { AuthErrorList } from '@/features/auth/components/AuthErrorList/AuthErro
 import { AuthField } from '@/features/auth/components/AuthField/AuthField'
 import { AuthHint } from '@/features/auth/components/AuthHint/AuthHint'
 import { AuthSubmitButton } from '@/features/auth/components/AuthSubmitButton/AuthSubmitButton'
-import { useConfirmResetContext } from '../../ConfirmStep.context'
+import { useConfirmResetContext } from '../../ConfirmResetStep.context'
 import {
   CODE_LABEL,
   EMAIL_LABEL,
