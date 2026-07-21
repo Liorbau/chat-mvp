@@ -37,6 +37,7 @@ function storedUser(overrides: Partial<StoredUser> = {}): StoredUser {
     passwordHash: 'hash',
     avatar: null,
     previousEmails: [],
+    tokenVersion: 0,
     ...overrides,
   }
 }

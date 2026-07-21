@@ -15,10 +15,10 @@ export type StoredUser = {
   passwordHash: string
   avatar: StoredAvatar | null
   previousEmails: string[]
+  tokenVersion: number
 }
 
-// New users start with no email history; the DB default supplies the empty list.
-export type StoredUserDraft = Omit<StoredUser, 'id' | 'previousEmails'>
+export type StoredUserDraft = Omit<StoredUser, 'id' | 'previousEmails' | 'tokenVersion'>
 
 export type UserUpdate = Partial<Pick<StoredUser, 'firstName' | 'lastName' | 'name'>>
 
@@ -35,6 +35,7 @@ export function toStoredUser(doc: UserDocument): StoredUser {
         ? null
         : { srcUrl: doc.avatar.srcUrl, storageKey: doc.avatar.storageKey ?? null },
     previousEmails: doc.previousEmails ?? [],
+    tokenVersion: doc.tokenVersion ?? 0,
   }
 }
 

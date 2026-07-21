@@ -39,6 +39,9 @@ export class User {
 
   @Prop({ type: [String], default: [] })
   previousEmails!: string[]
+
+  @Prop({ type: Number, default: 0 })
+  tokenVersion!: number
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)
