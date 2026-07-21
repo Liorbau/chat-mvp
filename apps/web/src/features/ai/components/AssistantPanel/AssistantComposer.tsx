@@ -3,7 +3,7 @@ import {
   SEND_DISABLED_STYLE,
   SEND_STYLE,
   TEXTAREA_STYLE,
-} from './AssistantPanel.constants'
+} from './AssistantPanel.styles'
 import type { AssistantComposerProps } from './AssistantPanel.types'
 
 export function AssistantComposer({

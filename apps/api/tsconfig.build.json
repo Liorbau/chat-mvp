@@ -11,5 +11,11 @@
     "rootDir": "./src",
     "outDir": "./dist"
   },
-  "exclude": ["src/**/*.test.ts", "src/**/__tests__/**", "dist", "node_modules"]
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/__tests__/**",
+    "eval",
+    "dist",
+    "node_modules"
+  ]
 }

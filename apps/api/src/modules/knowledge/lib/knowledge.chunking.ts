@@ -1,5 +1,5 @@
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters'
-import { AppError } from '../../../errors/AppError'
+import { HttpAppError } from '../../../errors/HttpAppError'
 import type { ChunkDraft } from '../repositories/chunk.dbService'
 
 const CHUNK_SIZE = 500
@@ -23,14 +23,11 @@ export function documentToText(file: UploadedDocument): string {
   const supported =
     SUPPORTED_TEXT_TYPES.includes(file.mimeType) || SUPPORTED_EXTENSIONS.test(file.name)
   if (!supported) {
-    throw AppError.badRequest(
-      'VALIDATION_ERROR',
-      `Can't read "${file.name}". Upload a .md or .txt file.`,
-    )
+    throw HttpAppError.badRequest(`Can't read "${file.name}". Upload a .md or .txt file.`)
   }
   const text = file.buffer.toString('utf-8').trim()
   if (text === '') {
-    throw AppError.badRequest('VALIDATION_ERROR', 'That file is empty — nothing to ingest.')
+    throw HttpAppError.badRequest('That file is empty — nothing to ingest.')
   }
   return text
 }

@@ -36,6 +36,9 @@ export class User {
 
   @Prop({ type: AvatarSchema, default: null })
   avatar!: Avatar | null
+
+  @Prop({ type: [String], default: [] })
+  previousEmails!: string[]
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)

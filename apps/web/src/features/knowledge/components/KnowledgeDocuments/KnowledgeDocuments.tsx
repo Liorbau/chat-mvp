@@ -6,7 +6,7 @@ import {
   LIST_STYLE,
   TITLE_STYLE,
   WRAP_STYLE,
-} from './KnowledgeDocuments.constants'
+} from './KnowledgeDocuments.styles'
 import { KnowledgeDocumentItem } from './KnowledgeDocumentItem'
 import { KnowledgeUpload } from './KnowledgeUpload'
 import type { KnowledgeDocumentsViewProps } from './KnowledgeDocuments.types'
@@ -35,7 +35,7 @@ export function KnowledgeDocuments({
         </div>
       ) : null}
 
-      {error !== null ? <div className={ERROR_STYLE}>{error}</div> : null}
+      {error != null ? <div className={ERROR_STYLE}>{error}</div> : null}
     </div>
   )
 }

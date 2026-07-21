@@ -3,7 +3,7 @@ import { ERROR_STYLE } from './AvatarError.styles'
 
 export function AvatarError() {
   const { error } = useAvatarContext()
-  if (error === null) {
+  if (error == null) {
     return null
   }
 

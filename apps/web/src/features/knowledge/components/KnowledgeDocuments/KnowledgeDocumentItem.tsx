@@ -1,5 +1,5 @@
 import type { KnowledgeDocument } from '@chat/contract'
-import { DELETE_STYLE, ITEM_STYLE, STATUS_META_STYLE } from './KnowledgeDocuments.constants'
+import { DELETE_STYLE, ITEM_STYLE, STATUS_META_STYLE } from './KnowledgeDocuments.styles'
 import type { KnowledgeDocumentItemProps } from './KnowledgeDocuments.types'
 
 function statusLabel(document: KnowledgeDocument): string {

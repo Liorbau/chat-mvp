@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ConfigService } from '@nestjs/config'
 import type { User } from '@chat/contract'
-import { AppError } from '../../errors/AppError'
+import { HttpAppError } from '../../errors/HttpAppError'
 import type { StoredAvatar, StoredUser } from './lib/user.mapper'
 import type { UsersDbService } from './users.dbService'
 import { UsersService } from './users.service'
@@ -22,6 +22,7 @@ function publicUser(overrides: Partial<User> = {}): User {
     lastName: 'Rivera',
     email: 'alex@example.com',
     avatarUrl: null,
+    previousEmails: [],
     ...overrides,
   }
 }
@@ -35,6 +36,7 @@ function storedUser(overrides: Partial<StoredUser> = {}): StoredUser {
     email: 'alex@example.com',
     passwordHash: 'hash',
     avatar: null,
+    previousEmails: [],
     ...overrides,
   }
 }
@@ -75,7 +77,7 @@ describe('UsersService', () => {
     it('throws notFound when the user is missing', async () => {
       const db = makeDb({ findStoredById: vi.fn().mockResolvedValue(undefined) })
 
-      await expect(makeService(db).getAvatarKey(USER_ID)).rejects.toThrow(AppError)
+      await expect(makeService(db).getAvatarKey(USER_ID)).rejects.toThrow(HttpAppError)
     })
   })
 
@@ -92,7 +94,7 @@ describe('UsersService', () => {
     it('throws notFound when the user is missing', async () => {
       const db = makeDb({ setAvatar: vi.fn().mockResolvedValue(undefined) })
 
-      await expect(makeService(db).clearAvatar(USER_ID)).rejects.toThrow(AppError)
+      await expect(makeService(db).clearAvatar(USER_ID)).rejects.toThrow(HttpAppError)
     })
   })
 
@@ -111,7 +113,7 @@ describe('UsersService', () => {
     it('throws notFound when the user is missing', async () => {
       const db = makeDb({ setAvatar: vi.fn().mockResolvedValue(undefined) })
 
-      await expect(makeService(db).setAvatar(USER_ID, AVATAR)).rejects.toThrow(AppError)
+      await expect(makeService(db).setAvatar(USER_ID, AVATAR)).rejects.toThrow(HttpAppError)
     })
   })
 
@@ -145,7 +147,7 @@ describe('UsersService', () => {
           firstName: 'Alex',
           lastName: 'Rivera',
         }),
-      ).rejects.toThrow(AppError)
+      ).rejects.toThrow(HttpAppError)
     })
   })
 
@@ -172,40 +174,14 @@ describe('UsersService', () => {
       const db = makeDb({ findById: vi.fn().mockResolvedValue(undefined) })
 
       await expect(makeService(db).updateProfile(USER_ID, { firstName: 'X' })).rejects.toThrow(
-        AppError,
+        HttpAppError,
       )
     })
 
     it('rejects an empty change set', async () => {
       const db = makeDb({ findById: vi.fn().mockResolvedValue(publicUser()) })
 
-      await expect(makeService(db).updateProfile(USER_ID, {})).rejects.toThrow(AppError)
-    })
-
-    it('rejects changing to an email owned by another user', async () => {
-      const db = makeDb({
-        findById: vi.fn().mockResolvedValue(publicUser()),
-        findByEmail: vi
-          .fn()
-          .mockResolvedValue(storedUser({ id: 'other', email: 'taken@example.com' })),
-      })
-
-      await expect(
-        makeService(db).updateProfile(USER_ID, { email: 'taken@example.com' }),
-      ).rejects.toThrow(AppError)
-    })
-
-    it('updates the email when it is available', async () => {
-      const db = makeDb({
-        findById: vi.fn().mockResolvedValue(publicUser()),
-        findByEmail: vi.fn().mockResolvedValue(undefined),
-        update: vi.fn().mockResolvedValue(publicUser({ email: 'new@example.com' })),
-      })
-
-      const result = await makeService(db).updateProfile(USER_ID, { email: 'new@example.com' })
-
-      expect(db.update).toHaveBeenCalledWith(USER_ID, { email: 'new@example.com' })
-      expect(result.email).toBe('new@example.com')
+      await expect(makeService(db).updateProfile(USER_ID, {})).rejects.toThrow(HttpAppError)
     })
   })
 })

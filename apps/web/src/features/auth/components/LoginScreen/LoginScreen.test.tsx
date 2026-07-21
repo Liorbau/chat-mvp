@@ -36,6 +36,7 @@ describe('LoginScreen', () => {
         lastName: 'Rivera',
         email: 'alex@example.com',
         avatarUrl: null,
+        previousEmails: [],
       },
     })
     renderLogin()

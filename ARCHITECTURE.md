@@ -1051,6 +1051,59 @@ by `agent.nodes.ts`), `document.dbService.ts` / `chunk.dbService.ts`
 
 ---
 
+# Change Email (post-Week 8)
+
+> Status: shipped on `feature/fullstack/change-email`. A confirmed two-step email
+> change; follows the orchestrator layering above. No changes to any other flow.
+
+## Flow
+
+1. `POST /me/email` (guarded) — `RequestEmailChangeOrchestrator` rejects an
+   unchanged or taken address, signs a short-lived JWT `{ userId, newEmail }` with
+   a **separate** `EMAIL_CHANGE_TOKEN_SECRET` (so a confirm token can never be
+   replayed as a session), and sends the link through the email seam.
+2. `POST /auth/email/confirm` (public — the token is the credential, so it works
+   logged-out or long after) — `ConfirmEmailChangeOrchestrator` verifies the token
+   and calls `UsersService.changeEmail`, which atomically sets the email and pushes
+   the old one onto `previousEmails` in one aggregation-pipeline update
+   (`$concatArrays` + `$slice: -10`, FIFO max 10); `old === new` is a no-op. The
+   `email` unique index stays the final authority (`E11000 → 409`).
+
+## Modules and seams
+
+- **`email` module** — the swappable delivery seam: `EmailProvider` interface +
+  `EMAIL_PROVIDER` DI token, with `LogEmailProvider` (default) and
+  `SesEmailProvider` (AWS SES v2) under `providers/`, bound by the `EMAIL_PROVIDER`
+  env var via a factory registry (same shape as `chat-model.ts`). Role-named seam;
+  the vendor name lives only on the concrete class.
+- **`EmailChangeTokenService`** (in `auth`) signs/verifies with the separate secret
+  by passing it per call to the shared `JwtService` — no second `JwtModule`.
+- **Orchestrators live in `auth`** (beside `me.controller` + `JwtService`); `auth`
+  imports `EmailModule` and `UsersModule`. Request → guarded `MeController`;
+  confirm → unguarded `AuthController`.
+
+## Auth module layout (supersedes the Week-4 flat listing)
+
+JWT machinery is grouped under `auth/jwt/` (`jwt.strategy.ts`, `jwt.auth.guard.ts`,
+`jwt.options.ts`); `email-change-token.service.ts` and the orchestrators sit at the
+module root. This replaces the earlier flat `jwt.strategy.ts` / `jwt-auth.guard.ts`
+listing shown in the Week-4 section.
+
+## Data model
+
+`User` gains `previousEmails: string[]` (read-only, FIFO max 10). Email moves only
+through this flow — `UpdateProfileRequest` / `PATCH /me` no longer accept `email`.
+
+## Frontend
+
+Request UI is `profile/.../ProfilePanel/components/EmailSection/` (avatar-nested:
+container → context → view → `hooks/` + `components/{EmailChangeForm,
+ConfirmationNotice, PreviousEmails}`). The confirm screen is its own feature,
+`features/email-change/` (`ConfirmEmailScreen/` + a URL-token helper); the App root
+detects `?emailChangeToken=` before the auth gate and runs it regardless of login.
+
+---
+
 ## Documentation Alignment
 
 - Keep this file aligned with implementation as structure evolves.

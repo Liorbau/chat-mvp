@@ -7,7 +7,7 @@ import {
   Logger,
 } from '@nestjs/common'
 import type { Response } from 'express'
-import { AppError } from '../../errors/AppError'
+import { HttpAppError } from '../../errors/HttpAppError'
 import type { ApiErrorBody } from '../errors/error.envelope.types'
 import { toApiErrorBody } from '../errors/to.api.error.body'
 import { isDuplicateKeyError } from '../mongo/is.duplicate.key.error'
@@ -19,8 +19,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>()
 
-    if (exception instanceof AppError) {
-      response.status(exception.statusCode).json(this.fromAppError(exception))
+    if (exception instanceof HttpAppError) {
+      response.status(exception.httpStatusCode).json(this.fromAppError(exception))
       return
     }
 
@@ -54,7 +54,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
   }
 
   private resolveHttpErrorStatus(exception: unknown): number | undefined {
-    if (typeof exception !== 'object' || exception === null) {
+    if (typeof exception !== 'object' || exception == null) {
       return undefined
     }
 
@@ -63,7 +63,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     return typeof status === 'number' ? status : undefined
   }
 
-  private fromAppError(error: AppError): ApiErrorBody {
+  private fromAppError(error: HttpAppError): ApiErrorBody {
     const base = { code: error.code, message: error.message }
     return { error: error.details === undefined ? base : { ...base, details: error.details } }
   }

@@ -33,14 +33,14 @@ export function useUserDirectory(
   }, [isAuthenticated, loadUsers])
 
   function getUserDisplayName(userId: string): string {
-    if (currentUser !== null && userId === currentUser.id) {
+    if (currentUser != null && userId === currentUser.id) {
       return currentUser.name
     }
     return users.find((directoryUser) => directoryUser.id === userId)?.name ?? userId
   }
 
   function getUserAvatarUrl(userId: string): string | null {
-    if (currentUser !== null && userId === currentUser.id) {
+    if (currentUser != null && userId === currentUser.id) {
       return currentUser.avatarUrl
     }
     return users.find((directoryUser) => directoryUser.id === userId)?.avatarUrl ?? null

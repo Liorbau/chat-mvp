@@ -1,4 +1,5 @@
 export * from './avatar'
+export * from './email'
 
 export type User = {
   id: string
@@ -7,6 +8,7 @@ export type User = {
   lastName: string
   email: string
   avatarUrl: string | null
+  previousEmails: string[]
 }
 
 export type SignupRequest = {
@@ -19,7 +21,6 @@ export type SignupRequest = {
 export type UpdateProfileRequest = {
   firstName?: string
   lastName?: string
-  email?: string
 }
 
 export type LoginRequest = {

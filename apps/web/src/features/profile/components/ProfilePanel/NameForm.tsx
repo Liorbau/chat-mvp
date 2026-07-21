@@ -4,7 +4,7 @@ import {
   SECTION_HEADING_STYLE,
   SECTION_STYLE,
   submitButtonStyle,
-} from './ProfilePanel.constants'
+} from './ProfilePanel.styles'
 import { useProfileContext } from './ProfilePanel.context'
 import { ErrorList } from './ErrorList'
 import { SavedNote } from './SavedNote'

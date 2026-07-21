@@ -8,7 +8,7 @@ export const UserContext = createContext<UserContextValue | null>(null)
 
 export function useUsers(): UserContextValue {
   const context = useContext(UserContext)
-  if (context === null) {
+  if (context == null) {
     throw new Error('useUsers must be used within a UserProvider')
   }
 

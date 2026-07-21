@@ -23,7 +23,7 @@ export function useMessages(conversationId: string | null): UseMessagesResult {
   const loadMessages = useCallback(async () => {
     const requestedConversationId = conversationId
 
-    if (requestedConversationId === null) {
+    if (requestedConversationId == null) {
       setStatus('idle')
       setMessages([])
       setError(null)
@@ -48,7 +48,7 @@ export function useMessages(conversationId: string | null): UseMessagesResult {
         }
         nextMessages = [...response.messages, ...nextMessages]
 
-        if (response.nextCursor === null) {
+        if (response.nextCursor == null) {
           break
         }
 

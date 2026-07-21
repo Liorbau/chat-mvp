@@ -6,7 +6,7 @@ import {
   HEADER_STYLE,
   HEADER_TITLE_STYLE,
   PANEL_STYLE,
-} from './TutorPanel.constants'
+} from './TutorPanel.styles'
 import { TutorComposer } from './TutorComposer'
 import { TutorMessagesArea } from './TutorMessagesArea'
 
@@ -22,7 +22,7 @@ export function TutorPanel() {
 
       <KnowledgeDocumentsContainer />
 
-      {error !== null ? (
+      {error != null ? (
         <div className={ERROR_STYLE} role="alert">
           {error}
         </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { buttonStyle, TOOLTIP_STYLE, WRAP_STYLE } from './ModeSwitcher.constants'
+import { buttonStyle, TOOLTIP_STYLE, WRAP_STYLE } from './ModeSwitcher.styles'
 import type { ModeButtonProps } from './ModeSwitcher.types'
 
 export function ModeButton({ def, onSelect }: ModeButtonProps) {

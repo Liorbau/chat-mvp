@@ -10,4 +10,5 @@ export {
   uploadKnowledgeDocument,
 } from './knowledge.api'
 export { updateProfile, uploadAvatar, removeAvatar } from './profile.api'
+export { requestEmailChange, confirmEmailChange } from './email-change.api'
 export type { CreateConversationInput } from './types'

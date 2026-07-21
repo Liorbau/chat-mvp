@@ -17,6 +17,7 @@ function uploadedUser(avatarUrl: string): User {
     lastName: 'Rivera',
     email: 'alex@example.com',
     avatarUrl,
+    previousEmails: [],
   }
 }
 

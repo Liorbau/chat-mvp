@@ -9,7 +9,7 @@ export function toApiErrorBody(statusCode: number, exceptionResponse: unknown): 
     return { error: { code, message: exceptionResponse } }
   }
 
-  if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+  if (typeof exceptionResponse === 'object' && exceptionResponse != null) {
     const responseRecord = exceptionResponse as Record<string, unknown>
     const details = resolveDetails(statusCode, responseRecord.message)
     const message =

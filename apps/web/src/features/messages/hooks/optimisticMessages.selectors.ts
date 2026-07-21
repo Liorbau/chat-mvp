@@ -36,7 +36,7 @@ export function resolveOptimisticStatus(
   baseStatus: LoadStatus,
   mergedMessages: OptimisticMessage[],
 ): LoadStatus {
-  if (conversationId === null) {
+  if (conversationId == null) {
     return 'idle'
   }
 

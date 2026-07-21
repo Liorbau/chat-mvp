@@ -46,11 +46,11 @@ export function useAvatar(): UseAvatar {
   const preview = useImageFallback(avatarUrl)
 
   async function upload(file: File): Promise<void> {
-    if (user === null) {
+    if (user == null) {
       return
     }
     const validationError = validateAvatarFile(file)
-    if (validationError !== null) {
+    if (validationError != null) {
       setError(validationError)
       return
     }
@@ -67,7 +67,7 @@ export function useAvatar(): UseAvatar {
   }
 
   async function remove(): Promise<void> {
-    if (user === null) {
+    if (user == null) {
       return
     }
     setBusy(true)
@@ -105,7 +105,7 @@ export function useAvatar(): UseAvatar {
   return {
     name: user?.name ?? '',
     avatarUrl,
-    hasAvatar: avatarUrl !== null,
+    hasAvatar: avatarUrl != null,
     busy,
     error,
     previewFailed: preview.failed,

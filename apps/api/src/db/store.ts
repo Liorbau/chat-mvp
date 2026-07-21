@@ -31,6 +31,7 @@ export function buildSeedUsers(bcryptRounds: number): StoredUser[] {
     name: `${seed.firstName} ${seed.lastName}`,
     passwordHash: seedPasswordHash,
     avatar: null,
+    previousEmails: [],
   }))
 }
 

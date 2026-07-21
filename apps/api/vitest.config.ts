@@ -8,6 +8,7 @@ export default defineConfig({
     maxWorkers: 1,
     env: {
       JWT_SECRET: 'test-secret-at-least-32-characters-long',
+      EMAIL_CHANGE_TOKEN_SECRET: 'test-email-change-secret-at-least-32-chars',
       BCRYPT_ROUNDS: '4', // For fast testing (less secure than production)
       MONGO_URI: 'mongodb://localhost:27017/chat-test?replicaSet=rs0',
       // Dummy keys so env validation passes at boot; no test calls a live API.

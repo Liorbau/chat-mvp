@@ -1,4 +1,5 @@
-import { SKELETON_ITEM_STYLE, SKELETON_ITEMS } from './ConversationListSkeleton.constants'
+import { SKELETON_ITEMS } from './ConversationListSkeleton.constants'
+import { SKELETON_ITEM_STYLE } from './ConversationListSkeleton.styles'
 
 export function ConversationListSkeleton() {
   return (

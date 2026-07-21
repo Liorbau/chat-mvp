@@ -5,7 +5,7 @@ export const ProfileFormContext = createContext<ProfileFormValue | null>(null)
 
 export function useProfileContext(): ProfileFormValue {
   const context = useContext(ProfileFormContext)
-  if (context === null) {
+  if (context == null) {
     throw new Error('useProfileContext must be used within a ProfilePanelContainer')
   }
 

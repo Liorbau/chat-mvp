@@ -34,7 +34,7 @@ export class ConversationsDbService {
 
   async findById(conversationId: string): Promise<Conversation | undefined> {
     const doc = await this.conversationModel.findById(conversationId).exec()
-    return doc === null ? undefined : toConversation(doc)
+    return doc == null ? undefined : toConversation(doc)
   }
 
   async listByParticipant(userId: string): Promise<Conversation[]> {
@@ -49,13 +49,13 @@ export class ConversationsDbService {
     const doc = await this.conversationModel
       .findOne({ participantIds: { $all: participantIds, $size: 2 } })
       .exec()
-    return doc === null ? undefined : toConversation(doc)
+    return doc == null ? undefined : toConversation(doc)
   }
 
   // The single-participant AI conversation (assistant or tutor) owned by a user.
   async findOwnedByType(userId: string, type: ConversationType): Promise<Conversation | undefined> {
     const doc = await this.conversationModel.findOne({ participantIds: userId, type }).exec()
-    return doc === null ? undefined : toConversation(doc)
+    return doc == null ? undefined : toConversation(doc)
   }
 
   async create(draft: ConversationDraft): Promise<Conversation> {
@@ -83,21 +83,23 @@ export class ConversationsDbService {
         { returnDocument: 'after', ...(session ? { session } : {}) },
       )
       .exec()
-    return doc === null ? undefined : toConversation(doc)
+    return doc == null ? undefined : toConversation(doc)
   }
 
-  async reset(conversations: SeedConversation[]): Promise<void> {
+  async reset(conversations: SeedConversation[]): Promise<number> {
     await this.conversationModel.deleteMany({})
-    if (conversations.length > 0) {
-      await this.conversationModel.insertMany(
-        conversations.map((conversation) => ({
-          _id: conversation.id,
-          participantIds: conversation.participantIds,
-          lastMessagePreview: conversation.lastMessagePreview,
-          lastMessageAt: conversation.lastMessageAt,
-          ...(conversation.title === undefined ? {} : { title: conversation.title }),
-        })),
-      )
+    if (conversations.length === 0) {
+      return 0
     }
+    const inserted = await this.conversationModel.insertMany(
+      conversations.map((conversation) => ({
+        _id: conversation.id,
+        participantIds: conversation.participantIds,
+        lastMessagePreview: conversation.lastMessagePreview,
+        lastMessageAt: conversation.lastMessageAt,
+        ...(conversation.title === undefined ? {} : { title: conversation.title }),
+      })),
+    )
+    return inserted.length
   }
 }

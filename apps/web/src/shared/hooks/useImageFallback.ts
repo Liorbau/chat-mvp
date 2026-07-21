@@ -9,7 +9,7 @@ type ImageFallback = {
 export function useImageFallback(url: string | null): ImageFallback {
   const [failedUrl, setFailedUrl] = useState<string | null>(null)
   return {
-    failed: url !== null && url === failedUrl,
+    failed: url != null && url === failedUrl,
     onError: () => setFailedUrl(url),
   }
 }

@@ -14,7 +14,7 @@ const listeners = new Set<Listener>()
 function read(): StoredAuth | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw === null ? null : (JSON.parse(raw) as StoredAuth)
+    return raw == null ? null : (JSON.parse(raw) as StoredAuth)
   } catch {
     return null
   }
@@ -43,7 +43,7 @@ export function saveAuth(auth: StoredAuth): void {
 }
 
 export function updateUser(user: User): void {
-  if (cached === null) {
+  if (cached == null) {
     throw new Error('Cannot update the stored user before authentication')
   }
   saveAuth({ ...cached, user })

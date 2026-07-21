@@ -1,5 +1,5 @@
 import { MessagePanelContainer } from '@/features/messages/components/MessagePanelContainer/MessagePanelContainer'
-import { MAIN_PANEL_STYLE, PANEL_CONTENT_STYLE, PANEL_HEADING_STYLE } from './ChatLayout.constants'
+import { MAIN_PANEL_STYLE, PANEL_CONTENT_STYLE, PANEL_HEADING_STYLE } from './ChatLayout.styles'
 import type { MessagesPaneProps } from './ChatLayout.types'
 
 export function MessagesPane({

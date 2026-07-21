@@ -1,6 +1,6 @@
 import { useScrollToBottom } from '@/shared/hooks/useScrollToBottom'
 import { MessageItem } from '@/features/messages/components/MessageItem/MessageItem'
-import { LIST_END_MARKER_STYLE, MESSAGE_LIST_STYLE } from './MessageList.constants'
+import { LIST_END_MARKER_STYLE, MESSAGE_LIST_STYLE } from './MessageList.styles'
 import type { MessageListProps } from './MessageList.types'
 
 export function MessageList({ items, currentUserId }: MessageListProps) {

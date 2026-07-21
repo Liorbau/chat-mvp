@@ -59,7 +59,7 @@ export function useAssistantChat(
   const send = useCallback(
     (content: string) => {
       const conversationId = state.conversationId
-      if (conversationId === null || state.isStreaming) {
+      if (conversationId == null || state.isStreaming) {
         return
       }
       const tempId = `temp-${String(Date.now())}`
@@ -112,7 +112,7 @@ export function useAssistantChat(
     streamingText: state.streamingText,
     toolLabel: state.toolLabel,
     isStreaming: state.isStreaming,
-    isReady: state.conversationId !== null,
+    isReady: state.conversationId != null,
     error: state.error,
     send,
   }

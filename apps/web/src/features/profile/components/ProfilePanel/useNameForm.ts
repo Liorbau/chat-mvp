@@ -12,7 +12,7 @@ export function useNameForm(user: User | null): NameFormValue {
   const [saved, setSaved] = useState(false)
 
   const changed =
-    user !== null && (firstName.trim() !== user.firstName || lastName.trim() !== user.lastName)
+    user != null && (firstName.trim() !== user.firstName || lastName.trim() !== user.lastName)
 
   function submit(): void {
     setSubmitting(true)

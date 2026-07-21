@@ -5,7 +5,7 @@ import {
   CONVERSATION_ROW_STYLE,
   CONVERSATION_TITLE_STYLE,
   SELECTED_CONVERSATION_BUTTON_STYLE,
-} from './ConversationListItem.constants'
+} from './ConversationListItem.styles'
 import type { ConversationListItemProps } from './ConversationListItem.types'
 
 export function ConversationListItem({

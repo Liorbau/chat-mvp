@@ -11,6 +11,7 @@ const session: AuthResponse = {
     lastName: 'Rivera',
     email: 'alex@example.com',
     avatarUrl: null,
+    previousEmails: [],
   },
 }
 

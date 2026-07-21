@@ -1,4 +1,4 @@
-import { SAVED_NOTE_STYLE } from './ProfilePanel.constants'
+import { SAVED_NOTE_STYLE } from './ProfilePanel.styles'
 import type { SavedNoteProps } from './ProfilePanel.types'
 
 export function SavedNote({ show }: SavedNoteProps) {

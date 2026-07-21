@@ -16,7 +16,7 @@ export async function sendOptimisticMessage({
   dispatch,
 }: SendOptimisticMessageParameters): Promise<void> {
   const normalizedContent = content.trim()
-  if (conversationId === null || normalizedContent.length === 0) {
+  if (conversationId == null || normalizedContent.length === 0) {
     return
   }
 

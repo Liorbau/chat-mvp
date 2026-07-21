@@ -78,10 +78,12 @@ export class MessagesDbService {
     return groups.flatMap((group) => group.docs.map(toMessage))
   }
 
-  async reset(drafts: MessageDraft[]): Promise<void> {
+  async reset(drafts: MessageDraft[]): Promise<number> {
     await this.messageModel.deleteMany({})
-    if (drafts.length > 0) {
-      await this.messageModel.insertMany(drafts.map(toMessageDocument))
+    if (drafts.length === 0) {
+      return 0
     }
+    const inserted = await this.messageModel.insertMany(drafts.map(toMessageDocument))
+    return inserted.length
   }
 }

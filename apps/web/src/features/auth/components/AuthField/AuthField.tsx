@@ -1,4 +1,4 @@
-import { FIELD_STYLE, INPUT_STYLE } from '@/features/auth/constants/authForm.constants'
+import { FIELD_STYLE, INPUT_STYLE } from '@/features/auth/authForm.styles'
 import type { AuthFieldProps } from './AuthField.types'
 
 export function AuthField({

@@ -10,20 +10,9 @@ export type NameFormValue = {
   submit: () => void
 }
 
-export type EmailFormValue = {
-  email: string
-  onEmailChange: (value: string) => void
-  submitting: boolean
-  errors: string[]
-  saved: boolean
-  changed: boolean
-  submit: () => void
-}
-
 export type ProfileFormValue = {
   userName: string
   name: NameFormValue
-  email: EmailFormValue
 }
 
 export type ErrorListProps = {

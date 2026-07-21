@@ -4,7 +4,7 @@ export async function readSseStream<T>(
   response: Response,
   onEvent: (event: T) => void,
 ): Promise<void> {
-  if (response.body === null) {
+  if (response.body == null) {
     return
   }
 

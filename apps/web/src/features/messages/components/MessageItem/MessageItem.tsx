@@ -7,7 +7,7 @@ import {
   OTHER_BUBBLE_STYLE,
   PENDING_STYLE,
   SENDER_STYLE,
-} from './MessageItem.constants'
+} from './MessageItem.styles'
 import type { MessageItemProps } from './MessageItem.types'
 
 export function MessageItem({

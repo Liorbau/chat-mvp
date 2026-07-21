@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { Embeddings } from '@langchain/core/embeddings'
 import { Injectable, Logger } from '@nestjs/common'
 import type { KnowledgeDocument } from '@chat/contract'
-import { AppError } from '../../errors/AppError'
+import { HttpAppError } from '../../errors/HttpAppError'
 import { ChunkDbService } from './repositories/chunk.dbService'
 import { DocumentDbService } from './repositories/document.dbService'
 import {
@@ -67,7 +67,7 @@ export class KnowledgeService {
   async removeDocument(userId: string, id: string): Promise<string> {
     const doc = await this.documentDb.findByIdAndUser(id, userId)
     if (doc === undefined) {
-      throw AppError.notFound('Document not found')
+      throw HttpAppError.notFound('Document not found')
     }
     await this.chunkDb.deleteChunksByDocument(id)
     await this.documentDb.deleteDocument(id)

@@ -43,6 +43,7 @@ describe('SignupScreen', () => {
         lastName: 'User',
         email: 'new@example.com',
         avatarUrl: null,
+        previousEmails: [],
       },
     })
     renderSignup()

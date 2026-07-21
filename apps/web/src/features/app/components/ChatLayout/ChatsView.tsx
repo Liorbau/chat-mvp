@@ -1,4 +1,4 @@
-import { PANELS_LAYOUT_STYLE, ROOT_LAYOUT_STYLE } from './ChatLayout.constants'
+import { PANELS_LAYOUT_STYLE, ROOT_LAYOUT_STYLE } from './ChatLayout.styles'
 import { ConversationsSidebar } from './ConversationsSidebar'
 import { MessagesPane } from './MessagesPane'
 import type { ChatsViewProps } from './ChatLayout.types'

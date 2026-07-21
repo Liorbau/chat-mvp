@@ -43,7 +43,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value: AuthContextValue = {
     user: auth?.user ?? null,
-    isAuthenticated: auth !== null,
+    isAuthenticated: auth != null,
     signIn,
     signUp,
     updateProfile,
