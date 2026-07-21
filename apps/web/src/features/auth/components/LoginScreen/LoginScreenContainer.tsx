@@ -3,12 +3,12 @@ import { LoginScreen } from './LoginScreen'
 import type { LoginScreenProps } from './LoginScreen.types'
 import { useLoginForm } from './useLoginForm'
 
-export function LoginScreenContainer({ onSwitchToSignup }: LoginScreenProps) {
+export function LoginScreenContainer({ onSwitchToSignup, onForgotPassword }: LoginScreenProps) {
   const value = useLoginForm()
 
   return (
     <LoginFormContext.Provider value={value}>
-      <LoginScreen onSwitchToSignup={onSwitchToSignup} />
+      <LoginScreen onSwitchToSignup={onSwitchToSignup} onForgotPassword={onForgotPassword} />
     </LoginFormContext.Provider>
   )
 }

@@ -14,7 +14,7 @@ vi.mock('@/api', async (importActual) => {
 function renderLogin() {
   render(
     <AuthProvider>
-      <LoginScreenContainer onSwitchToSignup={vi.fn()} />
+      <LoginScreenContainer onSwitchToSignup={vi.fn()} onForgotPassword={vi.fn()} />
     </AuthProvider>,
   )
 }
