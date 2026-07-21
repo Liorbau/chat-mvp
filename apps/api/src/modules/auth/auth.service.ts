@@ -1,15 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import type { AuthResponse } from '@chat/contract'
+import type { AuthResponse, User } from '@chat/contract'
 import { HttpAppError } from '../../errors/HttpAppError'
 import { UsersService } from '../users/users.service'
 import type { LoginDto } from './dto/login.dto'
 import type { SignupDto } from './dto/signup.dto'
-
-type TokenSubject = {
-  id: string
-  email: string
-}
 
 @Injectable()
 export class AuthService {
@@ -20,7 +15,7 @@ export class AuthService {
 
   async signup(input: SignupDto): Promise<AuthResponse> {
     const user = await this.usersService.create(input)
-    return { token: this.signToken({ id: user.id, email: user.email }), user }
+    return { token: await this.signToken(user), user }
   }
 
   async login(input: LoginDto): Promise<AuthResponse> {
@@ -31,10 +26,18 @@ export class AuthService {
       throw HttpAppError.unauthorized('Invalid credentials')
     }
 
-    return { token: this.signToken({ id: user.id, email: user.email }), user }
+    return { token: await this.signToken(user), user }
   }
 
-  private signToken(user: TokenSubject): string {
-    return this.jwtService.sign({ sub: user.id, email: user.email })
+  private async signToken(user: User): Promise<string> {
+    const stored = await this.usersService.findStoredById(user.id)
+    if (stored === undefined) {
+      throw HttpAppError.notFound('User not found')
+    }
+    return this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      tokenVersion: stored.tokenVersion,
+    })
   }
 }

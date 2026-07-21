@@ -3,7 +3,13 @@ import { ConfigService } from '@nestjs/config'
 import type { UpdateProfileRequest, User } from '@chat/contract'
 import { HttpAppError } from '../../errors/HttpAppError'
 import { UsersDbService } from './users.dbService'
-import { buildUserUpdate, deriveName, toPublicUser, type StoredAvatar } from './lib/user.mapper'
+import {
+  buildUserUpdate,
+  deriveName,
+  toPublicUser,
+  type StoredAvatar,
+  type StoredUser,
+} from './lib/user.mapper'
 import { hashPassword, verifyPassword } from './lib/password'
 
 export type CreateUserInput = {
@@ -22,6 +28,15 @@ export class UsersService {
 
   async findById(userId: string): Promise<User | undefined> {
     return this.usersDbService.findById(userId)
+  }
+
+  async findByEmail(email: string): Promise<User | undefined> {
+    const stored = await this.usersDbService.findByEmail(email)
+    return stored === undefined ? undefined : toPublicUser(stored)
+  }
+
+  async findStoredById(userId: string): Promise<StoredUser | undefined> {
+    return this.usersDbService.findStoredById(userId)
   }
 
   async list(): Promise<User[]> {
@@ -107,6 +122,16 @@ export class UsersService {
     }
 
     const updated = await this.usersDbService.update(userId, update)
+    if (updated === undefined) {
+      throw HttpAppError.notFound('User not found')
+    }
+    return updated
+  }
+
+  async resetPassword(userId: string, newPassword: string): Promise<User> {
+    const bcryptRounds = this.configService.getOrThrow<number>('BCRYPT_ROUNDS')
+    const passwordHash = await hashPassword(newPassword, bcryptRounds)
+    const updated = await this.usersDbService.setPasswordAndBumpTokenVersion(userId, passwordHash)
     if (updated === undefined) {
       throw HttpAppError.notFound('User not found')
     }
