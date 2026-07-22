@@ -4,13 +4,9 @@ import { REMOVE_BUTTON_LABEL } from './RemoveButton.constants'
 
 export function RemoveButton() {
   const { hasAvatar, busy, onRemove } = useAvatarContext()
-  if (!hasAvatar) {
-    return null
-  }
-
-  return (
+  return hasAvatar ? (
     <button type="button" className={REMOVE_BUTTON_STYLE} onClick={onRemove} disabled={busy}>
       {REMOVE_BUTTON_LABEL}
     </button>
-  )
+  ) : null
 }

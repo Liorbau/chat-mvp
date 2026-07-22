@@ -4,9 +4,7 @@ import { AVATAR_PREVIEW_ERROR_MESSAGE } from './PreviewWarning.constants'
 
 export function PreviewWarning() {
   const { previewFailed } = useAvatarContext()
-  if (!previewFailed) {
-    return null
-  }
-
-  return <p className={PREVIEW_WARNING_STYLE}>{AVATAR_PREVIEW_ERROR_MESSAGE}</p>
+  return previewFailed ? (
+    <p className={PREVIEW_WARNING_STYLE}>{AVATAR_PREVIEW_ERROR_MESSAGE}</p>
+  ) : null
 }

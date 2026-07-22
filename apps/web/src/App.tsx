@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ChatLayoutContainer } from './features/app/components/ChatLayout/ChatLayoutContainer'
 import { LoginScreenContainer } from './features/auth/components/LoginScreen/LoginScreenContainer'
 import { SignupScreenContainer } from './features/auth/components/SignupScreen/SignupScreenContainer'
@@ -19,10 +19,11 @@ export function App() {
     readEmailChangeToken(),
   )
 
+  let screen: ReactNode
   // A confirmation link is being opened: run the confirm flow regardless of
   // whether the visitor is logged in (the token is the credential).
   if (emailChangeToken != null) {
-    return (
+    screen = (
       <ConfirmEmailScreenContainer
         token={emailChangeToken}
         onDone={() => {
@@ -31,40 +32,36 @@ export function App() {
         }}
       />
     )
-  }
-
-  if (isAuthenticated && user != null) {
-    return <ChatLayoutContainer currentUserId={user.id} onLogout={signOut} />
-  }
-
-  if (authMode === 'signup') {
-    return (
+  } else if (isAuthenticated && user != null) {
+    screen = <ChatLayoutContainer currentUserId={user.id} onLogout={signOut} />
+  } else if (authMode === 'signup') {
+    screen = (
       <SignupScreenContainer
         onSwitchToLogin={() => {
           setAuthMode('login')
         }}
       />
     )
-  }
-
-  if (authMode === 'reset') {
-    return (
+  } else if (authMode === 'reset') {
+    screen = (
       <PasswordResetFlowContainer
         onExit={() => {
           setAuthMode('login')
         }}
       />
     )
+  } else {
+    screen = (
+      <LoginScreenContainer
+        onSwitchToSignup={() => {
+          setAuthMode('signup')
+        }}
+        onForgotPassword={() => {
+          setAuthMode('reset')
+        }}
+      />
+    )
   }
 
-  return (
-    <LoginScreenContainer
-      onSwitchToSignup={() => {
-        setAuthMode('signup')
-      }}
-      onForgotPassword={() => {
-        setAuthMode('reset')
-      }}
-    />
-  )
+  return screen
 }
