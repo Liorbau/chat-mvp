@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { MongooseModule } from '@nestjs/mongoose'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { UsersModule } from '../users/users.module'
@@ -16,16 +15,16 @@ import { RequestEmailChangeOrchestrator } from './orchestrators/request-email-ch
 import { ConfirmEmailChangeOrchestrator } from './orchestrators/confirm-email-change.orchestrator'
 import { RequestPasswordResetOrchestrator } from './orchestrators/request-password-reset.orchestrator'
 import { ConfirmPasswordResetOrchestrator } from './orchestrators/confirm-password-reset.orchestrator'
-import { PasswordReset, PasswordResetSchema } from './password-reset.schema'
-import { PasswordResetDbService } from './password-reset.dbService'
+import { ResetCodeModule } from './reset-code/reset-code.module'
+import { PasswordResetService } from './password-reset.service'
 
 @Module({
   imports: [
     UsersModule,
     EmailModule,
+    ResetCodeModule,
     PassportModule,
     JwtModule.registerAsync(jwtAsyncOptions),
-    MongooseModule.forFeature([{ name: PasswordReset.name, schema: PasswordResetSchema }]),
   ],
   controllers: [AuthController, MeController],
   providers: [
@@ -38,7 +37,7 @@ import { PasswordResetDbService } from './password-reset.dbService'
     ConfirmEmailChangeOrchestrator,
     RequestPasswordResetOrchestrator,
     ConfirmPasswordResetOrchestrator,
-    PasswordResetDbService,
+    PasswordResetService,
   ],
   exports: [AuthService, PassportModule, JwtModule],
 })

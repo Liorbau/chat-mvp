@@ -2,7 +2,10 @@ import type { INestApplication } from '@nestjs/common'
 import request from 'supertest'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { SEED_USER_IDS } from '../db/store'
-import { PasswordResetDbService } from '../modules/auth/password-reset.dbService'
+import {
+  RESET_CODE_PROVIDER,
+  type ResetCodeProvider,
+} from '../modules/auth/reset-code/reset-code.provider'
 import {
   EMAIL_PROVIDER,
   type EmailProvider,
@@ -12,8 +15,30 @@ import { createTestApp, login, SEED_PASSWORD } from './test.app'
 
 const NEW_PASSWORD = 'brand-new-password'
 
+class FakeResetCodeProvider implements ResetCodeProvider {
+  private readonly codes = new Map<string, string>()
+
+  store(userId: string, codeHash: string): Promise<string> {
+    this.codes.set(userId, codeHash)
+    return Promise.resolve(codeHash)
+  }
+
+  find(userId: string): Promise<string | undefined> {
+    return Promise.resolve(this.codes.get(userId))
+  }
+
+  consume(userId: string): Promise<boolean> {
+    return Promise.resolve(this.codes.delete(userId))
+  }
+
+  expire(userId: string): void {
+    this.codes.delete(userId)
+  }
+}
+
 describe('Password reset API', () => {
   let app: INestApplication
+  let resetCodeProvider: FakeResetCodeProvider
   const sent: SendEmailInput[] = []
   const emailProvider: EmailProvider = {
     send: (input) => {
@@ -24,8 +49,13 @@ describe('Password reset API', () => {
 
   beforeEach(async () => {
     sent.length = 0
+    resetCodeProvider = new FakeResetCodeProvider()
     app = await createTestApp('chat-test-password-reset', (builder) =>
-      builder.overrideProvider(EMAIL_PROVIDER).useValue(emailProvider),
+      builder
+        .overrideProvider(EMAIL_PROVIDER)
+        .useValue(emailProvider)
+        .overrideProvider(RESET_CODE_PROVIDER)
+        .useValue(resetCodeProvider),
     )
   })
 
@@ -33,7 +63,6 @@ describe('Password reset API', () => {
     await app.close()
   })
 
-  // The reset email reads "Your password reset code is 123456."
   function codeFromLastEmail(): string {
     const code = sent.at(-1)?.text.match(/code is (\d{6})/)?.[1]
     if (code === undefined) {
@@ -137,13 +166,7 @@ describe('Password reset API', () => {
   it('rejects an expired code with 401', async () => {
     const code = await requestCode('alex@example.com')
 
-    // Re-store the same hash with a past expiry to simulate the TTL window lapsing.
-    const db = app.get(PasswordResetDbService)
-    const stored = await db.findByUserId(SEED_USER_IDS.alex)
-    if (stored === undefined) {
-      throw new Error('expected a stored reset code')
-    }
-    await db.store(SEED_USER_IDS.alex, stored.codeHash, new Date(Date.now() - 1000))
+    resetCodeProvider.expire(SEED_USER_IDS.alex)
 
     const confirm = await request(app.getHttpServer())
       .post('/auth/password/reset')

@@ -1,8 +1,7 @@
 import { IsEmail, IsString, Length, Matches, MinLength } from 'class-validator'
-import type { ConfirmPasswordResetRequest } from '@chat/contract'
+import { RESET_CODE_LENGTH, type ConfirmPasswordResetRequest } from '@chat/contract'
 import { Lowercase } from '../../../common/decorators/lowercase.decorator'
 import { Trim } from '../../../common/decorators/trim.decorator'
-import { RESET_CODE_LENGTH } from '../lib/reset-code'
 
 export class ConfirmPasswordResetDto implements ConfirmPasswordResetRequest {
   @Trim()

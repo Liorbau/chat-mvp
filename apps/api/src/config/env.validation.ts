@@ -14,6 +14,7 @@ import {
 
 export type LlmProviderName = 'openai' | 'anthropic'
 export type EmailProviderName = 'log' | 'ses'
+export type ResetCodeDriver = 'redis' | 'memory'
 
 export class EnvironmentVariables {
   @IsString()
@@ -123,6 +124,14 @@ export class EnvironmentVariables {
   @ValidateIf((env: EnvironmentVariables) => env.EMAIL_PROVIDER === 'ses')
   @IsEmail()
   EMAIL_FROM?: string
+
+  @IsIn(['redis', 'memory'])
+  RESET_CODE_DRIVER: ResetCodeDriver = 'redis'
+
+  @ValidateIf((env: EnvironmentVariables) => env.RESET_CODE_DRIVER === 'redis')
+  @IsString()
+  @MinLength(1)
+  REDIS_URL?: string
 }
 
 export function validateEnv(config: Record<string, unknown>): EnvironmentVariables {

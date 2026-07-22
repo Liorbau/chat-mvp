@@ -1,37 +1,32 @@
-import { Inject, Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import type { RequestPasswordResetResponse } from '@chat/contract'
 import { EMAIL_PROVIDER, type EmailProvider } from '../../email/providers/email.provider'
-import { hashPassword } from '../../users/lib/password'
 import { UsersService } from '../../users/users.service'
-import { PasswordResetDbService } from '../password-reset.dbService'
-import { buildPasswordResetMessage } from '../lib/password-reset-message'
-import { RESET_CODE_TTL_MS, generateResetCode } from '../lib/reset-code'
+import { RESET_CODE_PROVIDER, type ResetCodeProvider } from '../reset-code/reset-code.provider'
+import { PasswordResetService } from '../password-reset.service'
 import type { RequestPasswordResetDto } from '../dto/request-password-reset.dto'
 
 @Injectable()
 export class RequestPasswordResetOrchestrator {
+  private readonly logger = new Logger(RequestPasswordResetOrchestrator.name)
+
   constructor(
     private readonly usersService: UsersService,
-    private readonly passwordResetDbService: PasswordResetDbService,
+    @Inject(RESET_CODE_PROVIDER) private readonly resetCodeProvider: ResetCodeProvider,
+    private readonly passwordResetService: PasswordResetService,
     @Inject(EMAIL_PROVIDER) private readonly emailProvider: EmailProvider,
-    private readonly configService: ConfigService,
   ) {}
 
-  // Always resolves to the same response so a caller cannot tell whether the
-  // account exists (no user enumeration). The code is only generated, stored,
-  // and emailed when the account is real.
   async execute(dto: RequestPasswordResetDto): Promise<RequestPasswordResetResponse> {
     const user = await this.usersService.findByEmail(dto.email)
     if (user !== undefined) {
-      const code = generateResetCode()
-      const rounds = this.configService.getOrThrow<number>('BCRYPT_ROUNDS')
-      const codeHash = await hashPassword(code, rounds)
-      const expiresAt = new Date(Date.now() + RESET_CODE_TTL_MS)
-      await this.passwordResetDbService.store(user.id, codeHash, expiresAt)
+      const code = this.passwordResetService.generateCode()
+      const codeHash = await this.passwordResetService.hashCode(code)
+      await this.resetCodeProvider.store(user.id, codeHash)
 
-      const { subject, text } = buildPasswordResetMessage(code)
+      const { subject, text } = this.passwordResetService.buildMessage(code)
       await this.emailProvider.send({ to: user.email, subject, text })
+      this.logger.log(`Password reset code issued for user ${user.id}.`)
     }
 
     return { status: 'reset_code_sent' }
