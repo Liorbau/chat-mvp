@@ -13,9 +13,19 @@ import { MeController } from './me.controller'
 import { SignupOrchestrator } from './orchestrators/signup.orchestrator'
 import { RequestEmailChangeOrchestrator } from './orchestrators/request-email-change.orchestrator'
 import { ConfirmEmailChangeOrchestrator } from './orchestrators/confirm-email-change.orchestrator'
+import { RequestPasswordResetOrchestrator } from './orchestrators/request-password-reset.orchestrator'
+import { ConfirmPasswordResetOrchestrator } from './orchestrators/confirm-password-reset.orchestrator'
+import { ResetCodeModule } from './reset-code/reset-code.module'
+import { PasswordResetService } from './password-reset.service'
 
 @Module({
-  imports: [UsersModule, EmailModule, PassportModule, JwtModule.registerAsync(jwtAsyncOptions)],
+  imports: [
+    UsersModule,
+    EmailModule,
+    ResetCodeModule,
+    PassportModule,
+    JwtModule.registerAsync(jwtAsyncOptions),
+  ],
   controllers: [AuthController, MeController],
   providers: [
     AuthService,
@@ -25,6 +35,9 @@ import { ConfirmEmailChangeOrchestrator } from './orchestrators/confirm-email-ch
     LoginOrchestrator,
     RequestEmailChangeOrchestrator,
     ConfirmEmailChangeOrchestrator,
+    RequestPasswordResetOrchestrator,
+    ConfirmPasswordResetOrchestrator,
+    PasswordResetService,
   ],
   exports: [AuthService, PassportModule, JwtModule],
 })

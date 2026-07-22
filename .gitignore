@@ -33,3 +33,7 @@ local_mds/
 
 # Legacy snapshots kept only for local reference.
 apps/web/legacy/
+
+# Emitted declaration files from ad-hoc tsc runs over the eval scripts (eval is
+# excluded from the Nest build; these are never source).
+apps/api/eval/**/*.d.ts

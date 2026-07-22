@@ -8,8 +8,9 @@ import {
   clearEmailChangeTokenFromUrl,
   readEmailChangeToken,
 } from './features/email-change/lib/emailChangeToken'
+import { PasswordResetFlowContainer } from './features/password-reset/components/PasswordResetFlow/PasswordResetFlowContainer'
 
-type AuthMode = 'login' | 'signup'
+type AuthMode = 'login' | 'signup' | 'reset'
 
 export function App() {
   const { user, isAuthenticated, signOut } = useAuth()
@@ -32,21 +33,38 @@ export function App() {
     )
   }
 
-  return !isAuthenticated || user == null ? (
-    authMode === 'login' ? (
-      <LoginScreenContainer
-        onSwitchToSignup={() => {
-          setAuthMode('signup')
-        }}
-      />
-    ) : (
+  if (isAuthenticated && user != null) {
+    return <ChatLayoutContainer currentUserId={user.id} onLogout={signOut} />
+  }
+
+  if (authMode === 'signup') {
+    return (
       <SignupScreenContainer
         onSwitchToLogin={() => {
           setAuthMode('login')
         }}
       />
     )
-  ) : (
-    <ChatLayoutContainer currentUserId={user.id} onLogout={signOut} />
+  }
+
+  if (authMode === 'reset') {
+    return (
+      <PasswordResetFlowContainer
+        onExit={() => {
+          setAuthMode('login')
+        }}
+      />
+    )
+  }
+
+  return (
+    <LoginScreenContainer
+      onSwitchToSignup={() => {
+        setAuthMode('signup')
+      }}
+      onForgotPassword={() => {
+        setAuthMode('reset')
+      }}
+    />
   )
 }

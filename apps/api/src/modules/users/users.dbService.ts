@@ -80,6 +80,22 @@ export class UsersDbService {
     return doc == null ? undefined : toPublicUser(toStoredUser(doc))
   }
 
+  // Atomic: swap the password hash and bump tokenVersion in one write so a
+  // password reset both changes the credential and kicks every existing token.
+  async setPasswordAndBumpTokenVersion(
+    userId: string,
+    passwordHash: string,
+  ): Promise<User | undefined> {
+    const doc = await this.userModel
+      .findByIdAndUpdate(
+        userId,
+        { $set: { passwordHash }, $inc: { tokenVersion: 1 } },
+        { returnDocument: 'after' },
+      )
+      .exec()
+    return doc == null ? undefined : toPublicUser(toStoredUser(doc))
+  }
+
   async setEmailWithHistory(userId: string, newEmail: string): Promise<User | undefined> {
     const email = newEmail.trim().toLowerCase()
     const doc = await this.userModel

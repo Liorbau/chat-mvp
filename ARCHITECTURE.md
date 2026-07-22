@@ -1104,6 +1104,71 @@ detects `?emailChangeToken=` before the auth gate and runs it regardless of logi
 
 ---
 
+# Password Reset (post-Week 8)
+
+> Status: shipped on `feature/fullstack/password-reset`. An unauthenticated,
+> emailed-OTP reset; follows the orchestrator layering above. The only cross-flow
+> change is a new `tokenVersion` on `User` (session invalidation), reused by auth.
+
+## Flow
+
+1. `POST /auth/password/forgot` (public) — `RequestPasswordResetOrchestrator`
+   **always** returns `{ status: 'reset_code_sent' }` (no enumeration). If the user
+   exists: `PasswordResetService.generateCode()` makes a `RESET_CODE_LENGTH`-digit
+   code, its bcrypt hash goes into the `ResetCodeProvider` (10-min TTL, one active per
+   user), and the plaintext code is emailed via the `email` seam. Logs `userId`
+   only — never the email or the code.
+2. `POST /auth/password/reset` (public) — `ConfirmPasswordResetOrchestrator`
+   resolves the user, `find`s the stored hash (peek), bcrypt-compares the code, then
+   `consume`s it (atomic single-use gate) **before** setting the password — so a
+   wrong guess can't burn the real code. `UsersService.resetPassword` writes the new
+   hash and bumps `tokenVersion` in one atomic update. Every failure (unknown email,
+   no code, expired, wrong, used) throws the **same opaque** `401`.
+
+## Session invalidation (`tokenVersion`)
+
+`User.tokenVersion` (default 0) is embedded in the JWT at sign time and re-checked by
+`JwtStrategy` on every request; a mismatch → `401`. `resetPassword` swaps the hash
+and `$inc`s `tokenVersion` in a single `findByIdAndUpdate`, so a reset kicks every
+existing session at once. (Stateless-JWT trade-off: it's an all-sessions kick, not
+per-device — sufficient for account-takeover recovery.)
+
+## Modules and seams
+
+- **`reset-code` module (under `auth`)** — the ephemeral code store, behind a
+  role-named seam: `ResetCodeProvider` interface + `RESET_CODE_PROVIDER` DI token
+  (`store` / `find` / `consume`). Provider-agnostic wiring identical to `EmailModule`:
+  a factory registry keyed by the `RESET_CODE_DRIVER` env picks the concrete impl —
+  `RedisResetCodeProvider` (ioredis; `SET … EX` native TTL, atomic `GETDEL` single-use,
+  `quit()` on shutdown) or `MemoryResetCodeProvider` (Map + lazy TTL, zero-dep dev
+  fallback, parallel to the email `log` provider). Orchestrators depend only on the
+  interface; the vendor name lives on the concrete class.
+- **No Mongo collection.** Codes are ephemeral/throwaway, so they live off the
+  primary store (Redis owns TTL + single-use natively). This replaced an earlier
+  Mongo `password_resets` collection + TTL/unique index.
+- **`PasswordResetService`** (in `auth`) owns code generation, hashing (delegating to
+  the shared `PasswordHasher`), verification, and the email copy. **`PasswordHasher`**
+  (in `users`, exported) wraps bcrypt + `BCRYPT_ROUNDS` and is shared by
+  `UsersService`. Both are injectables — no free functions imported into Nest classes.
+
+## Config
+
+- `RESET_CODE_DRIVER` — `'redis'` (default) or `'memory'`; validated in
+  `env.validation.ts`. `REDIS_URL` is required **only** when the driver is `redis`
+  (`@ValidateIf`, mirroring the SES-only email vars). `docker-compose.yml` runs a
+  `redis:7-alpine` service (persistence off — OTPs are throwaway). Tests use the
+  `memory` driver and further override `RESET_CODE_PROVIDER` with an in-memory fake, so
+  the suite never opens a Redis connection.
+
+## Frontend
+
+`features/password-reset/` slice — `PasswordResetFlow` (container → context → view)
+drives two steps: `RequestCodeStep` (email → generic "if that account exists…") and
+`ConfirmResetStep` (code + new password → in-flow success). Reached from
+`LoginScreen`'s "Forgot password?"; the App root adds a `'reset'` auth mode.
+
+---
+
 ## Documentation Alignment
 
 - Keep this file aligned with implementation as structure evolves.

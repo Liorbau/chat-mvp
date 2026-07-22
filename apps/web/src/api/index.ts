@@ -11,4 +11,5 @@ export {
 } from './knowledge.api'
 export { updateProfile, uploadAvatar, removeAvatar } from './profile.api'
 export { requestEmailChange, confirmEmailChange } from './email-change.api'
+export { requestPasswordReset, confirmPasswordReset } from './password-reset.api'
 export type { CreateConversationInput } from './types'

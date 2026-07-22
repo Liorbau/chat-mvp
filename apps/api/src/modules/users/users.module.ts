@@ -7,6 +7,7 @@ import { RemoveAvatarOrchestrator } from './orchestrators/remove-avatar.orchestr
 import { UpdateProfileOrchestrator } from './orchestrators/update-profile.orchestrator'
 import { UploadAvatarOrchestrator } from './orchestrators/upload-avatar.orchestrator'
 import { User, UserSchema } from './user.schema'
+import { PasswordHasher } from './password-hasher.service'
 import { UsersController } from './users.controller'
 import { UsersDbService } from './users.dbService'
 import { UsersService } from './users.service'
@@ -21,6 +22,7 @@ import { UsersService } from './users.service'
   providers: [
     UsersService,
     UsersDbService,
+    PasswordHasher,
     ListUsersOrchestrator,
     UpdateProfileOrchestrator,
     UploadAvatarOrchestrator,
@@ -28,6 +30,7 @@ import { UsersService } from './users.service'
   ],
   exports: [
     UsersService,
+    PasswordHasher,
     UpdateProfileOrchestrator,
     UploadAvatarOrchestrator,
     RemoveAvatarOrchestrator,

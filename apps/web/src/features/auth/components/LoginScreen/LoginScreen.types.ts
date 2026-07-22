@@ -10,4 +10,5 @@ export type LoginFormValue = {
 
 export type LoginScreenProps = {
   onSwitchToSignup: () => void
+  onForgotPassword: () => void
 }

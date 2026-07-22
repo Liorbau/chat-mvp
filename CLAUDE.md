@@ -741,4 +741,13 @@ Derived from the Week-8 backend refactor; applies to every endpoint.
   separate `EMAIL_CHANGE_TOKEN_SECRET`, atomic FIFO-10 `previousEmails`, JWT
   files grouped under `auth/jwt/`; `PATCH /me` no longer accepts `email`. See
   `ARCHITECTURE.md` "Change Email (post-Week 8)" and `API_CONTRACT.md`.
+- Post-Week-8 (password-reset feature): unauthenticated emailed-OTP reset
+  (`POST /auth/password/forgot` + `/reset`, always-generic responses, opaque 401s).
+  Ephemeral codes live in a new role-named `ResetCodeProvider` seam (`RESET_CODE_PROVIDER`
+  token) with a config-driven factory (`RESET_CODE_DRIVER` = `redis` default /
+  `memory` dev), same shape as the email seam — Redis (ioredis, native TTL + atomic
+  `GETDEL`), no Mongo collection. Confirming a reset bumps `User.tokenVersion` to
+  invalidate all sessions (checked in `JwtStrategy`). Shared `PasswordHasher`
+  (users) + `PasswordResetService` (auth) are injectables — no free functions in Nest
+  classes. See `ARCHITECTURE.md` "Password Reset (post-Week 8)" and `API_CONTRACT.md`.
 - Add future weeks as new sections without removing shared principles.
