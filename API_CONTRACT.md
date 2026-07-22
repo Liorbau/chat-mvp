@@ -1,4 +1,4 @@
-# Frontend Chat MVP — API Contract (Week 2 -> Week 8)
+# Chat MVP — API Contract
 
 ## Related Planning Docs
 
@@ -7,14 +7,13 @@
 
 ## Stability Policy
 
-This contract is the backend target for the current week's implementation
-(Week 5: MongoDB persistence). Week 5 changed only the storage layer; every
-request and response shape below is unchanged from Week 4.
+This file documents the current HTTP and SSE contract shared by the frontend
+and backend. `@chat/contract` is the TypeScript source of truth.
 
 - Keep endpoint shapes stable.
 - If a change is required, update this file in the same PR and add a short "Contract Changes" note at the end.
 
-## Authentication (Week 4)
+## Authentication
 
 - Auth uses real JWTs. `POST /auth/signup` and `POST /auth/login` return a signed
   token; every other endpoint requires it.
@@ -32,7 +31,10 @@ request and response shape below is unchanged from Week 4.
 type User = {
   id: string;
   name: string;
+  firstName: string;
+  lastName: string;
   email: string;
+  avatarUrl: string | null;
   previousEmails: string[]; // read-only history, newest last, capped at 10 (FIFO)
 };
 // Note: the password is hashed server-side (bcrypt) and is never part of `User`
@@ -45,7 +47,8 @@ type ConfirmEmailChangeRequest = { token: string };
 type SignupRequest = {
   email: string;
   password: string;
-  name: string;
+  firstName: string;
+  lastName: string;
 };
 
 type LoginRequest = {
@@ -60,6 +63,7 @@ type AuthResponse = {
 
 type Conversation = {
   id: string;
+  type: "user" | "assistant" | "tutor";
   // Optional: direct (1:1) conversations carry no stored title — the frontend
   // derives a per-viewer display name from the other participant. Named/group
   // conversations may set one.
@@ -105,7 +109,8 @@ type ApiError = {
 {
   "email": "string",
   "password": "string",
-  "name": "string"
+  "firstName": "string",
+  "lastName": "string"
 }
 ```
 
@@ -117,7 +122,11 @@ type ApiError = {
   "user": {
     "id": "string",
     "name": "string",
-    "email": "string"
+    "firstName": "string",
+    "lastName": "string",
+    "email": "string",
+    "avatarUrl": null,
+    "previousEmails": []
   }
 }
 ```
@@ -155,7 +164,11 @@ type ApiError = {
   "user": {
     "id": "string",
     "name": "string",
-    "email": "string"
+    "firstName": "string",
+    "lastName": "string",
+    "email": "string",
+    "avatarUrl": null,
+    "previousEmails": []
   }
 }
 ```
@@ -187,7 +200,8 @@ Returns the currently authenticated user. Requires a valid bearer token.
   "firstName": "string",
   "lastName": "string",
   "email": "string",
-  "avatarUrl": "https://cdn.example/avatars/<id>?v=<uuid> | null"
+  "avatarUrl": "https://cdn.example/avatars/<id>?v=<uuid> | null",
+  "previousEmails": []
 }
 ```
 
@@ -583,7 +597,6 @@ JSON is an `AssistantSseEvent`:
 type AssistantSseEvent =
   | { type: 'user_message'; message: Message }
   | { type: 'token'; value: string }
-  | { type: 'status'; state: 'thinking' | 'tool_call' }
   | { type: 'tool_call'; tool: string; label: string } // a tool started (Week 8)
   | { type: 'tool_result'; tool: string } // a tool finished (Week 8)
   | { type: 'done'; messageId: string; citations?: Citation[] }
