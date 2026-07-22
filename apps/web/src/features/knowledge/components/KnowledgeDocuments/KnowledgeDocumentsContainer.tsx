@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { KnowledgeDocument } from '@chat/contract'
-import { deleteKnowledgeDocument, getKnowledgeDocuments, uploadKnowledgeDocument } from '@/api'
+import {
+  deleteKnowledgeDocument,
+  getKnowledgeDocuments,
+  uploadKnowledgeDocument,
+} from './apiActions/knowledge'
 import { KnowledgeDocuments } from './KnowledgeDocuments'
 
 export function KnowledgeDocumentsContainer() {

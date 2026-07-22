@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { requestPasswordReset } from '@/api'
+import { requestPasswordReset } from '@/features/password-reset/apiActions/passwordReset'
 import { toApiErrorMessages } from '@/shared/utils/apiErrorMessages'
 
 type UseRequestReset = {

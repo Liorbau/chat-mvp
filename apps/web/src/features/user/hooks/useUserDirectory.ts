@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { User } from '@chat/contract'
-import { getUsers } from '@/api'
+import { getUsers } from '../apiActions/users'
 
 type UserDirectory = {
   users: User[]

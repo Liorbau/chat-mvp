@@ -1,5 +1,5 @@
 import type { KnowledgeDocument } from '@chat/contract'
-import { API_BASE_URL, buildHeaders, request, throwApiError } from './apiClient'
+import { API_BASE_URL, buildHeaders, request, throwApiError } from '@/api/apiClient'
 
 export async function getKnowledgeDocuments(): Promise<KnowledgeDocument[]> {
   return request<KnowledgeDocument[]>('/knowledge/documents')

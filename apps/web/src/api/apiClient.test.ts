@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '@chat/contract'
-import { ApiRequestError, getConversations, signup } from './index'
+import { ApiRequestError, getConversations } from './index'
 import { clearStoredAuth, getToken, saveAuth } from '@/shared/auth/authStorage'
 
 const user: User = {
@@ -62,12 +62,7 @@ describe('apiClient', () => {
       ),
     )
 
-    const error = await signup({
-      email: 'a@b.com',
-      password: 'short',
-      firstName: 'A',
-      lastName: 'B',
-    }).catch((caught: unknown) => caught)
+    const error = await getConversations().catch((caught: unknown) => caught)
 
     expect(error).toBeInstanceOf(ApiRequestError)
     const apiError = error as ApiRequestError

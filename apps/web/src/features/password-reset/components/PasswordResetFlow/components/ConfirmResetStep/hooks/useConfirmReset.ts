@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { confirmPasswordReset } from '@/api'
+import { confirmPasswordReset } from '@/features/password-reset/apiActions/passwordReset'
 import { toApiErrorMessages } from '@/shared/utils/apiErrorMessages'
 
 type ConfirmResetStatus = 'form' | 'success'

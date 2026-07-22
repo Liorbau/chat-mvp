@@ -1,6 +1,6 @@
 import type { AssistantSseEvent } from '@chat/contract'
-import { API_BASE_URL, buildHeaders, throwApiError } from './apiClient'
-import { readSseStream } from './sse'
+import { API_BASE_URL, buildHeaders, throwApiError } from '@/api/apiClient'
+import { readSseStream } from '@/api/sse'
 
 // Streams the agent reply over SSE, invoking onEvent for each parsed frame.
 export async function streamAssistant(

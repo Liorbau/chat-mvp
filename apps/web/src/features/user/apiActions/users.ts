@@ -1,5 +1,5 @@
 import type { User } from '@chat/contract'
-import { request } from './apiClient'
+import { request } from '@/api/apiClient'
 
 export async function getUsers(): Promise<User[]> {
   return request<User[]>('/users')
