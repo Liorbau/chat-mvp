@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import type { UpdateProfileRequest, User } from '@chat/contract'
-import { HttpAppError } from '../../errors/HttpAppError'
+import { AppError } from '../../errors/AppError'
 import { UsersDbService } from './users.dbService'
 import {
   buildUserUpdate,
@@ -31,7 +31,7 @@ export class UsersService {
 
   async findByEmail(email: string): Promise<User | undefined> {
     const stored = await this.usersDbService.findByEmail(email)
-    return stored === undefined ? undefined : toPublicUser(stored)
+    return stored ? toPublicUser(stored) : undefined
   }
 
   async findStoredById(userId: string): Promise<StoredUser | undefined> {
@@ -52,7 +52,7 @@ export class UsersService {
 
   async verifyCredentials(email: string, password: string): Promise<User | undefined> {
     const stored = await this.usersDbService.findByEmail(email)
-    if (stored === undefined) {
+    if (!stored) {
       return undefined
     }
 
@@ -65,11 +65,8 @@ export class UsersService {
   }
 
   async create(input: CreateUserInput): Promise<User> {
-    if ((await this.usersDbService.findByEmail(input.email)) !== undefined) {
-      throw HttpAppError.conflict(
-        'EMAIL_ALREADY_EXISTS',
-        'An account with this email already exists',
-      )
+    if (await this.usersDbService.findByEmail(input.email)) {
+      throw AppError.conflict('EMAIL_ALREADY_EXISTS', 'An account with this email already exists')
     }
 
     const passwordHash = await this.passwordHasher.hash(input.password)
@@ -86,42 +83,42 @@ export class UsersService {
 
   async getAvatarKey(userId: string): Promise<string | null> {
     const stored = await this.usersDbService.findStoredById(userId)
-    if (stored === undefined) {
-      throw HttpAppError.notFound('User not found')
+    if (!stored) {
+      throw AppError.notFound('User not found')
     }
     return stored.avatar?.storageKey ?? null
   }
 
   async clearAvatar(userId: string): Promise<User> {
     const updated = await this.usersDbService.setAvatar(userId, null)
-    if (updated === undefined) {
-      throw HttpAppError.notFound('User not found')
+    if (!updated) {
+      throw AppError.notFound('User not found')
     }
     return updated
   }
 
   async setAvatar(userId: string, avatar: StoredAvatar): Promise<User> {
     const updated = await this.usersDbService.setAvatar(userId, avatar)
-    if (updated === undefined) {
-      throw HttpAppError.notFound('User not found')
+    if (!updated) {
+      throw AppError.notFound('User not found')
     }
     return updated
   }
 
   async updateProfile(userId: string, changes: UpdateProfileRequest): Promise<User> {
     const current = await this.usersDbService.findById(userId)
-    if (current === undefined) {
-      throw HttpAppError.notFound('User not found')
+    if (!current) {
+      throw AppError.notFound('User not found')
     }
 
     const update = buildUserUpdate(current, changes)
     if (Object.keys(update).length === 0) {
-      throw HttpAppError.badRequest('No fields to update')
+      throw AppError.badRequest('No fields to update')
     }
 
     const updated = await this.usersDbService.update(userId, update)
-    if (updated === undefined) {
-      throw HttpAppError.notFound('User not found')
+    if (!updated) {
+      throw AppError.notFound('User not found')
     }
     return updated
   }
@@ -129,21 +126,21 @@ export class UsersService {
   async resetPassword(userId: string, newPassword: string): Promise<User> {
     const passwordHash = await this.passwordHasher.hash(newPassword)
     const updated = await this.usersDbService.setPasswordAndBumpTokenVersion(userId, passwordHash)
-    if (updated === undefined) {
-      throw HttpAppError.notFound('User not found')
+    if (!updated) {
+      throw AppError.notFound('User not found')
     }
     return updated
   }
 
   async isEmailTaken(email: string, exceptUserId: string): Promise<boolean> {
     const existing = await this.usersDbService.findByEmail(email)
-    return existing !== undefined && existing.id !== exceptUserId
+    return !!existing && existing.id !== exceptUserId
   }
 
   async changeEmail(userId: string, newEmail: string): Promise<User> {
     const current = await this.usersDbService.findById(userId)
-    if (current === undefined) {
-      throw HttpAppError.notFound('User not found')
+    if (!current) {
+      throw AppError.notFound('User not found')
     }
 
     const normalized = newEmail.trim().toLowerCase()
@@ -152,15 +149,15 @@ export class UsersService {
     }
 
     if (await this.isEmailTaken(normalized, userId)) {
-      throw HttpAppError.conflict(
+      throw AppError.conflict(
         'EMAIL_ALREADY_EXISTS',
         'That email is already in use by another account.',
       )
     }
 
     const updated = await this.usersDbService.setEmailWithHistory(userId, normalized)
-    if (updated === undefined) {
-      throw HttpAppError.notFound('User not found')
+    if (!updated) {
+      throw AppError.notFound('User not found')
     }
     return updated
   }

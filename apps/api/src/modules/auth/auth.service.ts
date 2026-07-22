@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import type { AuthResponse, User } from '@chat/contract'
-import { HttpAppError } from '../../errors/HttpAppError'
+import { AppError } from '../../errors/AppError'
 import { UsersService } from '../users/users.service'
 import type { LoginDto } from './dto/login.dto'
 import type { SignupDto } from './dto/signup.dto'
@@ -22,8 +22,8 @@ export class AuthService {
     // verifyCredentials returns undefined for both unknown email and wrong
     // password, so we surface one error and never reveal which accounts exist.
     const user = await this.usersService.verifyCredentials(input.email, input.password)
-    if (user === undefined) {
-      throw HttpAppError.unauthorized('Invalid credentials')
+    if (!user) {
+      throw AppError.unauthorized('Invalid credentials')
     }
 
     return { token: await this.signToken(user), user }
@@ -31,8 +31,8 @@ export class AuthService {
 
   private async signToken(user: User): Promise<string> {
     const stored = await this.usersService.findStoredById(user.id)
-    if (stored === undefined) {
-      throw HttpAppError.notFound('User not found')
+    if (!stored) {
+      throw AppError.notFound('User not found')
     }
     return this.jwtService.sign({
       sub: user.id,

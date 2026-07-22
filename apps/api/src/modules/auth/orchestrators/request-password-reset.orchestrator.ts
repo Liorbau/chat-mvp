@@ -19,7 +19,7 @@ export class RequestPasswordResetOrchestrator {
 
   async execute(dto: RequestPasswordResetDto): Promise<RequestPasswordResetResponse> {
     const user = await this.usersService.findByEmail(dto.email)
-    if (user !== undefined) {
+    if (user) {
       const code = this.passwordResetService.generateCode()
       const codeHash = await this.passwordResetService.hashCode(code)
       await this.resetCodeProvider.store(user.id, codeHash)

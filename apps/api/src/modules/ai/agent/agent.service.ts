@@ -65,7 +65,7 @@ export class AgentService {
   ): Promise<BaseMessage[]> {
     const snapshot = await this.graph.getState(config)
     const checkpointed = snapshot.values.messages as BaseMessage[] | undefined
-    const isWarm = checkpointed !== undefined && checkpointed.length > 0
+    const isWarm = !!checkpointed && checkpointed.length > 0
     const history = await this.memory.historyForTurn(conversationId, HISTORY_TOKEN_BUDGET, isWarm)
     return history.map((message) => coerceMessageLikeToMessage(message))
   }
@@ -77,7 +77,7 @@ export class AgentService {
   ): AsyncGenerator<AssistantSseEvent> {
     const snapshot = await this.graph.getState(config)
     const answerMessage = snapshot.values.messages.at(-1)
-    const finalText = answerMessage !== undefined ? answerMessage.text : ''
+    const finalText = answerMessage ? answerMessage.text : ''
     // The refusal path answers without an LLM call, so stream its text here.
     if (nothingStreamed && finalText.length > 0) {
       yield { type: 'token', value: finalText }

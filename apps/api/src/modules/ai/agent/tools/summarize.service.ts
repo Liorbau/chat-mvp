@@ -37,9 +37,7 @@ export class SummarizeService {
           [conversation.id, conversation.participantIds.find((id) => id !== requesterId)] as const,
       ),
     )
-    const otherIds = [...otherIdByConversation.values()].filter(
-      (id): id is string => id !== undefined,
-    )
+    const otherIds = [...otherIdByConversation.values()].filter((id): id is string => Boolean(id))
     const nameById = new Map(
       (await this.usersService.findByIds(otherIds)).map((user) => [user.id, user.name]),
     )

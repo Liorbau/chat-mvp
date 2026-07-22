@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { Embeddings } from '@langchain/core/embeddings'
 import { Injectable, Logger } from '@nestjs/common'
 import type { KnowledgeDocument } from '@chat/contract'
-import { HttpAppError } from '../../errors/HttpAppError'
+import { AppError } from '../../errors/AppError'
 import { ChunkDbService } from './repositories/chunk.dbService'
 import { DocumentDbService } from './repositories/document.dbService'
 import {
@@ -66,8 +66,8 @@ export class KnowledgeService {
   // Authz baked into the lookup: another user's id resolves to undefined -> 404.
   async removeDocument(userId: string, id: string): Promise<string> {
     const doc = await this.documentDb.findByIdAndUser(id, userId)
-    if (doc === undefined) {
-      throw HttpAppError.notFound('Document not found')
+    if (!doc) {
+      throw AppError.notFound('Document not found')
     }
     await this.chunkDb.deleteChunksByDocument(id)
     await this.documentDb.deleteDocument(id)

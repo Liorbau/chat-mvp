@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HttpAppError } from '../../../errors/HttpAppError'
+import { AppError } from '../../../errors/AppError'
 import { DocumentFilePipe } from './document-file.pipe'
 
 function multerFile(overrides: Partial<Express.Multer.File> = {}): Express.Multer.File {
@@ -25,12 +25,12 @@ describe('DocumentFilePipe', () => {
   })
 
   it('rejects a missing file with a 400 VALIDATION_ERROR', () => {
-    expect(() => pipe.transform(undefined)).toThrow(HttpAppError)
+    expect(() => pipe.transform(undefined)).toThrow(AppError)
   })
 
   it('rejects a file over the size limit with a 400', () => {
     const tooBig = multerFile({ size: 6 * 1024 * 1024 })
 
-    expect(() => pipe.transform(tooBig)).toThrow(HttpAppError)
+    expect(() => pipe.transform(tooBig)).toThrow(AppError)
   })
 })

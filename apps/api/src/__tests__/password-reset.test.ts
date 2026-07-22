@@ -65,7 +65,7 @@ describe('Password reset API', () => {
 
   function codeFromLastEmail(): string {
     const code = sent.at(-1)?.text.match(/code is (\d{6})/)?.[1]
-    if (code === undefined) {
+    if (!code) {
       throw new Error('no reset code found in the sent email')
     }
     return code

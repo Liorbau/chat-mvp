@@ -7,7 +7,8 @@ import {
   Logger,
 } from '@nestjs/common'
 import type { Response } from 'express'
-import { HttpAppError } from '../../errors/HttpAppError'
+import { AppError } from '../../errors/AppError'
+import { httpStatusForCode } from '../errors/code.to.http.status'
 import type { ApiErrorBody } from '../errors/error.envelope.types'
 import { toApiErrorBody } from '../errors/to.api.error.body'
 import { isDuplicateKeyError } from '../mongo/is.duplicate.key.error'
@@ -19,8 +20,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>()
 
-    if (exception instanceof HttpAppError) {
-      response.status(exception.httpStatusCode).json(this.fromAppError(exception))
+    if (exception instanceof AppError) {
+      const status = exception.status ?? httpStatusForCode(exception.code)
+      response.status(status).json(this.fromAppError(exception))
       return
     }
 
@@ -41,7 +43,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     const httpErrorStatus = this.resolveHttpErrorStatus(exception)
-    if (httpErrorStatus !== undefined) {
+    if (httpErrorStatus != null) {
       const message = exception instanceof Error ? exception.message : 'Request failed'
       response.status(httpErrorStatus).json(toApiErrorBody(httpErrorStatus, message))
       return
@@ -63,8 +65,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
     return typeof status === 'number' ? status : undefined
   }
 
-  private fromAppError(error: HttpAppError): ApiErrorBody {
+  private fromAppError(error: AppError): ApiErrorBody {
     const base = { code: error.code, message: error.message }
-    return { error: error.details === undefined ? base : { ...base, details: error.details } }
+    return { error: error.details == null ? base : { ...base, details: error.details } }
   }
 }

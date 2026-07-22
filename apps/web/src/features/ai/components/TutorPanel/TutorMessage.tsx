@@ -18,7 +18,7 @@ export function TutorMessage({ message, currentUserId }: TutorMessageProps) {
       <div className={`${BASE_BUBBLE_STYLE} ${mine ? MINE_BUBBLE_COLORS : OTHER_BUBBLE_COLORS}`}>
         <span className={SENDER_LABEL_STYLE}>{who}</span>
         {message.content}
-        {message.citations !== undefined && message.citations.length > 0 ? (
+        {message.citations && message.citations.length > 0 ? (
           <TutorSources citations={message.citations} />
         ) : null}
       </div>

@@ -14,7 +14,7 @@ export class S3Storage implements StorageProvider {
     const endpoint = configService.get<string>('STORAGE_S3_ENDPOINT')
     this.client = new S3Client({
       region: configService.getOrThrow<string>('STORAGE_S3_REGION'),
-      ...(endpoint !== undefined ? { endpoint, forcePathStyle: true } : {}),
+      ...(endpoint ? { endpoint, forcePathStyle: true } : {}),
       credentials: {
         accessKeyId: configService.getOrThrow<string>('STORAGE_S3_ACCESS_KEY_ID'),
         secretAccessKey: configService.getOrThrow<string>('STORAGE_S3_SECRET_ACCESS_KEY'),

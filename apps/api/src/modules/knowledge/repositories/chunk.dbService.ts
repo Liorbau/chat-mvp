@@ -39,7 +39,7 @@ export class ChunkDbService {
   // Native collection for the LangChain vector store (needs the raw driver handle).
   chunkCollection(): Collection {
     const db = this.chunkModel.db.db
-    if (db === undefined) {
+    if (!db) {
       throw new Error('Mongo connection is not ready')
     }
     return db.collection(this.chunkModel.collection.collectionName)

@@ -9,7 +9,7 @@ export function toApiErrorMessages(
 ): string[] {
   if (error instanceof ApiRequestError) {
     const override = statusMessages[error.status]
-    if (override !== undefined) {
+    if (override) {
       return [override]
     }
     if (error.status === 400 && Array.isArray(error.details)) {

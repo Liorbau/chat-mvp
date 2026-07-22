@@ -35,7 +35,7 @@ describe('Email change API', () => {
   // The confirmation link carries the token as ?emailChangeToken=<jwt> (root query).
   function tokenFromLastEmail(): string {
     const token = sent.at(-1)?.text.match(/emailChangeToken=([^\s]+)/)?.[1]
-    if (token === undefined) {
+    if (!token) {
       throw new Error('no email-change token found in the sent email')
     }
     return token

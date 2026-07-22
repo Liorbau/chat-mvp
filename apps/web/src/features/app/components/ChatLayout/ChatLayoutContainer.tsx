@@ -18,12 +18,12 @@ function toDisplayConversation(
   const otherIds = conversation.participantIds.filter((id) => id !== currentUserId)
   const otherId = otherIds.length === 1 ? otherIds[0] : undefined
   const fallback = conversation.title ?? 'Conversation'
-  const name = otherId !== undefined ? getUserDisplayName(otherId) : fallback
+  const name = otherId ? getUserDisplayName(otherId) : fallback
   return {
     ...conversation,
-    title: otherId !== undefined ? `Chat with ${name}` : fallback,
+    title: otherId ? `Chat with ${name}` : fallback,
     avatarName: name,
-    avatarUrl: otherId !== undefined ? getUserAvatarUrl(otherId) : null,
+    avatarUrl: otherId ? getUserAvatarUrl(otherId) : null,
   }
 }
 

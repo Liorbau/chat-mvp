@@ -49,7 +49,7 @@ export class KnowledgeRetrieverService {
   // Built lazily: the vector store needs the native driver collection, which
   // only exists once Mongo has connected (after module init).
   private vectorStore(): MongoDBAtlasVectorSearch {
-    if (this.store === undefined) {
+    if (!this.store) {
       this.store = new MongoDBAtlasVectorSearch(this.embeddings, {
         collection: this.chunkDb.chunkCollection() as unknown as VectorStoreCollection,
         indexName: this.configService.getOrThrow<string>('VECTOR_INDEX_NAME'),

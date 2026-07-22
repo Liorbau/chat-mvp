@@ -22,7 +22,7 @@ function toConversation(doc: ConversationDocument): Conversation {
     lastMessagePreview: doc.lastMessagePreview,
     updatedAt: (doc.lastMessageAt ?? doc.createdAt).toISOString(),
   }
-  return doc.title === undefined ? base : { ...base, title: doc.title }
+  return doc.title ? { ...base, title: doc.title } : base
 }
 
 @Injectable()
@@ -65,7 +65,7 @@ export class ConversationsDbService {
       participantIds: draft.participantIds,
       lastMessagePreview: draft.lastMessagePreview,
       lastMessageAt: new Date(),
-      ...(draft.title === undefined ? {} : { title: draft.title }),
+      ...(draft.title ? { title: draft.title } : {}),
     })
     return toConversation(doc)
   }
@@ -97,7 +97,7 @@ export class ConversationsDbService {
         participantIds: conversation.participantIds,
         lastMessagePreview: conversation.lastMessagePreview,
         lastMessageAt: conversation.lastMessageAt,
-        ...(conversation.title === undefined ? {} : { title: conversation.title }),
+        ...(conversation.title ? { title: conversation.title } : {}),
       })),
     )
     return inserted.length

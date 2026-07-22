@@ -82,7 +82,7 @@ export class MessagesService {
           senderId: ASSISTANT_SENDER_ID,
           content,
           createdAt,
-          ...(citations === undefined ? {} : { citations }),
+          ...(citations ? { citations } : {}),
         },
         session,
       )

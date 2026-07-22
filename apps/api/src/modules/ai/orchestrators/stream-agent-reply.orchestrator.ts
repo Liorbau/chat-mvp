@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import type { AssistantSseEvent, Message } from '@chat/contract'
-import { HttpAppError } from '../../../errors/HttpAppError'
+import { AppError } from '../../../errors/AppError'
 import { ConversationsService } from '../../conversations/conversations.service'
 import { MessagesService } from '../../messages/messages.service'
 import { AgentService } from '../agent/agent.service'
@@ -33,7 +33,7 @@ export class StreamAgentReplyOrchestrator {
       input.requesterId,
     )
     if (conversation.type !== 'assistant' && conversation.type !== 'tutor') {
-      throw HttpAppError.badRequest('This endpoint is only for assistant or tutor conversations')
+      throw AppError.badRequest('This endpoint is only for assistant or tutor conversations')
     }
 
     const userMessage = await this.messagesService.sendMessage({

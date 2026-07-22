@@ -77,9 +77,7 @@ export function assistantChatReducer(
             senderId: action.payload.senderId,
             content: state.streamingText ?? '',
             createdAt: action.payload.createdAt,
-            ...(action.payload.citations === undefined
-              ? {}
-              : { citations: action.payload.citations }),
+            ...(action.payload.citations ? { citations: action.payload.citations } : {}),
           },
         ],
         streamingText: null,
@@ -90,10 +88,9 @@ export function assistantChatReducer(
       return {
         ...state,
         error: action.payload.error,
-        messages:
-          action.payload.tempId === undefined
-            ? state.messages
-            : state.messages.filter((message) => message.id !== action.payload.tempId),
+        messages: action.payload.tempId
+          ? state.messages.filter((message) => message.id !== action.payload.tempId)
+          : state.messages,
       }
     case 'STREAM_END':
       return { ...state, isStreaming: false, streamingText: null, toolLabel: null }

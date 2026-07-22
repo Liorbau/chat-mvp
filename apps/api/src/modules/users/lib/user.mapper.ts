@@ -58,7 +58,7 @@ export function deriveName(firstName: string, lastName: string): string {
 export function buildUserUpdate(current: User, changes: UpdateProfileRequest): UserUpdate {
   const update: UserUpdate = {}
 
-  if (changes.firstName !== undefined || changes.lastName !== undefined) {
+  if (changes.firstName || changes.lastName) {
     const firstName = changes.firstName ?? current.firstName
     const lastName = changes.lastName ?? current.lastName
     update.firstName = firstName

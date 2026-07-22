@@ -22,7 +22,7 @@ export function toMessage(doc: MessageDocument): Message {
     content: doc.content,
     createdAt: doc.createdAt.toISOString(),
   }
-  return doc.citations === undefined ? message : { ...message, citations: doc.citations }
+  return doc.citations ? { ...message, citations: doc.citations } : message
 }
 
 export function toMessageDocument(draft: MessageDraft) {
@@ -32,12 +32,12 @@ export function toMessageDocument(draft: MessageDraft) {
     senderId: draft.senderId,
     content: draft.content,
     createdAt: new Date(draft.createdAt),
-    ...(draft.citations === undefined ? {} : { citations: draft.citations }),
+    ...(draft.citations ? { citations: draft.citations } : {}),
   }
 }
 
 export function buildPageFilter(conversationId: string, cursor?: MessagePageCursor) {
-  if (cursor === undefined) {
+  if (!cursor) {
     return { conversationId }
   }
 
@@ -56,7 +56,7 @@ export function toMessagePage(docsDesc: MessageDocument[], limit: number): Messa
   const pageDesc = hasMore ? docsDesc.slice(0, limit) : docsDesc
   const oldestOnPage = pageDesc.at(-1)
   const nextCursor =
-    hasMore && oldestOnPage !== undefined
+    hasMore && oldestOnPage
       ? { createdAt: oldestOnPage.createdAt.toISOString(), id: oldestOnPage._id }
       : null
 

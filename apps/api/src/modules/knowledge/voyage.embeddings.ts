@@ -37,7 +37,7 @@ export class VoyageEmbeddings extends Embeddings {
 
   async embedQuery(text: string): Promise<number[]> {
     const [vector] = await this.embed([text], 'query')
-    if (vector === undefined) {
+    if (!vector) {
       throw new Error('Voyage returned no embedding for the query')
     }
     return vector
