@@ -1049,6 +1049,17 @@ by `agent.nodes.ts`), `document.dbService.ts` / `chunk.dbService.ts`
 `rag-eval.scoring.ts`) keep services, DAOs, and the graph assembly under the
 ~150-line soft cap.
 
+## Error type (transport-agnostic)
+
+`AppError` (renamed from `HttpAppError`) is keyed by `ErrorCode` only — the domain
+layer no longer names an HTTP status, so services/orchestrators stay unaware they run
+over HTTP. `common/errors/code.to.http.status.ts` owns the single `code → HTTP status`
+map; `AllExceptionsFilter` derives the status
+(`error.status ?? httpStatusForCode(error.code)`), with an optional per-error `status`
+override for rare edge cases. The static factories (`AppError.notFound`,
+`.unauthorized`, `.forbidden`, `.badRequest`, `.conflict(code, …)`) are unchanged at
+call sites.
+
 ---
 
 # Change Email (post-Week 8)

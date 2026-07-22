@@ -34,12 +34,12 @@ split into files) — for scalability and readability. Specifically:
 
 ```
 src/
-  api/                 # the ONLY network layer: fetch core + per-domain actions
+  api/                 # shared network infra + multi-feature ("commonly used") actions
     apiClient.ts       # request() core: base URL, auth header, error mapping
     sse.ts             # readSseStream(): reusable SSE frame reader
     types.ts           # ApiRequestError + shared request/response helper types
-    auth.api.ts  users.api.ts  conversations.api.ts  messages.api.ts
-    ai.api.ts    knowledge.api.ts  profile.api.ts
+    conversations.api.ts  messages.api.ts  profile.api.ts  email-change.api.ts
+                       # single-feature actions live in that feature's apiActions/ (§7)
   shared/              # cross-feature building blocks
     constants/
     hooks/             # generic reusable hooks (e.g. useFileDropzone, useImageFallback)
@@ -134,18 +134,24 @@ Rules:
   Derivations/label choices go to `.utils.ts`; class assembly goes to
   `.styles.ts`; state goes to a hook. A component that mixes composition with an
   inline ad-hoc block is a smell — extract the block.
-- **No conditions inside JSX markup.** `{cond ? <A/> : <B/>}` and inline
-  branching are banned. Express a condition one of two ways:
-  1. **A guard clause** at the top of a **self-standing component** that owns the
-     condition — `if (!hasAvatar) return null` (`RemoveButton`), `if (error ===
-     null) return null` (`AvatarError`). The condition becomes the component's
-     single responsibility; the parent just renders `<AvatarError />` with no
-     `{error && …}` around it.
-  2. **A selector container/view** whose whole job is the choice — e.g.
-     `UserAvatar` returns `<AvatarFallback/>` or `<AvatarImage/>` via a guard.
+- **No conditions inside JSX markup, and exactly one `return` per component.**
+  `{cond ? <A/> : <B/>}` / `{cond && <A/>}` nested inside a parent's markup are
+  banned — and so are multiple `return` statements (no early-return guards). Give the
+  condition its own **self-standing component** whose single job is the choice, and
+  express it with **one** return:
+  1. **A single-return ternary** for a two-way choice — `return error == null ? null
+     : <p>{error}</p>` (`AvatarError`), `return hasAvatar ? <button…/> : null`
+     (`RemoveButton`), `return imageUrl == null ? <AvatarFallback/> : <AvatarImage/>`
+     (`UserAvatar`).
+  2. **Assign-then-return** for 3+ branches — compute the element into one variable
+     via `if`/`else if`/`switch`, then `return element` once (`App`,
+     `PasswordResetFlow`).
 
-  Guards that early-return (`null` or a standalone component) are the sanctioned
-  form. Do **not** put the branch in the parent's JSX.
+  The parent just renders `<AvatarError />` with no `{error && …}` around it.
+- **Layout components render structure + `children` only.** A shell like `AuthCard`
+  (the auth screen/card wrapper) takes no title/content props — callers compose the
+  pieces (`<AuthCardHeader title subtitle />`, the form, footer buttons) as
+  `children`. This keeps the shell reusable and free of screen-specific knowledge.
 
 Mnemonic: *state lives in a hook (container); markup/events live in the view;
 the value-in/value-out function lives in `.utils.ts`; the class string lives in
@@ -183,8 +189,8 @@ AvatarSection.context.ts   # createContext + a typed useAvatarContext() reader
   `useUpdateProfile`) — not one mega-hook.
 - Non-trivial state uses a **pure reducer** (`reducer.ts`, no React imports),
   unit-tested in isolation.
-- Hooks call the **`api/` actions**; components call hooks. Presentational files
-  never call `fetch` or the api layer.
+- Hooks call the **api actions** (shared `api/` or the feature's `apiActions/`, §7);
+  components call hooks. Presentational files never call `fetch` or the api layer.
 - **Duplicated behavior → one shared hook.** Extract to `shared/hooks/` when
   reused across features (e.g. `useFileDropzone`, `useImageFallback`, both born
   from the avatar work and reused by `knowledge`); use a per-feature hook when
@@ -192,13 +198,21 @@ AvatarSection.context.ts   # createContext + a typed useAvatarContext() reader
 - **Keep event/parse mapping pure and separate** from hook wiring
   (`handleAssistantEvent(dispatch, event)`), so the mapping is unit-testable.
 
-## 7. The API layer (`src/api`)
+## 7. The API layer (shared `src/api` + feature `apiActions/`)
 
 - `apiClient.ts` is the single low-level seam (base URL, `Authorization` header,
-  error → `ApiRequestError`). Nothing else calls `fetch`.
+  error → `ApiRequestError`). Nothing else calls `fetch` for authed JSON.
 - Reusable transport helpers live beside it (`sse.ts` → `readSseStream`).
-- Each domain gets a `<domain>.api.ts` of small named actions using `request()`;
-  feature hooks import these.
+- **Co-locate actions with their consumer.** A `<domain>.api.ts` of small named
+  actions (using `request()`) lives in a feature-local **`apiActions/`** folder next
+  to the code that calls it — beside the single component/hook that consumes it, or
+  at the feature root when 2+ of the feature's hooks share it.
+- **Keep in shared `api/` only the commonly-used actions:** the infra (`apiClient`,
+  `sse`, `types`, `ApiRequestError`) plus any `<domain>.api.ts` whose exports serve
+  **more than one feature** (e.g. `conversations`/`messages` are used by their own
+  feature *and* `ai`; `profile`/`email-change` span `auth`/`profile`/`email-change`).
+  `api/index.ts` re-exports only these.
+- Feature hooks import their `apiActions/`; presentational files never touch the api.
 - Keep transport concerns here only; never leak `Response`/`fetch` upward.
 
 ## 8. Co-location, file roles & naming
@@ -234,10 +248,12 @@ AvatarSection.context.ts   # createContext + a typed useAvatarContext() reader
 
 ## 10. Migration status (legacy vs. current)
 
-This rulebook was revised to the patterns proven on the avatar branch. Some
-older code predates the revision and still follows the previous rules (flat
-sub-components, ternary-in-JSX / single-return, class strings in `.constants.ts`).
-That code is **migration debt**, not a counter-example:
+This rulebook was revised to the patterns proven on the avatar branch, then updated
+(mentor review) so that **every component has one `return`** (guard-clause
+early-returns were converted to single-return ternaries) and single-feature api calls
+moved to feature-local `apiActions/` (§7). Some older code predates these revisions
+and still follows previous rules (flat sub-components, `{cond && …}` in JSX, class
+strings in `.constants.ts`). That code is **migration debt**, not a counter-example:
 
 - **Current (follow these):** `features/user/components/UserAvatar/**`,
   `features/profile/components/ProfilePanel/components/AvatarSection/**`.
