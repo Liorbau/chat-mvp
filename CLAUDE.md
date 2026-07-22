@@ -21,7 +21,7 @@
 
 The AI ownership protocol lives in [AGENTS.md](AGENTS.md): the human owns system
 design, tradeoffs, and final decisions; agents restate the task, surface options
-for important decisions, keep diffs small (≤ ~3 files / ~150 lines before
+for important decisions, keep diffs small (≤ ~3 files / ~40 lines before
 pausing), verify with lint/typecheck/tests, and pause at
 architecture/data-model/API/auth/migration decision points. See
 [AGENTS.md](AGENTS.md) for the full text.
