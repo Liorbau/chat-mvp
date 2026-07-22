@@ -3,6 +3,7 @@ import type { ConfigService } from '@nestjs/config'
 import type { User } from '@chat/contract'
 import { HttpAppError } from '../../errors/HttpAppError'
 import type { StoredAvatar, StoredUser } from './lib/user.mapper'
+import { PasswordHasher } from './password-hasher.service'
 import type { UsersDbService } from './users.dbService'
 import { UsersService } from './users.service'
 
@@ -56,7 +57,7 @@ function makeDb(overrides: Partial<UsersDbService> = {}): UsersDbService {
 
 function makeService(db: UsersDbService): UsersService {
   const config = { getOrThrow: vi.fn().mockReturnValue(4) } as unknown as ConfigService
-  return new UsersService(db, config)
+  return new UsersService(db, new PasswordHasher(config))
 }
 
 describe('UsersService', () => {

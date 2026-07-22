@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import type { UpdateProfileRequest, User } from '@chat/contract'
 import { HttpAppError } from '../../errors/HttpAppError'
 import { UsersDbService } from './users.dbService'
@@ -10,7 +9,7 @@ import {
   type StoredAvatar,
   type StoredUser,
 } from './lib/user.mapper'
-import { hashPassword, verifyPassword } from './lib/password'
+import { PasswordHasher } from './password-hasher.service'
 
 export type CreateUserInput = {
   email: string
@@ -23,7 +22,7 @@ export type CreateUserInput = {
 export class UsersService {
   constructor(
     private readonly usersDbService: UsersDbService,
-    private readonly configService: ConfigService,
+    private readonly passwordHasher: PasswordHasher,
   ) {}
 
   async findById(userId: string): Promise<User | undefined> {
@@ -57,7 +56,7 @@ export class UsersService {
       return undefined
     }
 
-    const passwordMatches = await verifyPassword(password, stored.passwordHash)
+    const passwordMatches = await this.passwordHasher.compare(password, stored.passwordHash)
     if (!passwordMatches) {
       return undefined
     }
@@ -73,8 +72,7 @@ export class UsersService {
       )
     }
 
-    const bcryptRounds = this.configService.getOrThrow<number>('BCRYPT_ROUNDS')
-    const passwordHash = await hashPassword(input.password, bcryptRounds)
+    const passwordHash = await this.passwordHasher.hash(input.password)
     const stored = await this.usersDbService.create({
       name: deriveName(input.firstName, input.lastName),
       firstName: input.firstName,
@@ -129,8 +127,7 @@ export class UsersService {
   }
 
   async resetPassword(userId: string, newPassword: string): Promise<User> {
-    const bcryptRounds = this.configService.getOrThrow<number>('BCRYPT_ROUNDS')
-    const passwordHash = await hashPassword(newPassword, bcryptRounds)
+    const passwordHash = await this.passwordHasher.hash(newPassword)
     const updated = await this.usersDbService.setPasswordAndBumpTokenVersion(userId, passwordHash)
     if (updated === undefined) {
       throw HttpAppError.notFound('User not found')
