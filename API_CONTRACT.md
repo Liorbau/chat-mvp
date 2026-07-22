@@ -289,6 +289,57 @@ pushes the old one onto `previousEmails` (FIFO, max 10). `old === new` is a no-o
 **Errors** — `401 UNAUTHORIZED` (invalid or expired token);
 `409 EMAIL_ALREADY_EXISTS` (address taken between request and confirm).
 
+### Password reset (unauthenticated OTP)
+
+A logged-out user proves inbox control with an emailed one-time code, then sets a
+new password. Both endpoints are public. `RESET_CODE_LENGTH` (shared in
+`@chat/contract`) is the code length (6 digits).
+
+#### `POST /auth/password/forgot`
+
+Public. **Always returns the same generic status** (no account enumeration). If the
+account exists, generates a numeric code, stores its bcrypt hash in the reset-code
+store with a ~10-minute TTL (one active code per user, overwriting any prior), and
+emails it through the email seam. No email is sent for unknown addresses.
+
+**Request body**
+
+```json
+{ "email": "string" }
+```
+
+**Success response (200)**
+
+```json
+{ "status": "reset_code_sent" }
+```
+
+**Errors** — `400 VALIDATION_ERROR` (missing/invalid email format). Unknown accounts
+still return `200` with the same body.
+
+#### `POST /auth/password/reset`
+
+Public. Verifies the code (matches, not expired, not already used), sets the new
+password, consumes the code (single-use), and **invalidates all existing sessions**
+by bumping the user's `tokenVersion`.
+
+**Request body**
+
+```json
+{ "email": "string", "code": "string", "newPassword": "string" }
+```
+
+**Success response (200)**
+
+```json
+{ "status": "password_reset" }
+```
+
+**Errors** — `400 VALIDATION_ERROR` (bad code length/format or too-short password);
+`401 UNAUTHORIZED` — one **opaque** message for every failure (unknown email, no
+active code, expired, wrong code, already used) so confirm can't enumerate accounts
+either. After success, any token issued before the reset also returns `401`.
+
 ### Logout (client-side)
 
 JWT auth is stateless, so there is no server session to tear down and no logout
@@ -646,3 +697,13 @@ Removes a document and its chunks. Scoped to the owner (another user's id -> `40
   and public `POST /auth/email/confirm` (`{ token }` -> updated `User`).
 - Email can no longer be changed via `PATCH /me`: `UpdateProfileRequest` drops
   `email` (name-only), and email now moves solely through the confirmed flow.
+
+### Password reset (post-Week 8)
+
+- Added public `POST /auth/password/forgot` (`{ email }` -> `{ status:
+  "reset_code_sent" }`, always generic) and `POST /auth/password/reset`
+  (`{ email, code, newPassword }` -> `{ status: "password_reset" }`).
+- New shared `RESET_CODE_LENGTH` constant in `@chat/contract` (code length, 6).
+- Confirming a reset bumps the user's `tokenVersion`, so every token issued before
+  the reset is rejected (`401`). No `User`-shape change is exposed by these
+  endpoints.
