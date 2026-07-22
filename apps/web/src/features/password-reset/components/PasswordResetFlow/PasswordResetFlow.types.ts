@@ -1,6 +1,6 @@
 import type { usePasswordResetFlow } from './hooks/usePasswordResetFlow'
 
-export type PasswordResetFlowView = ReturnType<typeof usePasswordResetFlow> & {
+export type PasswordResetFlowContextValue = ReturnType<typeof usePasswordResetFlow> & {
   onExit: () => void
 }
 

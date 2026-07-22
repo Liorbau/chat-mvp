@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { PasswordResetFlow } from './PasswordResetFlow'
-import type { PasswordResetFlowView } from './PasswordResetFlow.types'
+import { PasswordResetFlowContext } from './PasswordResetFlow.context'
+import type { PasswordResetFlowContextValue } from './PasswordResetFlow.types'
 
-function buildView(overrides: Partial<PasswordResetFlowView> = {}): PasswordResetFlowView {
+function buildValue(
+  overrides: Partial<PasswordResetFlowContextValue> = {},
+): PasswordResetFlowContextValue {
   return {
     step: 'request',
     email: '',
@@ -15,15 +18,23 @@ function buildView(overrides: Partial<PasswordResetFlowView> = {}): PasswordRese
   }
 }
 
+function renderFlow(overrides: Partial<PasswordResetFlowContextValue> = {}): void {
+  render(
+    <PasswordResetFlowContext.Provider value={buildValue(overrides)}>
+      <PasswordResetFlow />
+    </PasswordResetFlowContext.Provider>,
+  )
+}
+
 describe('PasswordResetFlow', () => {
   it('renders the request step first', () => {
-    render(<PasswordResetFlow {...buildView({ step: 'request' })} />)
+    renderFlow({ step: 'request' })
 
     expect(screen.getByRole('heading', { name: 'Forgot password' })).toBeInTheDocument()
   })
 
   it('renders the confirm step once a code has been sent', () => {
-    render(<PasswordResetFlow {...buildView({ step: 'confirm', email: 'alex@example.com' })} />)
+    renderFlow({ step: 'confirm', email: 'alex@example.com' })
 
     expect(screen.getByRole('heading', { name: 'Reset password' })).toBeInTheDocument()
   })
