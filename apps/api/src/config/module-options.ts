@@ -6,7 +6,7 @@ import { validateEnv } from './env.validation'
 export const configModuleOptions: ConfigModuleOptions = {
   isGlobal: true,
   validate: validateEnv,
-  ignoreEnvFile: process.env.VITEST !== undefined,
+  ignoreEnvFile: Boolean(process.env.VITEST),
 }
 
 export const mongooseAsyncOptions: MongooseModuleAsyncOptions = {

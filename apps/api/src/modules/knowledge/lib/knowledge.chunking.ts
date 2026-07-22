@@ -1,5 +1,5 @@
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters'
-import { HttpAppError } from '../../../errors/HttpAppError'
+import { AppError } from '../../../errors/AppError'
 import type { ChunkDraft } from '../repositories/chunk.dbService'
 
 const CHUNK_SIZE = 500
@@ -23,11 +23,11 @@ export function documentToText(file: UploadedDocument): string {
   const supported =
     SUPPORTED_TEXT_TYPES.includes(file.mimeType) || SUPPORTED_EXTENSIONS.test(file.name)
   if (!supported) {
-    throw HttpAppError.badRequest(`Can't read "${file.name}". Upload a .md or .txt file.`)
+    throw AppError.badRequest(`Can't read "${file.name}". Upload a .md or .txt file.`)
   }
   const text = file.buffer.toString('utf-8').trim()
   if (text === '') {
-    throw HttpAppError.badRequest('That file is empty — nothing to ingest.')
+    throw AppError.badRequest('That file is empty — nothing to ingest.')
   }
   return text
 }
@@ -47,7 +47,7 @@ export function toChunkDrafts(
   for (let index = 0; index < chunks.length; index += 1) {
     const text = chunks[index]
     const embedding = vectors[index]
-    if (text === undefined || embedding === undefined) {
+    if (!text || !embedding) {
       throw new Error('Chunk/embedding count mismatch during ingestion')
     }
     drafts.push({ documentId, documentName, userId, text, embedding, chunkIndex: index })

@@ -6,7 +6,7 @@ import { useFileDropzone } from './useFileDropzone'
 function dragEvent(file?: File): DragEvent<HTMLElement> {
   return {
     preventDefault: vi.fn(),
-    dataTransfer: { files: file === undefined ? [] : [file] },
+    dataTransfer: { files: file ? [file] : [] },
   } as unknown as DragEvent<HTMLElement>
 }
 

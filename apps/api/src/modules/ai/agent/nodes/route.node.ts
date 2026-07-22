@@ -11,7 +11,7 @@ function systemPromptFor(type: AgentConversationType): string {
 }
 
 function answerMessage(replaceId: string | undefined, content: string): AIMessage {
-  return new AIMessage(replaceId !== undefined ? { id: replaceId, content } : { content })
+  return new AIMessage(replaceId ? { id: replaceId, content } : { content })
 }
 
 // route decides the turn: refuse (tutor with empty retrieval), request tools, or

@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import * as apiClient from '@/api'
+import * as authActions from '@/features/auth/apiActions/auth'
 import { ApiRequestError } from '@/api'
 import { AuthProvider } from '@/features/auth/context/AuthProvider'
 import { LoginScreenContainer } from './LoginScreenContainer'
 
-vi.mock('@/api', async (importActual) => {
-  const actual = await importActual<typeof import('@/api')>()
-  return { ...actual, login: vi.fn(), signup: vi.fn(), getUsers: vi.fn() }
+vi.mock('@/features/auth/apiActions/auth', async (importActual) => {
+  const actual = await importActual<typeof import('@/features/auth/apiActions/auth')>()
+  return { ...actual, login: vi.fn(), signup: vi.fn() }
 })
 
 function renderLogin() {
@@ -21,13 +21,13 @@ function renderLogin() {
 
 beforeEach(() => {
   localStorage.clear()
-  vi.mocked(apiClient.login).mockReset()
+  vi.mocked(authActions.login).mockReset()
 })
 
 describe('LoginScreen', () => {
   it('submits email and password to sign in', async () => {
     const user = userEvent.setup()
-    vi.mocked(apiClient.login).mockResolvedValue({
+    vi.mocked(authActions.login).mockResolvedValue({
       token: 'tok',
       user: {
         id: 'user-1',
@@ -45,7 +45,7 @@ describe('LoginScreen', () => {
     await user.type(screen.getByLabelText('Password'), 'password123')
     await user.click(screen.getByRole('button', { name: 'Log in' }))
 
-    expect(apiClient.login).toHaveBeenCalledWith({
+    expect(authActions.login).toHaveBeenCalledWith({
       email: 'alex@example.com',
       password: 'password123',
     })
@@ -53,7 +53,7 @@ describe('LoginScreen', () => {
 
   it('shows a friendly message on invalid credentials (401)', async () => {
     const user = userEvent.setup()
-    vi.mocked(apiClient.login).mockRejectedValue(
+    vi.mocked(authActions.login).mockRejectedValue(
       new ApiRequestError(401, 'UNAUTHORIZED', 'Invalid credentials', undefined),
     )
     renderLogin()
@@ -67,7 +67,7 @@ describe('LoginScreen', () => {
 
   it('renders field-level validation messages from a 400', async () => {
     const user = userEvent.setup()
-    vi.mocked(apiClient.login).mockRejectedValue(
+    vi.mocked(authActions.login).mockRejectedValue(
       new ApiRequestError(400, 'VALIDATION_ERROR', 'Invalid request', [
         'password must be longer than or equal to 8 characters',
       ]),

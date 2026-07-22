@@ -16,7 +16,7 @@ export function KnowledgeUpload({ busy, onFile }: KnowledgeUploadProps) {
         disabled={busy}
         onChange={(event) => {
           const file = event.target.files?.[0]
-          if (file !== undefined) {
+          if (file) {
             onFile(file)
           }
           if (inputRef.current != null) {

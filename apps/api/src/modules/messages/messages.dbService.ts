@@ -44,7 +44,7 @@ export class MessagesDbService {
       [toMessageDocument(draft)],
       session ? { session } : {},
     )
-    if (doc === undefined) {
+    if (!doc) {
       throw new Error('Failed to create message')
     }
     return toMessage(doc)

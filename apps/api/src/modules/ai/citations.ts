@@ -25,7 +25,7 @@ export function parseAnswer(full: string): { answer: string; usedIndices: number
 export function toCitations(usedIndices: number[], chunks: RetrievedChunk[]): Citation[] {
   return usedIndices
     .map((n) => chunks[n - 1])
-    .filter((chunk): chunk is RetrievedChunk => chunk !== undefined)
+    .filter((chunk): chunk is RetrievedChunk => Boolean(chunk))
     .map((chunk) => ({
       chunkId: chunk.chunkId,
       documentId: chunk.documentId,

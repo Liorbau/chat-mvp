@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { RequestEmailChangeResponse, User } from '@chat/contract'
-import { HttpAppError } from '../../../errors/HttpAppError'
+import { AppError } from '../../../errors/AppError'
 import { EMAIL_PROVIDER, type EmailProvider } from '../../email/providers/email.provider'
 import { UsersService } from '../../users/users.service'
 import { EmailChangeTokenService } from '../email-change-token.service'
@@ -20,10 +20,10 @@ export class RequestEmailChangeOrchestrator {
   async execute(user: User, dto: RequestEmailChangeDto): Promise<RequestEmailChangeResponse> {
     const newEmail = dto.newEmail
     if (newEmail === user.email) {
-      throw HttpAppError.badRequest('That is already your email address. Enter a different one.')
+      throw AppError.badRequest('That is already your email address. Enter a different one.')
     }
     if (await this.usersService.isEmailTaken(newEmail, user.id)) {
-      throw HttpAppError.conflict(
+      throw AppError.conflict(
         'EMAIL_ALREADY_EXISTS',
         'That email is already in use by another account.',
       )

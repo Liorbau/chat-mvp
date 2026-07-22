@@ -61,7 +61,7 @@ export function buildHeaders(hasBody: boolean, init?: HeadersInit): Headers {
 }
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const headers = buildHeaders(init.body !== undefined, init.headers)
+  const headers = buildHeaders(Boolean(init.body), init.headers)
   const response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
 
   if (!response.ok) {

@@ -49,10 +49,9 @@ export class ConversationMemoryService {
       role: message.senderId === options.assistantSenderId ? 'assistant' : 'user',
       content: message.content,
     }))
-    const withSystem =
-      options.systemPrompt === undefined
-        ? history
-        : [{ role: 'system' as const, content: options.systemPrompt }, ...history]
+    const withSystem = options.systemPrompt
+      ? [{ role: 'system' as const, content: options.systemPrompt }, ...history]
+      : history
     return truncateIfNeeded(withSystem, maxTokensBudget)
   }
 
@@ -69,6 +68,6 @@ export class ConversationMemoryService {
       return history
     }
     const latest = history.at(-1)
-    return latest !== undefined ? [latest] : []
+    return latest ? [latest] : []
   }
 }

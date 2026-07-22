@@ -88,7 +88,7 @@ export function useAvatar(): UseAvatar {
 
   function onFileChange(event: ChangeEvent<HTMLInputElement>): void {
     const file = event.target.files?.[0]
-    if (file !== undefined) {
+    if (file) {
       void upload(file)
     }
     event.target.value = ''

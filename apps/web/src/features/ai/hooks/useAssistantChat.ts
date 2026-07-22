@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import type { Message } from '@chat/contract'
-import { createConversation, getMessages, streamAssistant } from '@/api'
+import { createConversation, getMessages } from '@/api'
+import { streamAssistant } from '../apiActions/ai'
 import {
   assistantChatReducer,
   initialAssistantState,

@@ -4,7 +4,7 @@ import type {
   RequestPasswordResetRequest,
   RequestPasswordResetResponse,
 } from '@chat/contract'
-import { API_BASE_URL, buildHeaders, request, throwApiError } from './apiClient'
+import { API_BASE_URL, buildHeaders, request, throwApiError } from '@/api/apiClient'
 
 export async function requestPasswordReset(
   input: RequestPasswordResetRequest,

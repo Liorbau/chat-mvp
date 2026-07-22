@@ -25,7 +25,7 @@ const CHAT_MODEL_FACTORIES: Record<string, ChatModelFactory> = {
 export function createChatModel(configService: ConfigService): BaseChatModel {
   const provider = configService.get<string>('LLM_PROVIDER') ?? 'openai'
   const factory = CHAT_MODEL_FACTORIES[provider]
-  if (factory === undefined) {
+  if (!factory) {
     const supported = Object.keys(CHAT_MODEL_FACTORIES).join(', ')
     throw new Error(`Unsupported LLM_PROVIDER "${provider}". Supported: ${supported}`)
   }

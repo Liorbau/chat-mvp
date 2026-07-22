@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload): Promise<User> {
     const stored = await this.usersService.findStoredById(payload.sub)
-    if (stored === undefined || stored.tokenVersion !== payload.tokenVersion) {
+    if (!stored || stored.tokenVersion !== payload.tokenVersion) {
       throw new UnauthorizedException('Invalid or expired token')
     }
 

@@ -14,7 +14,7 @@ async function cleanEval(): Promise<void> {
   try {
     const connection = app.get<Connection>(getConnectionToken())
     const db = connection.db
-    if (db === undefined) {
+    if (!db) {
       throw new Error('No database connection')
     }
 

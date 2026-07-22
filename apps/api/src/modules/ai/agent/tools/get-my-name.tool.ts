@@ -8,9 +8,7 @@ export function buildGetMyNameTool(usersService: UsersService) {
     async (_input, config) => {
       // Scoped to the JWT requesterId; returns only the name, never id/email/hash.
       const user = await usersService.findById(requesterIdFromConfig(config))
-      return user === undefined
-        ? 'Your account could not be found.'
-        : JSON.stringify({ name: user.name })
+      return user ? JSON.stringify({ name: user.name }) : 'Your account could not be found.'
     },
     {
       name: 'get_my_name',

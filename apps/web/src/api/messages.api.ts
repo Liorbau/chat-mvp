@@ -5,7 +5,7 @@ export async function getMessages(
   conversationId: string,
   cursor?: string,
 ): Promise<GetMessagesResponse> {
-  const query = cursor === undefined ? '' : `?cursor=${encodeURIComponent(cursor)}`
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''
   return request<GetMessagesResponse>(`/conversations/${conversationId}/messages${query}`)
 }
 

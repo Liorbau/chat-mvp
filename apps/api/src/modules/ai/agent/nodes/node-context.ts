@@ -9,7 +9,7 @@ export function pendingToolCalls(
   state: AgentStateType,
 ): { name: string; args: Record<string, unknown>; id?: string }[] {
   const last = state.messages.at(-1)
-  return last !== undefined && isAIMessage(last) ? (last.tool_calls ?? []) : []
+  return last && isAIMessage(last) ? (last.tool_calls ?? []) : []
 }
 
 // Shared context every node closes over: the tool-bound chat model, the tool
@@ -30,7 +30,7 @@ export function createAgentNodeContext(chatModel: BaseChatModel, tools: AgentToo
     const retrieved: RetrievedChunk[] = []
     for (const call of pendingToolCalls(state)) {
       const tool = tools.get(call.name)
-      if (tool === undefined) {
+      if (!tool) {
         throw new Error(`Unknown tool: ${call.name}`)
       }
       const toolMessage = (await tool.invoke(call, config)) as ToolMessage

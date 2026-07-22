@@ -19,7 +19,7 @@ export function toApiErrorBody(statusCode: number, exceptionResponse: unknown): 
     const resolvedCode = typeof responseRecord.code === 'string' ? responseRecord.code : code
 
     const error: ApiErrorBody['error'] = { code: resolvedCode, message }
-    if (details !== undefined) {
+    if (details) {
       error.details = details
     }
     return { error }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import type { SendMessageResponse } from '@chat/contract'
-import { HttpAppError } from '../../../errors/HttpAppError'
+import { AppError } from '../../../errors/AppError'
 import { ConversationsService } from '../../conversations/conversations.service'
 import { MessagesService } from '../messages.service'
 
@@ -23,9 +23,7 @@ export class CreateMessageOrchestrator {
     // The plain message endpoint is for human conversations; assistant/tutor
     // sends go through the AI endpoint.
     if (conversation.type === 'assistant') {
-      throw HttpAppError.badRequest(
-        'Use the assistant endpoint to message an assistant conversation',
-      )
+      throw AppError.badRequest('Use the assistant endpoint to message an assistant conversation')
     }
 
     const message = await this.messagesService.sendMessage({

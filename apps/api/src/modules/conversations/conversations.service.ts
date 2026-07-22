@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import type { Conversation, ConversationType } from '@chat/contract'
 import type { ClientSession } from 'mongoose'
 import { isDuplicateKeyError } from '../../common/mongo/is.duplicate.key.error'
-import { HttpAppError } from '../../errors/HttpAppError'
+import { AppError } from '../../errors/AppError'
 import { UsersService } from '../users/users.service'
 import { ConversationsDbService } from './conversations.dbService'
 
@@ -43,7 +43,7 @@ export class ConversationsService {
     title: string | undefined,
   ): Promise<Conversation> {
     const existing = await this.conversationsDbService.findOwnedByType(creatorId, type)
-    if (existing !== undefined) {
+    if (existing) {
       return existing
     }
     try {
@@ -51,13 +51,13 @@ export class ConversationsService {
         type,
         participantIds: [creatorId],
         lastMessagePreview: '',
-        ...(title === undefined ? {} : { title }),
+        ...(title ? { title } : {}),
       })
     } catch (error) {
       const raced = isDuplicateKeyError(error)
         ? await this.conversationsDbService.findOwnedByType(creatorId, type)
         : undefined
-      if (raced !== undefined) {
+      if (raced) {
         return raced
       }
       throw error
@@ -73,15 +73,15 @@ export class ConversationsService {
     const existingIds = await this.usersService.findExistingIds(participantIds)
     const missingParticipantIds = participantIds.filter((id) => !existingIds.has(id))
     if (missingParticipantIds.length > 0) {
-      throw HttpAppError.badRequest('One or more participants do not exist', {
+      throw AppError.badRequest('One or more participants do not exist', {
         participantIds: missingParticipantIds,
       })
     }
 
     if (participantIds.length === 2) {
       const existing = await this.conversationsDbService.findDirectByParticipants(participantIds)
-      if (existing !== undefined) {
-        throw HttpAppError.conflict(
+      if (existing) {
+        throw AppError.conflict(
           'CONVERSATION_ALREADY_EXISTS',
           'A direct conversation for these participants already exists',
         )
@@ -92,17 +92,17 @@ export class ConversationsService {
       type: 'user',
       participantIds,
       lastMessagePreview: '',
-      ...(input.title === undefined ? {} : { title: input.title }),
+      ...(input.title ? { title: input.title } : {}),
     })
   }
 
   async assertParticipant(conversationId: string, requesterId: string): Promise<Conversation> {
     const conversation = await this.conversationsDbService.findById(conversationId)
-    if (conversation === undefined) {
-      throw HttpAppError.notFound('Conversation not found')
+    if (!conversation) {
+      throw AppError.notFound('Conversation not found')
     }
     if (!conversation.participantIds.includes(requesterId)) {
-      throw HttpAppError.forbidden('You are not a participant in this conversation')
+      throw AppError.forbidden('You are not a participant in this conversation')
     }
 
     return conversation
@@ -120,8 +120,8 @@ export class ConversationsService {
       occurredAt,
       session,
     )
-    if (updated === undefined) {
-      throw HttpAppError.notFound('Conversation not found')
+    if (!updated) {
+      throw AppError.notFound('Conversation not found')
     }
 
     return updated

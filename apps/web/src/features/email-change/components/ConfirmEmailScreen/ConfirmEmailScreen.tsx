@@ -1,4 +1,5 @@
 import { AuthCard } from '@/features/auth/components/AuthCard/AuthCard'
+import { AuthCardHeader } from '@/features/auth/components/AuthCardHeader/AuthCardHeader'
 import { useConfirmEmailContext } from './ConfirmEmailScreen.context'
 import { PendingState } from './components/PendingState/PendingState'
 import { SuccessState } from './components/SuccessState/SuccessState'
@@ -8,7 +9,11 @@ export function ConfirmEmailScreen() {
   const { status } = useConfirmEmailContext()
 
   return (
-    <AuthCard title="Confirm email change" subtitle="Finishing your email address update.">
+    <AuthCard>
+      <AuthCardHeader
+        title="Confirm email change"
+        subtitle="Finishing your email address update."
+      />
       {status === 'pending' && <PendingState />}
       {status === 'success' && <SuccessState />}
       {status === 'invalid' && <InvalidState />}

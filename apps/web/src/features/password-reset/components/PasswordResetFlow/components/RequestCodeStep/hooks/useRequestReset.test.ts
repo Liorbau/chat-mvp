@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
-import * as apiClient from '@/api'
+import * as passwordResetActions from '@/features/password-reset/apiActions/passwordReset'
 import { useRequestReset } from './useRequestReset'
 
-vi.mock('@/api', async (importActual) => {
-  const actual = await importActual<typeof import('@/api')>()
+vi.mock('@/features/password-reset/apiActions/passwordReset', async (importActual) => {
+  const actual =
+    await importActual<typeof import('@/features/password-reset/apiActions/passwordReset')>()
   return { ...actual, requestPasswordReset: vi.fn() }
 })
 
-const mockedRequestPasswordReset = vi.mocked(apiClient.requestPasswordReset)
+const mockedRequestPasswordReset = vi.mocked(passwordResetActions.requestPasswordReset)
 
 beforeEach(() => {
   mockedRequestPasswordReset.mockReset()

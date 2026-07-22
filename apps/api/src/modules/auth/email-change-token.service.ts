@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt'
-import { HttpAppError } from '../../errors/HttpAppError'
+import { AppError } from '../../errors/AppError'
 
 export type EmailChangeTokenPayload = {
   userId: string
@@ -34,7 +34,7 @@ export class EmailChangeTokenService {
       })
       return { userId: payload.userId, newEmail: payload.newEmail }
     } catch {
-      throw HttpAppError.unauthorized('Invalid or expired email-change token')
+      throw AppError.unauthorized('Invalid or expired email-change token')
     }
   }
 }

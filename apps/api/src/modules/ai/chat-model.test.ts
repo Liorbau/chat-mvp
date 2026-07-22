@@ -9,7 +9,7 @@ function config(values: Record<string, string>): ConfigService {
     get: (key: string) => values[key],
     getOrThrow: (key: string) => {
       const value = values[key]
-      if (value === undefined) {
+      if (!value) {
         throw new Error(`missing ${key}`)
       }
       return value

@@ -31,7 +31,7 @@ export function useFileDropzone(onFile: (file: File) => void, disabled: boolean)
       return
     }
     const file = event.dataTransfer.files?.[0]
-    if (file !== undefined) {
+    if (file) {
       onFile(file)
     }
   }
