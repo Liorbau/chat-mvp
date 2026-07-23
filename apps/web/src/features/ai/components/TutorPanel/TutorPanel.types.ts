@@ -12,16 +12,3 @@ export type TutorMessageProps = {
 export type TutorSourcesProps = {
   citations: Citation[]
 }
-
-export type TutorStreamingBubbleProps = {
-  streamingText: string | null
-  toolLabel: string | null
-}
-
-export type TutorComposerProps = {
-  input: string
-  isStreaming: boolean
-  canSend: boolean
-  onInputChange: (value: string) => void
-  onSubmit: () => void
-}

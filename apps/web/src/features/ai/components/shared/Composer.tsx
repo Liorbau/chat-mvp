@@ -1,25 +1,22 @@
-import {
-  COMPOSER_STYLE,
-  SEND_DISABLED_STYLE,
-  SEND_STYLE,
-  TEXTAREA_STYLE,
-} from './AssistantPanel.styles'
-import type { AssistantComposerProps } from './AssistantPanel.types'
+import type { ComposerProps } from './shared.types'
 
-export function AssistantComposer({
+export function Composer({
   input,
   isStreaming,
   canSend,
+  placeholderIdle,
+  placeholderStreaming,
+  styles,
   onInputChange,
   onSubmit,
-}: AssistantComposerProps) {
+}: ComposerProps) {
   return (
-    <div className={COMPOSER_STYLE}>
+    <div className={styles.composer}>
       <textarea
-        className={TEXTAREA_STYLE}
+        className={styles.textarea}
         value={input}
         rows={2}
-        placeholder={isStreaming ? 'Waiting for the assistant…' : 'Message the assistant…'}
+        placeholder={isStreaming ? placeholderStreaming : placeholderIdle}
         onChange={(event) => {
           onInputChange(event.target.value)
         }}
@@ -32,7 +29,7 @@ export function AssistantComposer({
       />
       <button
         type="button"
-        className={canSend ? SEND_STYLE : `${SEND_STYLE} ${SEND_DISABLED_STYLE}`}
+        className={canSend ? styles.send : `${styles.send} ${styles.sendDisabled}`}
         disabled={!canSend}
         onClick={onSubmit}
       >
