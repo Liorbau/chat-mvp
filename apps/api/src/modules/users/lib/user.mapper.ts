@@ -1,9 +1,14 @@
-import type { UpdateProfileRequest, User } from '@chat/contract'
+import type { PlanKey, SubscriptionStatus, UpdateProfileRequest, User } from '@chat/contract'
 import type { UserDocument } from '../user.schema'
 
 export type StoredAvatar = {
   srcUrl: string
   storageKey: string | null
+}
+
+export type StoredSubscription = {
+  planKey: PlanKey
+  status: SubscriptionStatus
 }
 
 export type StoredUser = {
@@ -16,9 +21,13 @@ export type StoredUser = {
   avatar: StoredAvatar | null
   previousEmails: string[]
   tokenVersion: number
+  subscription: StoredSubscription
 }
 
-export type StoredUserDraft = Omit<StoredUser, 'id' | 'previousEmails' | 'tokenVersion'>
+export type StoredUserDraft = Omit<
+  StoredUser,
+  'id' | 'previousEmails' | 'tokenVersion' | 'subscription'
+>
 
 export type UserUpdate = Partial<Pick<StoredUser, 'firstName' | 'lastName' | 'name'>>
 
@@ -36,6 +45,10 @@ export function toStoredUser(doc: UserDocument): StoredUser {
         : { srcUrl: doc.avatar.srcUrl, storageKey: doc.avatar.storageKey ?? null },
     previousEmails: doc.previousEmails ?? [],
     tokenVersion: doc.tokenVersion ?? 0,
+    subscription: {
+      planKey: doc.subscription?.planKey ?? 'free',
+      status: doc.subscription?.status ?? 'none',
+    },
   }
 }
 
@@ -48,6 +61,10 @@ export function toPublicUser(user: StoredUser): User {
     email: user.email,
     avatarUrl: user.avatar?.srcUrl ?? null,
     previousEmails: user.previousEmails,
+    subscription: {
+      planKey: user.subscription.planKey,
+      status: user.subscription.status,
+    },
   }
 }
 

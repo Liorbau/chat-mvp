@@ -34,6 +34,7 @@ describe('Auth API', () => {
         email: 'new@example.com',
         avatarUrl: null,
         previousEmails: [],
+        subscription: { planKey: 'free', status: 'none' },
       },
     })
   })
@@ -100,6 +101,7 @@ describe('Auth API', () => {
       email: 'me@example.com',
       avatarUrl: null,
       previousEmails: [],
+      subscription: { planKey: 'free', status: 'none' },
     })
   })
 
@@ -122,6 +124,7 @@ describe('Auth API', () => {
       email: 'alex@example.com',
       avatarUrl: null,
       previousEmails: [],
+      subscription: { planKey: 'free', status: 'none' },
     })
     expect(samMe.body).toEqual({
       id: SEED_USER_IDS.sam,
@@ -131,6 +134,7 @@ describe('Auth API', () => {
       email: 'sam@example.com',
       avatarUrl: null,
       previousEmails: [],
+      subscription: { planKey: 'free', status: 'none' },
     })
   })
 
@@ -164,6 +168,7 @@ describe('Auth API', () => {
         email: 'alex@example.com',
         avatarUrl: null,
         previousEmails: [],
+        subscription: { planKey: 'free', status: 'none' },
       },
     })
   })
@@ -248,6 +253,7 @@ describe('Auth API', () => {
       email: 'alex@example.com',
       avatarUrl: null,
       previousEmails: [],
+      subscription: { planKey: 'free', status: 'none' },
     })
   })
 

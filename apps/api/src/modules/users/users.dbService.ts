@@ -8,6 +8,7 @@ import {
   toPublicUser,
   toStoredUser,
   type StoredAvatar,
+  type StoredSubscription,
   type StoredUser,
   type StoredUserDraft,
   type UserUpdate,
@@ -76,6 +77,16 @@ export class UsersDbService {
   async setAvatar(userId: string, avatar: StoredAvatar | null): Promise<User | undefined> {
     const doc = await this.userModel
       .findByIdAndUpdate(userId, { $set: { avatar } }, { returnDocument: 'after' })
+      .exec()
+    return doc == null ? undefined : toPublicUser(toStoredUser(doc))
+  }
+
+  async setSubscription(
+    userId: string,
+    subscription: StoredSubscription,
+  ): Promise<User | undefined> {
+    const doc = await this.userModel
+      .findByIdAndUpdate(userId, { $set: { subscription } }, { returnDocument: 'after' })
       .exec()
     return doc == null ? undefined : toPublicUser(toStoredUser(doc))
   }

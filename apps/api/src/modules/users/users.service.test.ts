@@ -24,6 +24,7 @@ function publicUser(overrides: Partial<User> = {}): User {
     email: 'alex@example.com',
     avatarUrl: null,
     previousEmails: [],
+    subscription: { planKey: 'free', status: 'none' },
     ...overrides,
   }
 }
@@ -39,6 +40,7 @@ function storedUser(overrides: Partial<StoredUser> = {}): StoredUser {
     avatar: null,
     previousEmails: [],
     tokenVersion: 0,
+    subscription: { planKey: 'free', status: 'none' },
     ...overrides,
   }
 }
@@ -184,6 +186,35 @@ describe('UsersService', () => {
       const db = makeDb({ findById: vi.fn().mockResolvedValue(publicUser()) })
 
       await expect(makeService(db).updateProfile(USER_ID, {})).rejects.toThrow(AppError)
+    })
+  })
+
+  describe('setSubscription', () => {
+    it('persists the subscription and returns the updated user', async () => {
+      const proUser = publicUser({ subscription: { planKey: 'pro', status: 'active' } })
+      const db = makeDb({ setSubscription: vi.fn().mockResolvedValue(proUser) })
+
+      const result = await makeService(db).setSubscription(USER_ID, {
+        planKey: 'pro',
+        status: 'active',
+      })
+
+      expect(db.setSubscription).toHaveBeenCalledWith(USER_ID, {
+        planKey: 'pro',
+        status: 'active',
+      })
+      expect(result.subscription).toEqual({ planKey: 'pro', status: 'active' })
+    })
+
+    it('throws notFound when the user is missing', async () => {
+      const db = makeDb({ setSubscription: vi.fn().mockResolvedValue(undefined) })
+
+      await expect(
+        makeService(db).setSubscription(USER_ID, {
+          planKey: 'pro',
+          status: 'active',
+        }),
+      ).rejects.toThrow(AppError)
     })
   })
 })
