@@ -2,7 +2,7 @@
 
 ## Related Planning Docs
 
-- Execution rules and acceptance criteria: [`CLAUDE.md`](./CLAUDE.md)
+- Execution rules and acceptance criteria: [`CLAUDE.md`](../CLAUDE.md)
 - Feature structure and data flow: [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 
 ## Stability Policy
@@ -11,7 +11,8 @@ This file documents the current HTTP and SSE contract shared by the frontend
 and backend. `@chat/contract` is the TypeScript source of truth.
 
 - Keep endpoint shapes stable.
-- If a change is required, update this file in the same PR and add a short "Contract Changes" note at the end.
+- If a change is required, update this file in the same PR so it always reflects
+  the live contract.
 
 ## Authentication
 
@@ -36,9 +37,29 @@ type User = {
   email: string;
   avatarUrl: string | null;
   previousEmails: string[]; // read-only history, newest last, capped at 10 (FIFO)
+  subscription: Subscription; // read-only; only a verified webhook grants `pro`
 };
 // Note: the password is hashed server-side (bcrypt) and is never part of `User`
 // or any response body.
+
+type PlanKey = "free" | "pro";
+type SubscriptionStatus = "none" | "active" | "failed";
+
+type Subscription = {
+  planKey: PlanKey;
+  status: SubscriptionStatus;
+};
+
+type Plan = {
+  key: PlanKey;
+  name: string;
+  priceAmount: number; // minor units (e.g. cents); source of truth is MongoDB
+  currency: string; // ISO 4217, e.g. "USD"
+};
+
+type ListPlansResponse = { plans: Plan[] };
+type CreatePaymentSessionRequest = { planKey: PlanKey };
+type PaymentSessionResponse = { redirectUrl: string };
 
 type RequestEmailChangeRequest = { newEmail: string };
 type RequestEmailChangeResponse = { status: "confirmation_sent" };
@@ -547,7 +568,7 @@ per-viewer name from the participants); set it for named/group conversations.
 }
 ```
 
-## AI Assistant & Tutor (Weeks 6-7)
+## AI Assistant & Tutor
 
 ### Conversation types
 
@@ -597,8 +618,8 @@ JSON is an `AssistantSseEvent`:
 type AssistantSseEvent =
   | { type: 'user_message'; message: Message }
   | { type: 'token'; value: string }
-  | { type: 'tool_call'; tool: string; label: string } // a tool started (Week 8)
-  | { type: 'tool_result'; tool: string } // a tool finished (Week 8)
+  | { type: 'tool_call'; tool: string; label: string } // a tool started
+  | { type: 'tool_result'; tool: string } // a tool finished
   | { type: 'done'; messageId: string; citations?: Citation[] }
   | { type: 'error'; code: string; message: string }
 ```
@@ -633,90 +654,65 @@ Removes a document and its chunks. Scoped to the owner (another user's id -> `40
 - `200` -> `{ id: string }`.
 - `404` `RESOURCE_NOT_FOUND` — not found / not owned.
 
-## Contract Changes
+## Subscriptions & Billing (Pro plan)
 
-### Week 3
+A user upgrades from `free` to `pro` through a payment provider's hosted checkout.
+Plan prices live in MongoDB (never hardcoded), so changing a price is a DB edit.
+The subscription grant is applied **only** by a signature-verified webhook, never
+by the redirect back to the app.
 
-- Login request body changed from `{ email, password }` to `{ userId }`.
-- Error envelope changed from `{ error: string }` to
-  `{ error: { code, message, details? } }`.
-- Added `POST /conversations` to the documented endpoint surface.
-- Added `limit` query parameter documentation for message pagination.
+Flow: Account page → `POST /users/plans/payment-session` → redirect to the
+provider's hosted session → user pays → provider redirects to
+`/account/upgrade-success|upgrade-cancelled` (API may 302 to the web app) **and**
+(asynchronously) calls the webhook → the webhook enqueues a job → a worker
+verifies the amount and grants `pro`. The Account UI polls `GET /me` until Pro
+is active or the poll budget expires.
 
-### Week 4 (NestJS + JWT auth)
+### `GET /users/plans`
 
-- Added `POST /auth/signup` (`{ email, password, name }` -> `{ token, user }`);
-  duplicate email -> `409` (`EMAIL_ALREADY_EXISTS`).
-- `POST /auth/login` body changed back from `{ userId }` to `{ email, password }`;
-  bad credentials -> `401`.
-- Added `GET /me` returning the authenticated user.
-- Auth tokens are now real signed JWTs; all chat endpoints require
-  `Authorization: Bearer <token>` and return `401` when it is missing/invalid.
-- Added authorization rule: cross-user conversation access -> `403`
-  (`FORBIDDEN`); Week 3 used `404` for the non-member case.
-- Removed `POST /auth/logout`: JWT is stateless, so logout is a client-side token
-  clear with no server endpoint.
-- Passwords are hashed (bcrypt) server-side and never returned.
-- `Conversation.title` is now optional: direct (1:1) conversations store no
-  title and the frontend derives a per-viewer display name from participants.
-- Added `GET /users` (authenticated) returning all users in the public shape,
-  used by the frontend to pick participants for a new conversation.
+Authenticated. Lists the available plans (from MongoDB).
 
-### Week 5 (MongoDB persistence)
+**Success response (200)** — `ListPlansResponse` (`{ plans: Plan[] }`).
 
-- **No request or response shape changes.** Storage moved from in-memory stores
-  to MongoDB (Mongoose); every endpoint above behaves identically.
-- `Conversation.updatedAt` is now derived from the stored `lastMessageAt`
-  (falling back to `createdAt` for a conversation with no messages yet); the wire
-  field name and ISO-8601 format are unchanged.
-- Cursor pagination is now an index-backed keyset over MongoDB. The cursor stays
-  an opaque string; clients still pass back `nextCursor` verbatim.
-- Sending a message updates the message and its conversation's `lastMessageAt` /
-  `lastMessagePreview` atomically (single transaction), so the conversation list
-  never drifts from the latest message.
-- Data now persists across server restarts.
+### `POST /users/plans/payment-session`
 
-### Week 6 (AI assistant mode)
+Authenticated. Starts a hosted checkout for the given plan and returns the URL to
+redirect the browser to. Does **not** change the subscription.
 
-- `POST /conversations` gains optional `type: 'user' | 'assistant'` (default
-  `'user'`); `assistant` is get-or-create, one per user.
-- Added `POST /ai/conversations/:id/messages` — SSE stream of `AssistantSseEvent`
-  (token deltas + `done`/`error`); persists user + assistant messages.
+**Request body** — `CreatePaymentSessionRequest`
 
-### Week 7 (AI tutor / RAG)
+```json
+{ "planKey": "pro" }
+```
 
-- `type` union extends to include `'tutor'` (also get-or-create, one per user).
-- `Message` gains optional `citations: Citation[]` (tutor answers only); the
-  `done` SSE event gains optional `citations`.
-- Added `POST /knowledge/documents` (multipart upload, returns `KnowledgeDocument`),
-  `GET /knowledge/documents` (list), `DELETE /knowledge/documents/:id`
-  (`-> { id }`).
-- The tutor reuses `POST /ai/conversations/:id/messages`; the server branches on
-  `conversation.type`.
+**Success response (200)** — `PaymentSessionResponse`
 
-### Week 8 (LangGraph agent)
+```json
+{ "redirectUrl": "https://checkout.example/session/..." }
+```
 
-- `AssistantSseEvent` gains `tool_call` (`{ tool, label }`) and `tool_result`
-  (`{ tool }`) — the agent's tool progress; the FE renders `label`.
-- No endpoint or request-shape changes: both `assistant` and `tutor` now run
-  through one LangGraph agent behind the same SSE endpoint. Agent state is
-  checkpointed in MongoDB (`thread_id = conversationId`) so conversations resume
-  after a restart.
+**Errors** — `400 VALIDATION_ERROR` (unknown `planKey`, or the plan is not
+purchasable, e.g. `free`); `401 UNAUTHORIZED` (missing/invalid token);
+`404` (plan not found); `409 SUBSCRIPTION_ALREADY_ACTIVE` (caller already has an
+active subscription for that `planKey`).
 
-### Change email (post-Week 8)
+### `POST /webhooks/payments`
 
-- `User` gains `previousEmails: string[]` (read-only history, FIFO, max 10).
-- Added `POST /me/email` (`{ newEmail }` -> `{ status: "confirmation_sent" }`)
-  and public `POST /auth/email/confirm` (`{ token }` -> updated `User`).
-- Email can no longer be changed via `PATCH /me`: `UpdateProfileRequest` drops
-  `email` (name-only), and email now moves solely through the confirmed flow.
+**Public** (no JWT). Called by the payment provider. Authenticity is enforced by
+verifying the provider signature (`signature` header — Rapyd HMAC over the raw
+body; local provider uses `sha256(JWT_SECRET)` hex, no extra env); an invalid
+or missing signature → `401`. A verified event is pushed to a queue and processed
+asynchronously (retries + dead-letter queue), so this endpoint returns quickly and
+idempotently. Active Pro is never overwritten by a later `payment_failed` for
+another checkout attempt.
 
-### Password reset (post-Week 8)
+**Success response (200)**
 
-- Added public `POST /auth/password/forgot` (`{ email }` -> `{ status:
-  "reset_code_sent" }`, always generic) and `POST /auth/password/reset`
-  (`{ email, code, newPassword }` -> `{ status: "password_reset" }`).
-- New shared `RESET_CODE_LENGTH` constant in `@chat/contract` (code length, 6).
-- Confirming a reset bumps the user's `tokenVersion`, so every token issued before
-  the reset is rejected (`401`). No `User`-shape change is exposed by these
-  endpoints.
+```json
+{ "received": true }
+```
+
+Returns `{ "received": true }` even for a duplicate delivery or an
+unrecognized-but-verified event type (idempotent ack). The subscription grant is
+applied by the worker only after an amount/currency check against the DB plan; a
+mismatched amount is recorded (so it won't retry) and rejected without a grant.

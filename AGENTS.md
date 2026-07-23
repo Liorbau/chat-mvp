@@ -69,8 +69,8 @@ follow all of them before working**, in addition to the policy above:
   **frontend** rulebook (feature slices; component-as-folder; container +
   hook + context; Tailwind styling; `@/` imports; named exports; props in
   `.types.ts`). Follow it for all `apps/web` work.
-- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — system architecture.
-- [`API_CONTRACT.md`](./API_CONTRACT.md) — the HTTP endpoint contract.
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — system architecture.
+- [`docs/API_CONTRACT.md`](./docs/API_CONTRACT.md) — the HTTP endpoint contract.
 
-On conflict: follow `CLAUDE.md` acceptance criteria first, then `ARCHITECTURE.md`
-structure, and keep `API_CONTRACT.md` aligned.
+On conflict: follow `CLAUDE.md` acceptance criteria first, then
+`docs/ARCHITECTURE.md` structure, and keep `docs/API_CONTRACT.md` aligned.
