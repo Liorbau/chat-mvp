@@ -7,6 +7,7 @@ import {
   deriveName,
   toPublicUser,
   type StoredAvatar,
+  type StoredSubscription,
   type StoredUser,
 } from './lib/user.mapper'
 import { PasswordHasher } from './password-hasher.service'
@@ -126,6 +127,14 @@ export class UsersService {
   async resetPassword(userId: string, newPassword: string): Promise<User> {
     const passwordHash = await this.passwordHasher.hash(newPassword)
     const updated = await this.usersDbService.setPasswordAndBumpTokenVersion(userId, passwordHash)
+    if (!updated) {
+      throw AppError.notFound('User not found')
+    }
+    return updated
+  }
+
+  async setSubscription(userId: string, subscription: StoredSubscription): Promise<User> {
+    const updated = await this.usersDbService.setSubscription(userId, subscription)
     if (!updated) {
       throw AppError.notFound('User not found')
     }

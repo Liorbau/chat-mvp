@@ -42,6 +42,6 @@ The API tests require the local MongoDB replica set from `docker-compose.yml`.
 
 - `AGENTS.md` — agent workflow and human decision points.
 - `CLAUDE.md` — implementation rules and project history.
-- `ARCHITECTURE.md` — modules, data flows, and design decisions.
-- `API_CONTRACT.md` — HTTP and SSE contract.
+- `docs/ARCHITECTURE.md` — modules, data flows, and design decisions.
+- `docs/API_CONTRACT.md` — HTTP and SSE contract.
 - `docs/FRONTEND_CONVENTIONS.md` — frontend structure and conventions.

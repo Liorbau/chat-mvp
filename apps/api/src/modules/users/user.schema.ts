@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import type { PlanKey, SubscriptionStatus } from '@chat/contract'
 import type { HydratedDocument } from 'mongoose'
 
 export type UserDocument = HydratedDocument<User>
@@ -13,6 +14,17 @@ export class Avatar {
 }
 
 const AvatarSchema = SchemaFactory.createForClass(Avatar)
+
+@Schema({ _id: false })
+export class Subscription {
+  @Prop({ type: String, required: true, default: 'free' })
+  planKey!: PlanKey
+
+  @Prop({ type: String, required: true, default: 'none' })
+  status!: SubscriptionStatus
+}
+
+const SubscriptionSchema = SchemaFactory.createForClass(Subscription)
 
 @Schema({ timestamps: { createdAt: true, updatedAt: false } })
 export class User {
@@ -42,6 +54,12 @@ export class User {
 
   @Prop({ type: Number, default: 0 })
   tokenVersion!: number
+
+  @Prop({
+    type: SubscriptionSchema,
+    default: (): Subscription => ({ planKey: 'free', status: 'none' }),
+  })
+  subscription!: Subscription
 }
 
 export const UserSchema = SchemaFactory.createForClass(User)

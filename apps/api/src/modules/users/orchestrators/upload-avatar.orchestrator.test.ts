@@ -18,6 +18,7 @@ function uploadedUser(avatarUrl: string): User {
     email: 'alex@example.com',
     avatarUrl,
     previousEmails: [],
+    subscription: { planKey: 'free', status: 'none' },
   }
 }
 

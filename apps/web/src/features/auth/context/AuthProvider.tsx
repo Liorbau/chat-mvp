@@ -1,7 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { LoginRequest, SignupRequest, UpdateProfileRequest, User } from '@chat/contract'
 import { updateProfile as apiUpdateProfile } from '@/api'
-import { login as apiLogin, signup as apiSignup } from '../apiActions/auth'
+import { getMe, login as apiLogin, signup as apiSignup } from '../apiActions/auth'
 import { AuthContext, type AuthContextValue } from './auth.context'
 import {
   clearStoredAuth,
@@ -38,6 +38,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return updated
   }
 
+  const refreshUser = useCallback(async (): Promise<User> => {
+    const fresh = await getMe()
+    updateUser(fresh)
+    return fresh
+  }, [])
+
   function signOut(): void {
     clearStoredAuth()
   }
@@ -48,6 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signIn,
     signUp,
     updateProfile,
+    refreshUser,
     signOut,
   }
 

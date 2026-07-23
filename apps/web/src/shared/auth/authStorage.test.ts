@@ -12,6 +12,7 @@ const session: AuthResponse = {
     email: 'alex@example.com',
     avatarUrl: null,
     previousEmails: [],
+    subscription: { planKey: 'free', status: 'none' },
   },
 }
 

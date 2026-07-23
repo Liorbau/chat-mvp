@@ -3,7 +3,7 @@
 Canonical rulebook for how the `apps/web` frontend is organized. New UI work —
 by developers or agents — must follow this.
 
-Related: [`ARCHITECTURE.md`](../ARCHITECTURE.md) (system architecture),
+Related: [`ARCHITECTURE.md`](./ARCHITECTURE.md) (system architecture),
 [`CLAUDE.md`](../CLAUDE.md) (engineering principles).
 
 > **Reference implementation:** the **avatar feature** is the worked example of
@@ -256,7 +256,8 @@ and still follows previous rules (flat sub-components, `{cond && …}` in JSX, c
 strings in `.constants.ts`). That code is **migration debt**, not a counter-example:
 
 - **Current (follow these):** `features/user/components/UserAvatar/**`,
-  `features/profile/components/ProfilePanel/components/AvatarSection/**`.
+  `features/profile/components/ProfilePanel/components/AvatarSection/**`,
+  `features/profile/components/ProfilePanel/components/PlanSection/**`.
 - **Legacy (migrate opportunistically):** other components — e.g.
   `messages/**` (`MessageItem`, `MessageComposer`), `conversations/**`,
   `ai/**`, `auth/**`, and `profile/components/ProfilePanel`'s own `NameForm`/
@@ -274,4 +275,4 @@ strings in `.constants.ts`). That code is **migration debt**, not a counter-exam
 | `messages` | thread panel, list, bubbles, composer, optimistic send |
 | `ai` | assistant + tutor panels, SSE streaming hook + reducer |
 | `knowledge` | knowledge-base document upload/list/delete |
-| `profile` | profile page (edit name / email, avatar) |
+| `profile` | profile page (name / email / avatar / plan sections) |

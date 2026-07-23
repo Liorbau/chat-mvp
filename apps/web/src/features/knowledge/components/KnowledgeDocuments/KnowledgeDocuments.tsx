@@ -7,8 +7,8 @@ import {
   TITLE_STYLE,
   WRAP_STYLE,
 } from './KnowledgeDocuments.styles'
-import { KnowledgeDocumentItem } from './KnowledgeDocumentItem'
-import { KnowledgeUpload } from './KnowledgeUpload'
+import { KnowledgeDocumentItem } from './components/KnowledgeDocumentItem/KnowledgeDocumentItem'
+import { KnowledgeUpload } from './components/KnowledgeUpload/KnowledgeUpload'
 import type { KnowledgeDocumentsViewProps } from './KnowledgeDocuments.types'
 
 export function KnowledgeDocuments({

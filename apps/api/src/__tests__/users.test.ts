@@ -40,6 +40,7 @@ describe('Users API', () => {
         'lastName',
         'name',
         'previousEmails',
+        'subscription',
       ])
       expect(user).not.toHaveProperty('passwordHash')
     }
@@ -51,6 +52,7 @@ describe('Users API', () => {
       email: 'alex@example.com',
       avatarUrl: null,
       previousEmails: [],
+      subscription: { planKey: 'free', status: 'none' },
     })
   })
 })

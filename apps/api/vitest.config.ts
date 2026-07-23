@@ -12,6 +12,7 @@ export default defineConfig({
       BCRYPT_ROUNDS: '4', // For fast testing (less secure than production)
       MONGO_URI: 'mongodb://localhost:27017/chat-test?replicaSet=rs0',
       RESET_CODE_DRIVER: 'memory',
+      QUEUE_DRIVER: 'memory',
       // Dummy keys so env validation passes at boot; no test calls a live API.
       LLM_PROVIDER: 'openai',
       OPENAI_API_KEY: 'sk-test-key',

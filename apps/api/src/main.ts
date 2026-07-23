@@ -7,7 +7,7 @@ import { JSON_BODY_LIMIT } from './config/http.constants'
 
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap')
-  const app = await NestFactory.create<NestExpressApplication>(AppModule)
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true })
   app.useBodyParser('json', { limit: JSON_BODY_LIMIT })
   const configService = app.get(ConfigService)
 

@@ -11,6 +11,7 @@ const user: User = {
   email: 'alex@example.com',
   avatarUrl: null,
   previousEmails: [],
+  subscription: { planKey: 'free', status: 'none' },
 }
 
 function jsonResponse(body: unknown, status = 200): Response {

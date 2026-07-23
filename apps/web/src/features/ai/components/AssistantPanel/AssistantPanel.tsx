@@ -1,13 +1,23 @@
 import { useComposerContext } from '@/features/ai/context/composer.context'
+import { Composer } from '@/features/ai/components/shared/Composer/Composer'
+import { MessagesArea } from '@/features/ai/components/shared/MessagesArea/MessagesArea'
 import {
   AVATAR_STYLE,
+  COMPOSER_STYLE,
+  EMPTY_STYLE,
   ERROR_STYLE,
   HEADER_STYLE,
   HEADER_TITLE_STYLE,
+  MESSAGES_STYLE,
   PANEL_STYLE,
+  SEND_DISABLED_STYLE,
+  SEND_STYLE,
+  STATUS_STYLE,
+  STREAMING_BUBBLE_STYLE,
+  STREAMING_ROW_STYLE,
+  TEXTAREA_STYLE,
 } from './AssistantPanel.styles'
-import { AssistantComposer } from './AssistantComposer'
-import { AssistantMessagesArea } from './AssistantMessagesArea'
+import { AssistantMessage } from './components/AssistantMessage/AssistantMessage'
 
 export function AssistantPanel() {
   const { error, input, isStreaming, canSend, onInputChange, submit } = useComposerContext()
@@ -25,12 +35,29 @@ export function AssistantPanel() {
         </div>
       ) : null}
 
-      <AssistantMessagesArea />
+      <MessagesArea
+        emptyLabel="Ask me anything about your chats."
+        MessageComponent={AssistantMessage}
+        styles={{ messages: MESSAGES_STYLE, empty: EMPTY_STYLE }}
+        streamingBubbleStyles={{
+          row: STREAMING_ROW_STYLE,
+          bubble: STREAMING_BUBBLE_STYLE,
+          status: STATUS_STYLE,
+        }}
+      />
 
-      <AssistantComposer
+      <Composer
         input={input}
         isStreaming={isStreaming}
         canSend={canSend}
+        placeholderIdle="Message the assistant…"
+        placeholderStreaming="Waiting for the assistant…"
+        styles={{
+          composer: COMPOSER_STYLE,
+          textarea: TEXTAREA_STYLE,
+          send: SEND_STYLE,
+          sendDisabled: SEND_DISABLED_STYLE,
+        }}
         onInputChange={onInputChange}
         onSubmit={submit}
       />

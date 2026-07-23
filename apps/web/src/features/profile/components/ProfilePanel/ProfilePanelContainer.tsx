@@ -1,6 +1,6 @@
 import { ProfileFormContext } from './ProfilePanel.context'
 import { ProfilePanel } from './ProfilePanel'
-import { useProfileForm } from './useProfileForm'
+import { useProfileForm } from './hooks/useProfileForm'
 
 export function ProfilePanelContainer() {
   const value = useProfileForm()
