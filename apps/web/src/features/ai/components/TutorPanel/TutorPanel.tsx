@@ -1,7 +1,7 @@
 import { KnowledgeDocumentsContainer } from '@/features/knowledge/components/KnowledgeDocuments/KnowledgeDocumentsContainer'
 import { useComposerContext } from '@/features/ai/context/composer.context'
-import { Composer } from '@/features/ai/components/shared/Composer'
-import { MessagesArea } from '@/features/ai/components/shared/MessagesArea'
+import { Composer } from '@/features/ai/components/shared/Composer/Composer'
+import { MessagesArea } from '@/features/ai/components/shared/MessagesArea/MessagesArea'
 import {
   AVATAR_STYLE,
   COMPOSER_STYLE,
@@ -18,7 +18,7 @@ import {
   STREAMING_ROW_STYLE,
   TEXTAREA_STYLE,
 } from './TutorPanel.styles'
-import { TutorMessage } from './TutorMessage'
+import { TutorMessage } from './components/TutorMessage/TutorMessage'
 
 export function TutorPanel() {
   const { error, input, isStreaming, canSend, onInputChange, submit } = useComposerContext()

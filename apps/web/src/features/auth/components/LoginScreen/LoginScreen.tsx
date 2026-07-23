@@ -1,7 +1,7 @@
 import { AuthCard } from '@/features/auth/components/AuthCard/AuthCard'
 import { AuthCardHeader } from '@/features/auth/components/AuthCardHeader/AuthCardHeader'
 import { AuthSwitchButton } from '@/features/auth/components/AuthSwitchButton/AuthSwitchButton'
-import { LoginForm } from './LoginForm'
+import { LoginForm } from './components/LoginForm/LoginForm'
 import type { LoginScreenProps } from './LoginScreen.types'
 
 export function LoginScreen({ onSwitchToSignup, onForgotPassword }: LoginScreenProps) {

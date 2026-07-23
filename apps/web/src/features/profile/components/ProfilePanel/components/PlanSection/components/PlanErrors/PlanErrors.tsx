@@ -1,4 +1,4 @@
-import { ErrorList } from '@/features/profile/components/ProfilePanel/ErrorList'
+import { ErrorList } from '@/features/profile/components/ProfilePanel/components/ErrorList/ErrorList'
 import { usePlanContext } from '../../PlanSection.context'
 
 export function PlanErrors() {

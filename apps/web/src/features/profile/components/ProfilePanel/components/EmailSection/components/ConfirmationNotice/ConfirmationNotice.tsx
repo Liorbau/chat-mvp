@@ -1,4 +1,4 @@
-import { SAVED_NOTE_STYLE } from '@/features/profile/components/ProfilePanel/ProfilePanel.styles'
+import { SAVED_NOTE_STYLE } from '@/features/profile/components/ProfilePanel/components/SavedNote/SavedNote.styles'
 import { useEmailChangeContext } from '../../EmailSection.context'
 
 export function ConfirmationNotice() {

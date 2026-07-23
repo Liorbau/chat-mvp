@@ -1,7 +1,7 @@
 import { NewConversationContext } from './NewConversation.context'
 import { NewConversation } from './NewConversation'
 import type { NewConversationProps } from './NewConversation.types'
-import { useNewConversation } from './useNewConversation'
+import { useNewConversation } from './hooks/useNewConversation'
 
 export function NewConversationContainer({ currentUserId, onCreated }: NewConversationProps) {
   const value = useNewConversation(currentUserId, onCreated)

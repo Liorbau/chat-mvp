@@ -1,6 +1,6 @@
 import { NEW_BUTTON_STYLE } from './NewConversation.styles'
 import { useNewConversationContext } from './NewConversation.context'
-import { NewConversationForm } from './NewConversationForm'
+import { NewConversationForm } from './components/NewConversationForm/NewConversationForm'
 
 export function NewConversation() {
   const { isOpen, open } = useNewConversationContext()

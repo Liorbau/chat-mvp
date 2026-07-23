@@ -1,7 +1,7 @@
 import { useAuth } from '@/features/auth/context/auth.context'
 import { UserAvatarContainer } from '@/features/user/components/UserAvatar/UserAvatarContainer'
-import { ModeButton } from './ModeButton'
-import { PersonIcon } from './PersonIcon'
+import { ModeButton } from './components/ModeButton/ModeButton'
+import { PersonIcon } from './components/PersonIcon/PersonIcon'
 import { ROW_STYLE } from './ModeSwitcher.styles'
 import type { ModeDef, ModeSwitcherProps } from './ModeSwitcher.types'
 

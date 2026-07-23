@@ -1,6 +1,6 @@
 import { useComposerContext } from '@/features/ai/context/composer.context'
-import { Composer } from '@/features/ai/components/shared/Composer'
-import { MessagesArea } from '@/features/ai/components/shared/MessagesArea'
+import { Composer } from '@/features/ai/components/shared/Composer/Composer'
+import { MessagesArea } from '@/features/ai/components/shared/MessagesArea/MessagesArea'
 import {
   AVATAR_STYLE,
   COMPOSER_STYLE,
@@ -17,7 +17,7 @@ import {
   STREAMING_ROW_STYLE,
   TEXTAREA_STYLE,
 } from './AssistantPanel.styles'
-import { AssistantMessage } from './AssistantMessage'
+import { AssistantMessage } from './components/AssistantMessage/AssistantMessage'
 
 export function AssistantPanel() {
   const { error, input, isStreaming, canSend, onInputChange, submit } = useComposerContext()

@@ -1,9 +1,9 @@
 import { AssistantPanelContainer } from '@/features/ai/components/AssistantPanel/AssistantPanelContainer'
 import { TutorPanelContainer } from '@/features/ai/components/TutorPanel/TutorPanelContainer'
 import { ProfilePanelContainer } from '@/features/profile/components/ProfilePanel/ProfilePanelContainer'
-import { BackButton } from './BackButton'
-import { ChatsView } from './ChatsView'
-import { PersistentTopBar } from './PersistentTopBar'
+import { BackButton } from './components/BackButton/BackButton'
+import { ChatsView } from './components/ChatsView/ChatsView'
+import { PersistentTopBar } from './components/PersistentTopBar/PersistentTopBar'
 import type { ChatLayoutViewProps } from './ChatLayout.types'
 
 export function ChatLayout({

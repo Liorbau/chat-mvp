@@ -21,10 +21,6 @@ export const TITLE_STYLE = 'm-0 text-[24px] text-[#2563eb]'
 
 export const SUBTITLE_STYLE = 'mt-2 text-[#334155]'
 
-export const ERROR_LIST_STYLE = 'list-disc text-[#b91c1c] mt-3 pl-[18px]'
-
-export const SAVED_NOTE_STYLE = 'text-[#15803d] mt-3 text-[14px]'
-
 export function submitButtonStyle(disabled: boolean): string {
   return disabled ? `${BUTTON_STYLE} ${BUTTON_DISABLED_STYLE}` : BUTTON_STYLE
 }

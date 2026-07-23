@@ -5,8 +5,8 @@ import {
   SECTION_STYLE,
   submitButtonStyle,
 } from '@/features/profile/components/ProfilePanel/ProfilePanel.styles'
-import { ErrorList } from '@/features/profile/components/ProfilePanel/ErrorList'
-import { SavedNote } from '@/features/profile/components/ProfilePanel/SavedNote'
+import { ErrorList } from '@/features/profile/components/ProfilePanel/components/ErrorList/ErrorList'
+import { SavedNote } from '@/features/profile/components/ProfilePanel/components/SavedNote/SavedNote'
 import { useNameSectionContext } from './NameSection.context'
 
 export function NameSection() {

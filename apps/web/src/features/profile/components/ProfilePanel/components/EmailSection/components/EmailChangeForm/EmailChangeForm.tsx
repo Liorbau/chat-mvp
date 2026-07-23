@@ -3,7 +3,7 @@ import {
   INPUT_STYLE,
   submitButtonStyle,
 } from '@/features/profile/components/ProfilePanel/ProfilePanel.styles'
-import { ErrorList } from '@/features/profile/components/ProfilePanel/ErrorList'
+import { ErrorList } from '@/features/profile/components/ProfilePanel/components/ErrorList/ErrorList'
 import { useEmailChangeContext } from '../../EmailSection.context'
 
 export function EmailChangeForm() {
