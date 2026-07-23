@@ -37,6 +37,7 @@ describe('LoginScreen', () => {
         email: 'alex@example.com',
         avatarUrl: null,
         previousEmails: [],
+        subscription: { planKey: 'free', status: 'none' },
       },
     })
     renderLogin()

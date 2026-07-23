@@ -7,6 +7,7 @@ export type AuthContextValue = {
   signIn: (credentials: LoginRequest) => Promise<void>
   signUp: (input: SignupRequest) => Promise<void>
   updateProfile: (input: UpdateProfileRequest) => Promise<User>
+  refreshUser: () => Promise<User>
   signOut: () => void
 }
 

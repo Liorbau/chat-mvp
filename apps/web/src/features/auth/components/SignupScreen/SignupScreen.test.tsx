@@ -44,6 +44,7 @@ describe('SignupScreen', () => {
         email: 'new@example.com',
         avatarUrl: null,
         previousEmails: [],
+        subscription: { planKey: 'free', status: 'none' },
       },
     })
     renderSignup()

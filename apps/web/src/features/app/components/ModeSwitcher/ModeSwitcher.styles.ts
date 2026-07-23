@@ -1,5 +1,7 @@
 import type { ModeDef } from './ModeSwitcher.types'
 
+export const ROW_STYLE = 'flex gap-2'
+
 export const WRAP_STYLE = 'relative inline-flex'
 
 const BUTTON_STYLE =

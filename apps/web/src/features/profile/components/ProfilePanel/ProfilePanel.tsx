@@ -1,5 +1,6 @@
 import { AvatarSectionContainer } from '@/features/profile/components/ProfilePanel/components/AvatarSection/AvatarSectionContainer'
 import { EmailSectionContainer } from '@/features/profile/components/ProfilePanel/components/EmailSection/EmailSectionContainer'
+import { PlanSectionContainer } from '@/features/profile/components/ProfilePanel/components/PlanSection/PlanSectionContainer'
 import { CARD_STYLE, SCREEN_STYLE, SUBTITLE_STYLE, TITLE_STYLE } from './ProfilePanel.styles'
 import { useProfileContext } from './ProfilePanel.context'
 import { NameForm } from './NameForm'
@@ -15,6 +16,7 @@ export function ProfilePanel() {
         <AvatarSectionContainer />
         <NameForm />
         <EmailSectionContainer />
+        <PlanSectionContainer />
       </section>
     </main>
   )

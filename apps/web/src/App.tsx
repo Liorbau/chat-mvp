@@ -9,6 +9,7 @@ import {
   readEmailChangeToken,
 } from './features/email-change/lib/emailChangeToken'
 import { PasswordResetFlowContainer } from './features/password-reset/components/PasswordResetFlow/PasswordResetFlowContainer'
+import { readUpgradeReturn } from './features/profile/utils/upgradeReturn'
 
 type AuthMode = 'login' | 'signup' | 'reset'
 
@@ -18,6 +19,7 @@ export function App() {
   const [emailChangeToken, setEmailChangeToken] = useState<string | null>(() =>
     readEmailChangeToken(),
   )
+  const [upgradeReturn] = useState(() => readUpgradeReturn())
 
   let screen: ReactNode
   // A confirmation link is being opened: run the confirm flow regardless of
@@ -33,7 +35,13 @@ export function App() {
       />
     )
   } else if (isAuthenticated && user != null) {
-    screen = <ChatLayoutContainer currentUserId={user.id} onLogout={signOut} />
+    screen = (
+      <ChatLayoutContainer
+        currentUserId={user.id}
+        onLogout={signOut}
+        initialMode={upgradeReturn == null ? 'chats' : 'profile'}
+      />
+    )
   } else if (authMode === 'signup') {
     screen = (
       <SignupScreenContainer

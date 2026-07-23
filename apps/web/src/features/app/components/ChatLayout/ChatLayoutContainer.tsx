@@ -27,10 +27,14 @@ function toDisplayConversation(
   }
 }
 
-export function ChatLayoutContainer({ currentUserId, onLogout }: ChatLayoutProps) {
+export function ChatLayoutContainer({
+  currentUserId,
+  onLogout,
+  initialMode = 'chats',
+}: ChatLayoutProps) {
   const { getUserDisplayName, getUserAvatarUrl } = useUsers()
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
-  const [mode, setMode] = useState<ChatMode>('chats')
+  const [mode, setMode] = useState<ChatMode>(initialMode)
   // The mode to return to when leaving the profile page via the back arrow.
   const [returnMode, setReturnMode] = useState<ChatMode>('chats')
   const { status, conversations, error, markConversationActivity, refetch } = useConversations()

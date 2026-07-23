@@ -5,6 +5,7 @@ import type { ChatMode } from '@/features/app/components/ModeSwitcher/ModeSwitch
 export type ChatLayoutProps = {
   currentUserId: string
   onLogout: () => void
+  initialMode?: ChatMode
 }
 
 export type ChatLayoutViewProps = {
