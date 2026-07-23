@@ -4,12 +4,12 @@ import {
   SECTION_HEADING_STYLE,
   SECTION_STYLE,
   submitButtonStyle,
-} from './ProfilePanel.styles'
-import { useProfileContext } from './ProfilePanel.context'
-import { ErrorList } from './ErrorList'
-import { SavedNote } from './SavedNote'
+} from '@/features/profile/components/ProfilePanel/ProfilePanel.styles'
+import { ErrorList } from '@/features/profile/components/ProfilePanel/ErrorList'
+import { SavedNote } from '@/features/profile/components/ProfilePanel/SavedNote'
+import { useNameSectionContext } from './NameSection.context'
 
-export function NameForm() {
+export function NameSection() {
   const {
     firstName,
     lastName,
@@ -20,7 +20,7 @@ export function NameForm() {
     saved,
     changed,
     submit,
-  } = useProfileContext().name
+  } = useNameSectionContext()
   const disabled = submitting || !changed
 
   return (

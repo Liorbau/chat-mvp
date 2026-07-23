@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import type { User } from '@chat/contract'
 import { useUpdateProfile } from '@/features/profile/hooks/useUpdateProfile'
-import type { NameFormValue } from './ProfilePanel.types'
 
-export function useNameForm(user: User | null): NameFormValue {
+export function useNameForm(user: User | null): {
+  firstName: string
+  lastName: string
+  onFirstNameChange: (value: string) => void
+  onLastNameChange: (value: string) => void
+  submitting: boolean
+  errors: string[]
+  saved: boolean
+  changed: boolean
+  submit: () => void
+} {
   const save = useUpdateProfile()
   const [firstName, setFirstName] = useState(user?.firstName ?? '')
   const [lastName, setLastName] = useState(user?.lastName ?? '')
