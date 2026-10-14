@@ -3,8 +3,8 @@ import type { Conversation, ConversationType } from '@chat/contract'
 import type { ClientSession } from 'mongoose'
 import { isDuplicateKeyError } from '../../common/mongo/is.duplicate.key.error'
 import { AppError } from '../../errors/AppError'
-import { UsersService } from '../users/users.service'
 import { ConversationsDbService } from './conversations.dbService'
+import { participantIdsFor } from './lib/conversations.participants'
 
 export type CreateConversationInput = {
   type?: ConversationType
@@ -14,10 +14,7 @@ export type CreateConversationInput = {
 
 @Injectable()
 export class ConversationsService {
-  constructor(
-    private readonly conversationsDbService: ConversationsDbService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly conversationsDbService: ConversationsDbService) {}
 
   async listConversations(userId: string): Promise<Conversation[]> {
     // Already sorted by last activity (lastMessageAt desc) via the DB index.
@@ -27,12 +24,13 @@ export class ConversationsService {
   async createConversation(
     input: CreateConversationInput,
     creatorId: string,
+    existingUserIds: Set<string>,
   ): Promise<Conversation> {
     const type = input.type ?? 'user'
     if (type === 'assistant' || type === 'tutor') {
       return this.getOrCreateAiConversation(creatorId, type, input.title)
     }
-    return this.createUserConversation(input, creatorId)
+    return this.createUserConversation(input, creatorId, existingUserIds)
   }
 
   // Assistant/tutor conversations are singletons per user: reuse the existing one,
@@ -68,10 +66,10 @@ export class ConversationsService {
   private async createUserConversation(
     input: CreateConversationInput,
     creatorId: string,
+    existingUserIds: Set<string>,
   ): Promise<Conversation> {
-    const participantIds = [...new Set([...(input.participantIds ?? []), creatorId])]
-    const existingIds = await this.usersService.findExistingIds(participantIds)
-    const missingParticipantIds = participantIds.filter((id) => !existingIds.has(id))
+    const participantIds = participantIdsFor(input, creatorId)
+    const missingParticipantIds = participantIds.filter((id) => !existingUserIds.has(id))
     if (missingParticipantIds.length > 0) {
       throw AppError.badRequest('One or more participants do not exist', {
         participantIds: missingParticipantIds,
