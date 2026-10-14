@@ -1,6 +1,6 @@
-export const WRAP_STYLE = 'px-5 py-3 border-b border-[#4c1d24] bg-[#241013]'
+const WRAP_STYLE = 'px-5 py-3 border-b border-[#4c1d24] bg-[#241013]'
 
-export const DRAGGING_STYLE = 'outline-2 outline-dashed outline-[#f87171] outline-offset-[-6px]'
+const DRAGGING_STYLE = 'outline-2 outline-dashed outline-[#f87171] outline-offset-[-6px]'
 
 export const HEADER_STYLE = 'flex items-center justify-between mb-2'
 
@@ -21,3 +21,7 @@ export const ERROR_STYLE = 'text-[#fca5a5] text-[12px] mt-1.5'
 export const STATUS_META_STYLE = 'opacity-60'
 
 export const HIDDEN_INPUT_STYLE = 'hidden'
+
+export function wrapClass(isDragging: boolean): string {
+  return isDragging ? `${WRAP_STYLE} ${DRAGGING_STYLE}` : WRAP_STYLE
+}
