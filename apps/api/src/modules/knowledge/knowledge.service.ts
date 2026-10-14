@@ -63,12 +63,18 @@ export class KnowledgeService {
     return this.documentDb.listByUser(userId)
   }
 
-  // Authz baked into the lookup: another user's id resolves to undefined -> 404.
-  async removeDocument(userId: string, id: string): Promise<string> {
-    const doc = await this.documentDb.findByIdAndUser(id, userId)
-    if (!doc) {
+  async assertOwner(documentId: string, requesterId: string): Promise<string> {
+    const ownerId = await this.documentDb.findOwnerId(documentId)
+    if (!ownerId) {
       throw AppError.notFound('Document not found')
     }
+    if (ownerId !== requesterId) {
+      throw AppError.forbidden('You do not own this document')
+    }
+    return documentId
+  }
+
+  async removeDocument(id: string): Promise<string> {
     await this.chunkDb.deleteChunksByDocument(id)
     await this.documentDb.deleteDocument(id)
     return id

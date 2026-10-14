@@ -38,9 +38,9 @@ export class DocumentDbService {
     return doc == null ? undefined : toKnowledgeDocument(doc)
   }
 
-  async findByIdAndUser(id: string, userId: string): Promise<KnowledgeDocument | undefined> {
-    const doc = await this.documentModel.findOne({ _id: id, userId }).exec()
-    return doc == null ? undefined : toKnowledgeDocument(doc)
+  async findOwnerId(id: string): Promise<string | undefined> {
+    const doc = await this.documentModel.findById(id, { userId: 1 }).exec()
+    return doc?.userId
   }
 
   async listByUser(userId: string): Promise<KnowledgeDocument[]> {
