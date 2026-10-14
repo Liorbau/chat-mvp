@@ -151,6 +151,9 @@ architecture/data-model/API/auth/migration decision points. See
   layer that crosses domain boundaries.
 - **Service** owns single-domain business logic; framework- and DB-agnostic.
   Services never call each other across domains — composition lives in orchestrators.
+  Exception: the AI agent's tools and conversation memory (`ai/agent/tools`,
+  `conversation.memory.service.ts`) read other domains as adapters, because the graph
+  invokes them mid-turn; every such read is scoped to the server-injected `requesterId`.
 - **DbService (DAO / repository)** owns persistence (Mongoose models); services
   and orchestrators never touch Mongoose directly.
 - **Pipe** validates/extracts transport input at the edge (e.g. a multipart file
