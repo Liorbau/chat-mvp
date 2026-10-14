@@ -1,5 +1,4 @@
-import { AssistantPanelContainer } from '@/features/ai/components/AssistantPanel/AssistantPanelContainer'
-import { TutorPanelContainer } from '@/features/ai/components/TutorPanel/TutorPanelContainer'
+import { AiPanelContainer } from '@/features/ai/components/AiPanel/AiPanelContainer'
 import { ProfilePanelContainer } from '@/features/profile/components/ProfilePanel/ProfilePanelContainer'
 import { BackButton } from './components/BackButton/BackButton'
 import { ChatsView } from './components/ChatsView/ChatsView'
@@ -27,8 +26,8 @@ export function ChatLayout({
       ) : (
         <PersistentTopBar mode={mode} onSelectMode={onSelectMode} onLogout={onLogout} />
       )}
-      {mode === 'assistant' && <AssistantPanelContainer currentUserId={currentUserId} />}
-      {mode === 'tutor' && <TutorPanelContainer currentUserId={currentUserId} />}
+      {mode === 'assistant' && <AiPanelContainer currentUserId={currentUserId} mode="assistant" />}
+      {mode === 'tutor' && <AiPanelContainer currentUserId={currentUserId} mode="tutor" />}
       {mode === 'profile' && <ProfilePanelContainer />}
       {mode === 'chats' && (
         <ChatsView

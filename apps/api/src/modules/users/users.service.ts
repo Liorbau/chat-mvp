@@ -39,6 +39,14 @@ export class UsersService {
     return this.usersDbService.findStoredById(userId)
   }
 
+  async tokenVersionOf(userId: string): Promise<number> {
+    const stored = await this.usersDbService.findStoredById(userId)
+    if (!stored) {
+      throw AppError.notFound('User not found')
+    }
+    return stored.tokenVersion
+  }
+
   async list(): Promise<User[]> {
     return this.usersDbService.list()
   }

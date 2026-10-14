@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import type { AssistantSseEvent, Message } from '@chat/contract'
+import { InjectConnection } from '@nestjs/mongoose'
+import { ASSISTANT_SENDER_ID, type AssistantSseEvent, type Message } from '@chat/contract'
+import type { Connection } from 'mongoose'
 import { AppError } from '../../../errors/AppError'
 import { ConversationsService } from '../../conversations/conversations.service'
-import { MessagesService } from '../../messages/messages.service'
+import { MessagesService, type NewMessage } from '../../messages/messages.service'
 import { AgentService } from '../agent/agent.service'
 
 type StreamAgentReplyInput = {
@@ -22,11 +24,10 @@ export class StreamAgentReplyOrchestrator {
     private readonly conversationsService: ConversationsService,
     private readonly messagesService: MessagesService,
     private readonly agentService: AgentService,
+    @InjectConnection() private readonly connection: Connection,
   ) {}
 
-  // Authorize + persist the user message eagerly so errors surface as a normal
-  // HTTP error before the controller flushes SSE headers, then hand back the
-  // agent event stream.
+  // Authorize and persist before the controller flushes SSE headers, so errors stay plain HTTP.
   async execute(input: StreamAgentReplyInput): Promise<StreamAgentReplyResult> {
     const conversation = await this.conversationsService.assertParticipant(
       input.conversationId,
@@ -36,7 +37,7 @@ export class StreamAgentReplyOrchestrator {
       throw AppError.badRequest('This endpoint is only for assistant or tutor conversations')
     }
 
-    const userMessage = await this.messagesService.sendMessage({
+    const userMessage = await this.saveMessage({
       conversationId: input.conversationId,
       senderId: input.requesterId,
       content: input.content,
@@ -48,7 +49,27 @@ export class StreamAgentReplyOrchestrator {
         conversationId: input.conversationId,
         requesterId: input.requesterId,
         conversationType: conversation.type,
+        saveReply: ({ content, citations }) =>
+          this.saveMessage({
+            conversationId: input.conversationId,
+            senderId: ASSISTANT_SENDER_ID,
+            content,
+            ...(citations.length > 0 ? { citations } : {}),
+          }),
       }),
     }
+  }
+
+  private async saveMessage(message: NewMessage): Promise<Message> {
+    return this.connection.transaction(async (session) => {
+      const created = await this.messagesService.createMessage(message, session)
+      await this.conversationsService.recordMessageActivity(
+        message.conversationId,
+        created.content,
+        new Date(created.createdAt),
+        session,
+      )
+      return created
+    })
   }
 }

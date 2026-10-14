@@ -24,7 +24,7 @@ export class S3Storage implements StorageProvider {
     this.publicBaseUrl = configService.getOrThrow<string>('STORAGE_PUBLIC_BASE_URL')
   }
 
-  async put(input: PutObjectInput): Promise<void> {
+  async put(input: PutObjectInput): Promise<string> {
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -34,10 +34,12 @@ export class S3Storage implements StorageProvider {
         CacheControl: input.cacheControl,
       }),
     )
+    return input.key
   }
 
-  async delete(key: string): Promise<void> {
+  async delete(key: string): Promise<string> {
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }))
+    return key
   }
 
   publicUrl(key: string): string {

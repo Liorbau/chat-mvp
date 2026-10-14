@@ -92,10 +92,10 @@ describe('Knowledge API', () => {
     const del = await request(app.getHttpServer())
       .delete(`/knowledge/documents/${doc.id}`)
       .set('Authorization', `Bearer ${sam}`)
-    expect(del.status).toBe(404)
+    expect(del.status).toBe(403)
 
     const alexList = await listDocuments(alex)
-    expect(alexList.body as KnowledgeDocument[]).toHaveLength(1) // still there
+    expect(alexList.body as KnowledgeDocument[]).toHaveLength(1)
   })
 
   it('lists only documents owned by the caller', async () => {

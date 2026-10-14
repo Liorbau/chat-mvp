@@ -1,30 +1,14 @@
 import { Injectable } from '@nestjs/common'
-import { InjectConnection } from '@nestjs/mongoose'
-import {
-  ASSISTANT_SENDER_ID,
-  type Citation,
-  type GetMessagesResponse,
-  type Message,
-} from '@chat/contract'
-import type { Connection } from 'mongoose'
-import { ConversationsService } from '../conversations/conversations.service'
-import { MessagesDbService } from './messages.dbService'
+import type { GetMessagesResponse, Message } from '@chat/contract'
+import type { ClientSession } from 'mongoose'
+import { MessagesDbService, type MessageDraft } from './messages.dbService'
 import { decodeCursor, encodeCursor } from './lib/messages.cursor'
 
-type SendMessageInput = {
-  conversationId: string
-  senderId: string
-  content: string
-}
+export type NewMessage = Omit<MessageDraft, 'createdAt'>
 
 @Injectable()
 export class MessagesService {
-  constructor(
-    private readonly messagesDbService: MessagesDbService,
-    private readonly conversationsService: ConversationsService,
-    // Used only to run the message-send writes in one transaction.
-    @InjectConnection() private readonly connection: Connection,
-  ) {}
+  constructor(private readonly messagesDbService: MessagesDbService) {}
 
   async getPage(
     conversationId: string,
@@ -43,56 +27,10 @@ export class MessagesService {
     }
   }
 
-  // Atomic send: insert the message and update the conversation's last-message
-  // snapshot in one transaction. Authorization is the caller's responsibility.
-  async sendMessage(input: SendMessageInput): Promise<Message> {
-    const occurredAt = new Date()
-    const createdAt = occurredAt.toISOString()
-    return this.connection.transaction(async (session) => {
-      const created = await this.messagesDbService.create(
-        {
-          conversationId: input.conversationId,
-          senderId: input.senderId,
-          content: input.content,
-          createdAt,
-        },
-        session,
-      )
-      await this.conversationsService.recordMessageActivity(
-        input.conversationId,
-        created.content,
-        occurredAt,
-        session,
-      )
-      return created
-    })
-  }
-
-  async appendAssistantMessage(
-    conversationId: string,
-    content: string,
-    citations?: Citation[],
-  ): Promise<Message> {
-    const occurredAt = new Date()
-    const createdAt = occurredAt.toISOString()
-    return this.connection.transaction(async (session) => {
-      const created = await this.messagesDbService.create(
-        {
-          conversationId,
-          senderId: ASSISTANT_SENDER_ID,
-          content,
-          createdAt,
-          ...(citations ? { citations } : {}),
-        },
-        session,
-      )
-      await this.conversationsService.recordMessageActivity(
-        conversationId,
-        created.content,
-        occurredAt,
-        session,
-      )
-      return created
-    })
+  async createMessage(message: NewMessage, session: ClientSession): Promise<Message> {
+    return this.messagesDbService.create(
+      { ...message, createdAt: new Date().toISOString() },
+      session,
+    )
   }
 }

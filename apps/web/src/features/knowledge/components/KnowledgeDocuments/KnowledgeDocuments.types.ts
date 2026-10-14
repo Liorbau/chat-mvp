@@ -1,19 +1,8 @@
 import type { KnowledgeDocument } from '@chat/contract'
+import type { useKnowledgeDocuments } from './hooks/useKnowledgeDocuments'
 
-export type KnowledgeDocumentsViewProps = {
-  documents: KnowledgeDocument[]
-  error: string | null
-  busy: boolean
-  onUpload: (file: File) => void
-  onRemove: (id: string) => void
-}
-
-export type KnowledgeUploadProps = {
-  busy: boolean
-  onFile: (file: File) => void
-}
+export type KnowledgeDocumentsContextValue = ReturnType<typeof useKnowledgeDocuments>
 
 export type KnowledgeDocumentItemProps = {
   document: KnowledgeDocument
-  onRemove: (id: string) => void
 }

@@ -649,7 +649,7 @@ Returns the authenticated user's documents (newest first).
 
 ### `DELETE /knowledge/documents/:id`
 
-Removes a document and its chunks. Scoped to the owner (another user's id -> `404`).
+Removes a document and its chunks. Missing id -> `404`; another user's document -> `403`.
 
 - `200` -> `{ id: string }`.
 - `404` `RESOURCE_NOT_FOUND` — not found / not owned.

@@ -1,15 +1,26 @@
-import { useState } from 'react'
+import { useState, type KeyboardEvent, type RefObject } from 'react'
+import type { Message } from '@chat/contract'
 import { useScrollToBottom } from '@/shared/hooks/useScrollToBottom'
-import type { ComposerValue } from '@/features/ai/context/composer.types'
+import type { AiMode } from '@/features/ai/types/ai.types'
 import { useAssistantChat } from './useAssistantChat'
 
-// Shared composer state for the assistant and tutor panels: streams a reply,
-// tracks the input, auto-scrolls, and gates sending. `conversationType` is the
-// only difference between the two panels.
-export function useComposer(
-  currentUserId: string,
-  conversationType: 'assistant' | 'tutor',
-): ComposerValue {
+type UseComposer = {
+  conversationType: AiMode
+  messages: Message[]
+  streamingText: string | null
+  toolLabel: string | null
+  isStreaming: boolean
+  error: string | null
+  input: string
+  canSend: boolean
+  currentUserId: string
+  endRef: RefObject<HTMLDivElement | null>
+  onInputChange: (value: string) => void
+  onInputKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void
+  submit: () => void
+}
+
+export function useComposer(currentUserId: string, conversationType: AiMode): UseComposer {
   const { messages, streamingText, toolLabel, isStreaming, isReady, error, send } =
     useAssistantChat(currentUserId, conversationType)
   const [input, setInput] = useState('')
@@ -28,7 +39,15 @@ export function useComposer(
     setInput('')
   }
 
+  function onInputKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      submit()
+    }
+  }
+
   return {
+    conversationType,
     messages,
     streamingText,
     toolLabel,
@@ -39,6 +58,7 @@ export function useComposer(
     currentUserId,
     endRef,
     onInputChange: setInput,
+    onInputKeyDown,
     submit,
   }
 }

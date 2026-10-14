@@ -6,6 +6,7 @@ import {
 } from '@/features/ai/state/assistantChatReducer'
 import { useLoadAssistantConversation } from './useLoadAssistantConversation'
 import { useSendAssistantMessage } from './useSendAssistantMessage'
+import type { AiMode } from '@/features/ai/types/ai.types'
 
 type AssistantChat = {
   messages: Message[]
@@ -19,14 +20,15 @@ type AssistantChat = {
 
 export function useAssistantChat(
   currentUserId: string,
-  conversationType: 'assistant' | 'tutor' = 'assistant',
+  conversationType: AiMode = 'assistant',
 ): AssistantChat {
   const [state, dispatch] = useReducer(assistantChatReducer, initialAssistantState)
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
+    const streamAbort = abortRef
     return () => {
-      abortRef.current?.abort()
+      streamAbort.current?.abort()
     }
   }, [])
 

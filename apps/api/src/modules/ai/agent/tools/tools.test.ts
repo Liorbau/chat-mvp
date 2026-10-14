@@ -1,6 +1,7 @@
 import type { RunnableConfig } from '@langchain/core/runnables'
 import { describe, expect, it, vi } from 'vitest'
 import { buildGetMyNameTool } from './get-my-name.tool'
+import { buildRetrieveTool } from './retrieve-knowledge.tool'
 import { SummarizeService } from './summarize.service'
 
 // generateStructured hits the LLM; stub it so we can assert the scoping logic.
@@ -65,5 +66,16 @@ describe('SummarizeService', () => {
     expect(usersService.findByIds).toHaveBeenCalledWith(['u-dana'])
     const parsed = JSON.parse(content) as { summaries: Array<{ conversationId: string }> }
     expect(parsed.summaries[0]?.conversationId).toBe('c-user')
+  })
+})
+
+describe('buildRetrieveTool', () => {
+  it('retrieves for the JWT requester even when the model asks for another user', async () => {
+    const retriever = { retrieve: vi.fn().mockResolvedValue([]) }
+    const tool = buildRetrieveTool(retriever as never)
+
+    await tool.invoke({ query: 'notes', userId: 'u-bob' } as never, config)
+
+    expect(retriever.retrieve).toHaveBeenCalledWith('u-alex', 'notes')
   })
 })

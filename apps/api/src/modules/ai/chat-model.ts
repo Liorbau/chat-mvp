@@ -32,14 +32,13 @@ export function createChatModel(configService: ConfigService): BaseChatModel {
   return factory(configService)
 }
 
-// One-shot structured output via the chat model's native withStructuredOutput
-// (fail-closed: throws if the model output doesn't match the schema).
+// Fail-closed: throws when the model output doesn't match the schema.
 export async function generateStructured<T extends Record<string, unknown>>(
-  configService: ConfigService,
+  chatModel: BaseChatModel,
   system: string,
   userContent: string,
   schema: ZodType<T>,
 ): Promise<T> {
-  const model = createChatModel(configService).withStructuredOutput<T>(schema)
+  const model = chatModel.withStructuredOutput<T>(schema)
   return model.invoke([new SystemMessage(system), new HumanMessage(userContent)])
 }

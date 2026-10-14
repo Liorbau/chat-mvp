@@ -1,4 +1,4 @@
-import type { ConfigService } from '@nestjs/config'
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import { z } from 'zod'
 import { generateStructured } from '../../src/modules/ai/chat-model'
 
@@ -33,7 +33,7 @@ export type ScoreResult = { score: number; reasons: string[] }
 // 0..1. Hard-fails (PII, hallucination) zero the score; otherwise
 // 0.7 * outcome + 0.3 * lengthOk.
 export async function scoreSummary(args: {
-  configService: ConfigService
+  chatModel: BaseChatModel
   transcript: string
   summary: string
   good: string
@@ -47,7 +47,7 @@ export async function scoreSummary(args: {
   }
 
   const judge = await generateStructured(
-    args.configService,
+    args.chatModel,
     JUDGE_SYSTEM_PROMPT,
     [
       `TRANSCRIPT:\n${args.transcript}`,
