@@ -18,7 +18,7 @@ export class AiController {
     @Body() body: CreateMessageDto,
     @CurrentUser() user: User,
     @Res() response: Response,
-  ): Promise<void> {
+  ): Promise<Response> {
     const { userMessage, stream } = await this.streamAgentReplyOrchestrator.execute({
       conversationId: params.id,
       requesterId: user.id,
@@ -35,6 +35,6 @@ export class AiController {
     for await (const event of stream) {
       response.write(`data: ${JSON.stringify(event)}\n\n`)
     }
-    response.end()
+    return response.end()
   }
 }

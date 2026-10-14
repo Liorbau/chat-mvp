@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { ConfigService } from '@nestjs/config'
 import type { Message } from '@chat/contract'
-import { generateStructured } from '../../src/modules/ai/chat-model'
+import { createChatModel, generateStructured } from '../../src/modules/ai/chat-model'
 import { SUMMARIZE_SYSTEM_PROMPT } from '../../src/modules/ai/prompts/summarize.prompt'
 import { formatTranscript, OutputSchema } from '../../src/modules/ai/agent/tools/summarize.shared'
 import { scoreSummary } from './scorer'
@@ -32,7 +32,7 @@ function toMessages(fixture: Fixture): Message[] {
 }
 
 export async function run(): Promise<number[]> {
-  const configService = new ConfigService()
+  const chatModel = createChatModel(new ConfigService())
   const fixtures: Fixture[] = JSON.parse(
     readFileSync(
       join(process.cwd(), 'eval', 'summarize.recent.messages', 'fixtures.json'),
@@ -44,14 +44,14 @@ export async function run(): Promise<number[]> {
   for (const fixture of fixtures) {
     const transcript = formatTranscript(toMessages(fixture), ME, 50)
     const result = await generateStructured(
-      configService,
+      chatModel,
       SUMMARIZE_SYSTEM_PROMPT,
       transcript,
       OutputSchema,
     )
     const summary = result.summaries.map((entry) => entry.summary).join('\n')
     const { score, reasons } = await scoreSummary({
-      configService,
+      chatModel,
       transcript,
       summary,
       good: fixture.good,

@@ -1,5 +1,5 @@
+import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { ConversationsService } from '../../../conversations/conversations.service'
 import { MessagesDbService } from '../../../messages/messages.dbService'
 import { UsersService } from '../../../users/users.service'
@@ -13,7 +13,7 @@ export class SummarizeService {
     private readonly conversationsService: ConversationsService,
     private readonly messagesDbService: MessagesDbService,
     private readonly usersService: UsersService,
-    private readonly configService: ConfigService,
+    private readonly chatModel: BaseChatModel,
   ) {}
 
   // All reads are scoped to the JWT requesterId, never to model-supplied input.
@@ -50,7 +50,7 @@ export class SummarizeService {
 
     try {
       const result = await generateStructured(
-        this.configService,
+        this.chatModel,
         SUMMARIZE_SYSTEM_PROMPT,
         prompt,
         OutputSchema,

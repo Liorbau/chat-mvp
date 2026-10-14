@@ -1,24 +1,28 @@
+import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import { type BaseMessage, coerceMessageLikeToMessage } from '@langchain/core/messages'
 import type { RunnableConfig } from '@langchain/core/runnables'
 import type { BaseCheckpointSaver, CompiledStateGraph } from '@langchain/langgraph'
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import type { AssistantSseEvent } from '@chat/contract'
-import { MessagesService } from '../../messages/messages.service'
+import type { AssistantSseEvent, Citation, Message } from '@chat/contract'
 import { ConversationMemoryService } from '../conversation.memory.service'
 import { buildAgentGraph } from './agent.graph'
 import { type AgentConversationType, type AgentStateType } from './agent.state'
-import { createChatModel } from '../chat-model'
 import { AGENT_CHECKPOINTER } from './checkpointer.provider'
 import { streamToSse } from './stream-to-sse'
 import { AgentToolsService } from './tools/agent-tools.service'
 
 const HISTORY_TOKEN_BUDGET = 12000
 
+export type AgentReply = {
+  content: string
+  citations: Citation[]
+}
+
 type StreamInput = {
   conversationId: string
   requesterId: string
   conversationType: AgentConversationType
+  saveReply: (reply: AgentReply) => Promise<Message>
 }
 
 @Injectable()
@@ -27,13 +31,12 @@ export class AgentService {
   private readonly graph: CompiledStateGraph<AgentStateType, Partial<AgentStateType>>
 
   constructor(
-    configService: ConfigService,
+    chatModel: BaseChatModel,
     tools: AgentToolsService,
     @Inject(AGENT_CHECKPOINTER) checkpointer: BaseCheckpointSaver,
     private readonly memory: ConversationMemoryService,
-    private readonly messagesService: MessagesService,
   ) {
-    this.graph = buildAgentGraph({ chatModel: createChatModel(configService), tools, checkpointer })
+    this.graph = buildAgentGraph({ chatModel, tools, checkpointer })
   }
 
   async *streamReply(input: StreamInput): AsyncGenerator<AssistantSseEvent> {
@@ -52,7 +55,7 @@ export class AgentService {
         { ...config, version: 'v2' },
       )
       const streamedText = yield* streamToSse(events)
-      yield* this.finish(input.conversationId, config, streamedText === '')
+      yield* this.finish(config, streamedText === '', input.saveReply)
     } catch (error) {
       this.logger.error(`Agent turn failed for conversation ${input.conversationId}`, error)
       yield { type: 'error', code: 'AI_ERROR', message: 'The assistant failed to respond.' }
@@ -71,9 +74,9 @@ export class AgentService {
   }
 
   private async *finish(
-    conversationId: string,
     config: RunnableConfig,
     nothingStreamed: boolean,
+    saveReply: StreamInput['saveReply'],
   ): AsyncGenerator<AssistantSseEvent> {
     const snapshot = await this.graph.getState(config)
     const answerMessage = snapshot.values.messages.at(-1)
@@ -83,11 +86,7 @@ export class AgentService {
       yield { type: 'token', value: finalText }
     }
     const citations = snapshot.values.citations
-    const persisted = await this.messagesService.appendAssistantMessage(
-      conversationId,
-      finalText,
-      citations.length > 0 ? citations : undefined,
-    )
+    const persisted = await saveReply({ content: finalText, citations })
     yield citations.length > 0
       ? { type: 'done', messageId: persisted.id, citations }
       : { type: 'done', messageId: persisted.id }

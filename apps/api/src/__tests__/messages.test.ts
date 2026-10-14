@@ -129,6 +129,23 @@ describe('Messages API', () => {
     expect(response.body.error.code).toBe('VALIDATION_ERROR')
   })
 
+  it.each(['assistant', 'tutor'])(
+    'returns 400 for a plain message into a %s conversation',
+    async (type) => {
+      const token = await login(app, 'alex@example.com')
+      const created = await request(app.getHttpServer())
+        .post('/conversations')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ type })
+      const response = await request(app.getHttpServer())
+        .post(`/conversations/${created.body.id as string}/messages`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ content: 'hi' })
+
+      expect(response.status).toBe(400)
+    },
+  )
+
   it('returns 400 for unknown body fields', async () => {
     const token = await login(app, 'sam@example.com')
     const response = await request(app.getHttpServer())
