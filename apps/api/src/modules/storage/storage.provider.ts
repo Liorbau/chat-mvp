@@ -7,10 +7,9 @@ export type PutObjectInput = {
   cacheControl: string
 }
 
-// The swappable storage seam
 export interface StorageProvider {
-  put(input: PutObjectInput): Promise<void>
-  delete(key: string): Promise<void>
+  put(input: PutObjectInput): Promise<string>
+  delete(key: string): Promise<string>
   // Provider-specific public CDN URL for reading the object at `key`.
   publicUrl(key: string): string
 }
