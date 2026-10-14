@@ -1,4 +1,4 @@
-import { useCallback, type Dispatch, type MutableRefObject } from 'react'
+import { useCallback, type Dispatch, type RefObject } from 'react'
 import { streamAssistant } from '../apiActions/ai'
 import type { AssistantAction, AssistantState } from '@/features/ai/state/assistantChatReducer'
 import { handleAssistantEvent } from './handleAssistantEvent'
@@ -7,7 +7,7 @@ export function useSendAssistantMessage(
   state: AssistantState,
   dispatch: Dispatch<AssistantAction>,
   currentUserId: string,
-  abortRef: MutableRefObject<AbortController | null>,
+  abortRef: RefObject<AbortController | null>,
 ): (content: string) => void {
   return useCallback(
     (content: string) => {

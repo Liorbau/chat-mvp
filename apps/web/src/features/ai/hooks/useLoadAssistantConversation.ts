@@ -1,9 +1,10 @@
 import { useEffect, type Dispatch } from 'react'
 import { createConversation, getMessages } from '@/api'
 import type { AssistantAction } from '@/features/ai/state/assistantChatReducer'
+import type { AiMode } from '@/features/ai/types/ai.types'
 
 export function useLoadAssistantConversation(
-  conversationType: 'assistant' | 'tutor',
+  conversationType: AiMode,
   dispatch: Dispatch<AssistantAction>,
 ): void {
   useEffect(() => {
